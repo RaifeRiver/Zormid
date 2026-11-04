@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "http/HTTPServer.h"
 
 int main() {
@@ -8,5 +10,6 @@ int main() {
 	});
 	while (true) {
 		server.accept();
+		usleep(10000);
 	}
 }
