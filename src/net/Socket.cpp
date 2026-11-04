@@ -1,0 +1,60 @@
+#include "Socket.h"
+
+#include <cstring>
+#include <unistd.h>
+#include <sys/socket.h>
+
+namespace zormid::net {
+	Socket::Socket(const int fd) : mFD(fd) {}
+
+	void Socket::write(const void* data, const size_t size) const {
+		size_t sent = 0;
+		while (sent < size) {
+			if (const ssize_t s = send(mFD, static_cast<const char*>(data) + sent, size - sent, 0); s > 0) {
+				sent += s;
+			}
+		}
+	}
+
+	void Socket::writeString(const std::string& str) const {
+		send(mFD, str.c_str(), str.length(), 0);
+	}
+
+	size_t Socket::read(void* buffer, const size_t size) {
+		size_t bufferCopySize = 0;
+		if (const size_t bufferSize = mBufferEnd - mBufferPos; bufferSize > 0) {
+			bufferCopySize = size > bufferSize ? bufferSize : size;
+			memcpy(buffer, mBuffer + mBufferPos, bufferCopySize);
+			mBufferPos += bufferCopySize;
+			if (bufferCopySize == size) {
+				return bufferCopySize;
+			}
+		}
+		const ssize_t read = recv(mFD, buffer, size - bufferCopySize, 0);
+		return read > 0 ? read + bufferCopySize : bufferCopySize;
+	}
+
+	std::string Socket::readString(const char delimiter) {
+		std::string result;
+		while (true) {
+			for (size_t i = mBufferPos; i < mBufferEnd; i++) {
+				if (mBuffer[i] == delimiter) {
+					result.append(mBuffer + mBufferPos, i - mBufferPos);
+					mBufferPos = i + 1;
+					return result;
+				}
+			}
+			mBufferPos = 0;
+			if (const ssize_t read = recv(mFD, mBuffer, sizeof(mBuffer), 0); read > 0) {
+				mBufferEnd = read;
+			}
+			else {
+				mBufferEnd = 0;
+			}
+		}
+	}
+
+	void Socket::close() const {
+		::close(mFD);
+	}
+}
