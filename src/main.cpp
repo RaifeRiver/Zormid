@@ -6,18 +6,26 @@
 int main() {
 	zormid::net::http::HTTPServer server(8082);
 	server.setClientHandler([](const zormid::net::http::HTTPRequestHeader& request, const zormid::net::Socket& client) {
+		zormid::net::http::HTTPResponseHeader response;
 		if (request.path.find("..") != std::string::npos) {
-			client.writeString("HTTP/1.1 403 Forbidden");
+			response.statusCode = 403;
+			response.statusMessage = "Forbidden";
+			response.write(client);
 			client.close();
 			return;
 		}
 		const std::optional<std::string> data = zormid::util::file::readFile("../res/site/" + request.path);
 		if (!data.has_value()) {
-			client.writeString("HTTP/1.1 404 Not Found");
+			response.statusCode = 404;
+			response.statusMessage = "Not Found";
+			response.write(client);
 			client.close();
 			return;
 		}
-		client.writeString("HTTP/1.1 200 OK\r\n\r\n" + *data);
+		response.statusCode = 200;
+		response.statusMessage = "OK";
+		response.body = data.value();
+		response.write(client);
 		client.close();
 	});
 	while (true) {

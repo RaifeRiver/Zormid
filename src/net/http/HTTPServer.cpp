@@ -15,6 +15,13 @@ namespace zormid::net::http {
 				header.type = client->readString(' ');
 				header.path = client->readString(' ');
 				header.protocol = client->readString('\n').substr(0, -1);
+				std::string line;
+				while ((line = client->readString('\n')) != "\r") {
+					const size_t splitIndex = line.find(':');
+					std::string key = line.substr(0, splitIndex);
+					const std::string value = line.substr(line.find_first_not_of(' ', splitIndex + 1), line.find_last_not_of('\r'));
+					header.headers[key] = value;
+				}
 				(*mClientHandler)(header, *client);
 			}
 		}
