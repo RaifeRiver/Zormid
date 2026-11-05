@@ -8,3 +8,4 @@ file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS src/*.cpp)
 add_executable(zormid ${SRC_FILES})
 
 target_include_directories(zormid PUBLIC src)
+target_include_directories(zormid PUBLIC lib)
