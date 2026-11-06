@@ -39,7 +39,7 @@ int main() {
 		server.accept();
 		for (uint32_t i = 0; i < clients.size(); i++) {
 			clients[i].process();
-			if (clients[i].isOpen()) {
+			if (!clients[i].isOpen()) {
 				clients.erase(clients.begin() + i--);
 			}
 		}
