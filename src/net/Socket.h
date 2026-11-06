@@ -18,7 +18,11 @@ namespace zormid::net {
 
 		size_t read(void* buffer, size_t size);
 
+		void readBlocking(void* buffer, size_t size);
+
 		std::string readString(char delimiter = '\n');
+
+		[[nodiscard]] bool available();
 
 		void close() const;
 

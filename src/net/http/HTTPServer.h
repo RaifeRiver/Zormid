@@ -2,12 +2,13 @@
 
 #include <cstdint>
 #include <functional>
+#include <optional>
 
 #include "HTTPHeader.h"
 #include "net/ServerSocket.h"
 
 namespace zormid::net::http {
-	using ClientHandler = std::function<void(HTTPRequestHeader, Socket)>;
+	using ClientHandler = std::function<void(HTTPRequestHeader, std::unique_ptr<Socket>)>;
 
 	class HTTPServer {
 	public:

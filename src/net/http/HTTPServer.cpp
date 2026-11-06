@@ -9,12 +9,13 @@ namespace zormid::net::http {
 
 	void HTTPServer::accept() const {
 		if (mClientHandler.has_value()) {
-			std::optional<Socket> client;
-			while ((client = mServerSocket.accept()).has_value()) {
+			std::unique_ptr<Socket> client;
+			while ((client = mServerSocket.accept())) {
 				HTTPRequestHeader header;
 				header.type = client->readString(' ');
 				header.path = client->readString(' ');
-				header.protocol = client->readString('\n').substr(0, -1);
+				std::string protocol = client->readString('\n');
+				header.protocol = protocol.substr(0, protocol.size() - 1);
 				std::string line;
 				while ((line = client->readString('\n')) != "\r") {
 					const size_t splitIndex = line.find(':');
@@ -22,7 +23,7 @@ namespace zormid::net::http {
 					const std::string value = line.substr(line.find_first_not_of(' ', splitIndex + 1), line.find_last_not_of('\r') - line.find_first_not_of(' ', splitIndex + 1) + 1);
 					header.headers[key] = value;
 				}
-				(*mClientHandler)(header, *client);
+				(*mClientHandler)(header, std::move(client));
 			}
 		}
 	}

@@ -10,6 +10,10 @@
 
         <script>
             let socket = new WebSocket("ws://localhost:8082");
+            socket.addEventListener("open", () => {
+                socket.send("Hello World!");
+                console.log("Message sent");
+            });
         </script>
     </body>
 </html>

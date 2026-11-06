@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
+#include <memory>
 
 #include "Socket.h"
 
@@ -10,7 +10,7 @@ namespace zormid::net {
 	public:
 		explicit ServerSocket(uint16_t port);
 
-		[[nodiscard]] std::optional<Socket> accept() const;
+		[[nodiscard]] std::unique_ptr<Socket> accept() const;
 
 		~ServerSocket();
 

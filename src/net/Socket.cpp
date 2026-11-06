@@ -30,8 +30,15 @@ namespace zormid::net {
 				return bufferCopySize;
 			}
 		}
-		const ssize_t read = recv(mFD, buffer, size - bufferCopySize, 0);
+		const ssize_t read = recv(mFD, static_cast<char*>(buffer) + bufferCopySize, size - bufferCopySize, 0);
 		return read > 0 ? read + bufferCopySize : bufferCopySize;
+	}
+
+	void Socket::readBlocking(void* buffer, const size_t size) {
+		size_t s = 0;
+		while (s < size) {
+			s += read(static_cast<char*>(buffer) + s, size - s);
+		}
 	}
 
 	std::string Socket::readString(const char delimiter) {
@@ -44,6 +51,7 @@ namespace zormid::net {
 					return result;
 				}
 			}
+			result.append(mBuffer + mBufferPos, mBufferEnd - mBufferPos);
 			mBufferPos = 0;
 			if (const ssize_t read = recv(mFD, mBuffer, sizeof(mBuffer), 0); read > 0) {
 				mBufferEnd = read;
@@ -52,6 +60,19 @@ namespace zormid::net {
 				mBufferEnd = 0;
 			}
 		}
+	}
+
+	bool Socket::available() {
+		if (mBufferPos < mBufferEnd) {
+			return true;
+		}
+		mBufferPos = 0;
+		mBufferEnd = 0;
+		if (const ssize_t read = recv(mFD, mBuffer, sizeof(mBuffer), 0); read > 0) {
+			mBufferEnd = read;
+			return true;
+		}
+		return false;
 	}
 
 	void Socket::close() const {

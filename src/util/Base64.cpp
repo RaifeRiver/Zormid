@@ -17,7 +17,7 @@ namespace zormid::util::base64 {
 			}
 		}
 		if (bytes > -6) {
-			output.push_back(CHARS[((value << 8) >> (value + 8)) & 0x3F]);
+			output.push_back(CHARS[((value << (-bytes)) & 0x3F)]);
 		}
 		while (output.size() % 4 != 0) {
 			output.push_back('=');

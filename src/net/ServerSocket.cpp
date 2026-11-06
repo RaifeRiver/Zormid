@@ -31,17 +31,17 @@ namespace zormid::net {
 		}
 	}
 
-	std::optional<Socket> ServerSocket::accept() const {
+	std::unique_ptr<Socket> ServerSocket::accept() const {
 		sockaddr_in addr = {};
 		socklen_t len = sizeof(addr);
 		const int fd = ::accept(mFD, reinterpret_cast<sockaddr*>(&addr), &len);
 		if (fd == -1) {
-			return {};
+			return nullptr;
 		}
 		if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK) == -1) {
-			return {};
+			return nullptr;
 		}
-		return Socket(fd);
+		return std::make_unique<Socket>(fd);
 	}
 
 	ServerSocket::~ServerSocket() {
