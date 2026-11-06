@@ -4,16 +4,34 @@
         <title>Zormid</title>
 
         <meta charset="UTF-8">
+
+        <link rel="stylesheet" href="res/style/theme.css">
     </head>
-    <body style="background-color: #101015;">
-        <h1 style="color: white;">Welcome to Zormid!</h1>
+    <body>
+        <div id="input-container">
+            <div id="input">
+                <textarea id="message-input" placeholder="Type message here"></textarea>
+                <button id="send-button">➤</button>
+            </div>
+        </div>
 
         <script>
-            let socket = new WebSocket("ws://localhost:8082");
-            socket.addEventListener("open", () => {
-                socket.send("Hello World!");
-                console.log("Message sent");
+            const messageInput = document.getElementById("message-input");
+
+            const socket = new WebSocket("ws://localhost:8082");
+
+            function sendMessage() {
+                socket.send(messageInput.value);
+                messageInput.value = "";
+            }
+
+            messageInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    sendMessage();
+                }
             });
+            document.getElementById("send-button").addEventListener("click", sendMessage);
         </script>
     </body>
 </html>

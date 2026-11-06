@@ -1,0 +1,48 @@
+body {
+    background-color: #20202A;
+    margin: 0;
+}
+
+#input-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100vh;
+}
+
+#input {
+    display: flex;
+    flex-direction: row;
+    background-color: #252530;
+    border: #404050 2px solid;
+    border-radius: 5px;
+    width: 50%;
+    padding: 0.5%;
+    margin-bottom: 0.5%;
+    margin-left: 24.5%;
+    vertical-align: bottom;
+}
+
+#message-input {
+    border: none;
+    background-color: inherit;
+    color: #FFFFFF;
+    font-size: 20px;
+    width: 100%;
+    field-sizing: content;
+    resize: none;
+}
+
+#message-input:focus {
+    outline: none;
+}
+
+#send-button {
+    border: none;
+    background-color: #404050;
+    vertical-align: bottom;
+    aspect-ratio: 1/1;
+    color: #FFFFFF;
+    font-size: 25px;
+    align-self: center;
+}
