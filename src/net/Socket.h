@@ -14,7 +14,7 @@ namespace zormid::net {
 			write(data.data(), data.size() * sizeof(T));
 		}
 
-		void writeString(const std::string& str) const;
+		void writeString(const std::string& str);
 
 		size_t read(void* buffer, size_t size);
 

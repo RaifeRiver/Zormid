@@ -16,7 +16,7 @@ namespace zormid::net {
 		}
 	}
 
-	void Socket::writeString(const std::string& str) const {
+	void Socket::writeString(const std::string& str) {
 		ssize_t result = 0;
 		size_t sent = 0;
 		while ((result = send(mFD, str.c_str() + sent, str.length() - sent, 0)) < str.length()) {
