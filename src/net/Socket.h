@@ -24,12 +24,17 @@ namespace zormid::net {
 
 		[[nodiscard]] bool available();
 
-		void close() const;
+		[[nodiscard]] bool isOpen() const {
+			return mOpen;
+		}
+
+		void close();
 
 	private:
 		int mFD;
 		char mBuffer[4096] = {};
 		size_t mBufferPos = 0;
 		size_t mBufferEnd = 0;
+		bool mOpen = true;
 	};
 }

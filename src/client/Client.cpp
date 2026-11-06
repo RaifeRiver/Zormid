@@ -13,8 +13,11 @@ namespace zormid::client {
 		}
 	}
 
-	void Client::close() {
+	void Client::close() const {
 		mSocket->close();
-		mClosed = true;
+	}
+
+	bool Client::isOpen() const {
+		return mSocket->isOpen();
 	}
 }

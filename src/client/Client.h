@@ -9,14 +9,11 @@ namespace zormid::client {
 
 		void process() const;
 
-		void close();
+		void close() const;
 
-		[[nodiscard]] bool isClosed() const {
-			return mClosed;
-		}
+		[[nodiscard]] bool isOpen() const;
 
 	private:
 		std::unique_ptr<net::http::WebSocket> mSocket;
-		bool mClosed = false;
 	};
 }

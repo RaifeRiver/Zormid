@@ -60,6 +60,10 @@ namespace zormid::net::http {
 		return {{.data = data, .size = length}};
 	}
 
+	bool WebSocket::isOpen() const {
+		return mSocket->isOpen();
+	}
+
 	void WebSocket::close() const {
 		mSocket->close();
 	}

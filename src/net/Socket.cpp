@@ -17,7 +17,19 @@ namespace zormid::net {
 	}
 
 	void Socket::writeString(const std::string& str) const {
-		send(mFD, str.c_str(), str.length(), 0);
+		ssize_t result = 0;
+		size_t sent = 0;
+		while ((result = send(mFD, str.c_str() + sent, str.length() - sent, 0)) < str.length()) {
+			if (result == -1) {
+				if (errno == EPIPE || errno == ECONNRESET) {
+					close();
+					return;
+				}
+			}
+			else {
+				sent += result;
+			}
+		}
 	}
 
 	size_t Socket::read(void* buffer, const size_t size) {
@@ -31,7 +43,13 @@ namespace zormid::net {
 			}
 		}
 		const ssize_t read = recv(mFD, static_cast<char*>(buffer) + bufferCopySize, size - bufferCopySize, 0);
-		return read > 0 ? read + bufferCopySize : bufferCopySize;
+		if (read == -1) {
+			if (errno == EPIPE || errno == ECONNRESET) {
+				close();
+			}
+			return bufferCopySize;
+		}
+		return read + bufferCopySize;
 	}
 
 	void Socket::readBlocking(void* buffer, const size_t size) {
@@ -56,7 +74,11 @@ namespace zormid::net {
 			if (const ssize_t read = recv(mFD, mBuffer, sizeof(mBuffer), 0); read > 0) {
 				mBufferEnd = read;
 			}
-			else {
+			else if (read == -1) {
+				if (errno == EPIPE || errno == ECONNRESET) {
+					close();
+					return result;
+				}
 				mBufferEnd = 0;
 			}
 		}
@@ -75,7 +97,8 @@ namespace zormid::net {
 		return false;
 	}
 
-	void Socket::close() const {
+	void Socket::close() {
 		::close(mFD);
+		mOpen = false;
 	}
 }

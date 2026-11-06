@@ -18,6 +18,8 @@ namespace zormid::net::http {
 
 		[[nodiscard]] std::optional<PayloadData> read() const;
 
+		[[nodiscard]] bool isOpen() const;
+
 		void close() const;
 
 	private:
