@@ -1,6 +1,8 @@
 #include "Auth.h"
 
 #include <chrono>
+#include <cstring>
+#include <iostream>
 
 #include "user/User.h"
 #include "user/UserManager.h"
@@ -25,7 +27,7 @@ namespace zormid::site {
 		return "Internal server error";
 	}
 
-	void auth(const net::http::HTTPRequestHeader& request, net::http::HTTPResponseHeader& response) {
+	bool verifySessionCookies(const net::http::HTTPRequestHeader& request) {
 		if (const auto cookieIt = request.headers.find("Cookie"); cookieIt != request.headers.end()) {
 			const std::string& cookieHeader = cookieIt->second;
 			std::string userCookie;
@@ -39,6 +41,7 @@ namespace zormid::site {
 				std::string cookie(cookieHeader.substr(pos, cookieHeader.find_first_of('=', pos) - pos));
 				if (cookie.starts_with(' ')) {
 					cookie = cookie.substr(1);
+					pos++;
 				}
 				if (cookie == "user") {
 					userCookie = cookieHeader.substr(pos + 5, end - pos - 6);
@@ -49,11 +52,34 @@ namespace zormid::site {
 				pos = end + 1;
 			}
 			if (!userCookie.empty() && !sessionCookie.empty()) {
-				response.statusCode = 303;
-				response.statusMessage = "See Other";
-				response.headers["Location"] = "/app/";
-				return;
+				const std::vector<char> userChars = util::base64::decode(userCookie);
+				if (userChars.size() != 21) {
+					return false;
+				}
+				const std::vector<char> sessionChars = util::base64::decode(sessionCookie);
+				if (sessionChars.size() != 17) {
+					return false;
+				}
+				const user::manager::UserID userID(userChars.data());
+				if (!user::manager::exists(userID)) {
+					return false;
+				}
+				for (user::User user = user::manager::loadUser(userID); user::Session session : user.getSessions()) {
+					if (memcmp(sessionChars.data(), static_cast<const char*>(session), 16) == 0) {
+						return true;
+					}
+				}
 			}
+		}
+		return false;
+	}
+
+	void auth(const net::http::HTTPRequestHeader& request, net::http::HTTPResponseHeader& response) {
+		if (verifySessionCookies(request)) {
+			response.statusCode = 303;
+			response.statusMessage = "See Other";
+			response.headers["Location"] = "/app/";
+			return;
 		}
 		if (request.type == "GET") {
 			response.statusCode = 200;
