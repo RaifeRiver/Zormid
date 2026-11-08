@@ -109,6 +109,13 @@ namespace zormid::user {
 			user.getSessions().emplace_back(sessionID);
 		}
 		fileStream >> user.getUsername();
+		uint32_t friendCount;
+		fileStream >> friendCount;
+		for (uint32_t i = 0; i < friendCount; i++) {
+			char friendID[20];
+			fileStream.read(friendID, sizeof(friendID));
+			user.getFriends().emplace_back(friendID);
+		}
 		return user;
 	}
 
@@ -122,5 +129,9 @@ namespace zormid::user {
 			fileStream.write(static_cast<const char*>(session), 16);
 		}
 		fileStream << user.getUsername();
+		fileStream << user.getFriends().size();
+		for (const UserID& friendID: user.getFriends()) {
+			fileStream.write(static_cast<const char*>(friendID), 20);
+		}
 	}
 }

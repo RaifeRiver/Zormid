@@ -24,5 +24,9 @@ namespace zormid::client {
 		void processPacket(const net::http::PayloadData& payload);
 
 		void processMessagePacket(const net::http::PayloadData& payload);
+
+		void processUsernameRequestPacket(const net::http::PayloadData& payload) const;
+
+		void processAcceptFriendRequestPacket(const net::http::PayloadData& payload);
 	};
 }

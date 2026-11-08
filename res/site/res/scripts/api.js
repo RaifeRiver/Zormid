@@ -15,6 +15,11 @@ export function setMessageHandler(handler) {
     messageHandler = handler;
 }
 
+export let usernameRequestHandler;
+export function setUsernameRequestHandler(handler) {
+    usernameRequestHandler = handler;
+}
+
 function readString(packet, pos) {
     let str = "";
     let size = packet.getUint32(pos, true);
@@ -22,6 +27,14 @@ function readString(packet, pos) {
         str += String.fromCharCode(packet.getUint8(pos + 4 + i));
     }
     return str;
+}
+
+function readUserID(packet, pos) {
+    let id = "";
+    for (let i = 0; i < 20; i++) {
+        id += String.fromCharCode(packet.getUint8(pos + i));
+    }
+    return id;
 }
 
 function processPacket(packet) {
@@ -38,6 +51,13 @@ function processPacket(packet) {
                 let content = readString(view, 4);
                 let username = readString(view, 8 + content.length);
                 messageHandler({content: content, username: username});
+            }
+            break;
+        case 0x2:
+            if (usernameRequestHandler) {
+                let userID = readUserID(view, 4);
+                let username = readString(view, 24);
+                usernameRequestHandler(username, userID);
             }
             break;
         default:
@@ -79,6 +99,27 @@ export function sendMessage(message) {
     view.setUint32(4, message.length, true);
     for (let i = 0; i < message.length; i++) {
         view.setUint8(i + 8, message.charCodeAt(i));
+    }
+    websocket.send(buffer);
+}
+
+export function requestUsername(id) {
+    let buffer = new ArrayBuffer(24);
+    let view = new DataView(buffer);
+    let rawID = atob(id);
+    view.setUint32(0, 0x2, true);
+    for (let i = 0; i < 20; i++) {
+        view.setUint8(i + 4, rawID.charCodeAt(i));
+    }
+    websocket.send(buffer);
+}
+
+export function acceptFriendRequest(userID) {
+    let buffer = new ArrayBuffer(24);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0x3, true);
+    for (let i = 0; i < 20; i++) {
+        view.setUint8(i + 4, userID.charCodeAt(i));
     }
     websocket.send(buffer);
 }

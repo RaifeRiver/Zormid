@@ -49,6 +49,15 @@ namespace zormid {
 				client->close();
 				return;
 			}
+			if (request.path.starts_with("/friend/")) {
+				response.statusCode = 302;
+				response.statusMessage = "Found";
+				response.headers["Location"] = "/app/";
+				response.headers["Set-Cookie"] = "add-friend=" + std::string(request.path.substr(8)) + "; Path=/";
+				response.write(*client);
+				client->close();
+				return;
+			}
 			const std::optional<std::string> data = util::file::readFile("../res/site/" + request.path);
 			if (!data.has_value()) {
 				response.statusCode = 404;

@@ -46,12 +46,17 @@ namespace zormid::user {
 
 		void setUsername(const std::string& username);
 
+		[[nodiscard]] std::vector<manager::UserID>& getFriends() {
+			return mFriends;
+		}
+
 	private:
 		manager::UserID mID;
 		char mPasswordSalt[16] = {};
 		char mPasswordDigest[20] = {};
 		std::string mUsername;
 		std::vector<Session> mSessions = {};
+		std::vector<manager::UserID> mFriends = {};
 
 		explicit User(const manager::UserID& id);
 

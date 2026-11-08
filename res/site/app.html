@@ -8,23 +8,53 @@
         <link rel="stylesheet" href="/res/style/app.css">
     </head>
     <body>
-        <div id="message-container">
+        <div id="app-container">
+            <div id="side-panel">
+                <button id="add-friend">Add Friend</button>
+            </div>
 
+            <div id="main-area">
+                <div id="message-container">
+
+                </div>
+
+                <template id="message-template">
+                    <div class="message">
+                        <p class="message-username"></p>
+                        <p class="message-content"></p>
+                    </div>
+                </template>
+
+                <div id="input-container">
+                    <div id="input-inner-container">
+                        <textarea id="message-input" placeholder="Type message here"></textarea>
+                        <button id="send-button">➤</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <template id="message-template">
-            <div class="message">
-                <p class="message-username"></p>
-                <p class="message-content"></p>
-            </div>
-        </template>
+        <dialog id="add-friend-menu" class="popup-menu">
+            <h3>Add Friend</h3>
 
-        <div id="input-container">
-            <div id="input">
-                <textarea id="message-input" placeholder="Type message here"></textarea>
-                <button id="send-button">➤</button>
+            <p class="copyable-url-label">Friend invite link</p>
+            <p id="add-friend-url" class="copyable-url"></p>
+
+            <button id="add-friend-close" class="close-button">X</button>
+        </dialog>
+
+        <dialog id="accept-friend-menu" class="popup-menu">
+            <h3>Accept Friend</h3>
+
+            <p id="accept-friend-text"></p>
+
+            <div id="accept-friend-buttons">
+                <button id="accept-friend-accept" class="accept-friend-button">Accept</button>
+                <button id="accept-friend-decline" class="accept-friend-button">Decline</button>
             </div>
-        </div>
+
+            <button id="accept-friend-close" class="close-button">X</button>
+        </dialog>
 
         <script type="module" src="/res/scripts/app.js"></script>
     </body>

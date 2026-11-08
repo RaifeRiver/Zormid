@@ -73,6 +73,12 @@ namespace zormid::client {
 			case 0x1:
 				processMessagePacket(payload);
 				break;
+			case 0x2:
+				processUsernameRequestPacket(payload);
+				break;
+			case 0x3:
+				processAcceptFriendRequestPacket(payload);
+				break;
 			default:
 				break;
 		}
@@ -87,5 +93,36 @@ namespace zormid::client {
 		for (Client& c : Zormid::getInstance().getClients()) {
 			c.sendMessage({.content = message, .from = mUser->getUsername()});
 		}
+	}
+
+	void Client::processUsernameRequestPacket(const net::http::PayloadData& payload) const {
+		char userIDChars[20];
+		memcpy(userIDChars, payload.data + 4, 20);
+		const user::manager::UserID userID(userIDChars);
+		user::User user = user::manager::loadUser(userID);
+		const std::string username = user.getUsername();
+		net::http::PayloadData response = {};
+		response.type = net::http::PayloadType::BINARY;
+		response.size = 28 + username.length();
+		response.data = static_cast<char*>(malloc(response.size));
+		constexpr uint32_t responseID = 0x2;
+		memcpy(response.data, &responseID, 4);
+		memcpy(response.data + 4, userIDChars, 20);
+		const uint32_t usernameLength = username.length();
+		memcpy(response.data + 24, &usernameLength, 4);
+		memcpy(response.data + 28, username.c_str(), username.length());
+		mSocket->write(response);
+		free(response.data);
+	}
+
+	void Client::processAcceptFriendRequestPacket(const net::http::PayloadData& payload) {
+		char userIDChars[20];
+		memcpy(userIDChars, payload.data + 4, 20);
+		const user::manager::UserID userID(userIDChars);
+		user::User user = user::manager::loadUser(userID);
+		user.getFriends().push_back(mUser->getID());
+		user::manager::saveUser(user);
+		mUser->getFriends().push_back(userID);
+		user::manager::saveUser(*mUser);
 	}
 }
