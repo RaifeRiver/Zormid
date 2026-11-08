@@ -31,6 +31,10 @@ namespace zormid::net::http {
 					}
 					header.body.append(buffer, read);
 				}
+				if (const size_t queryPos = header.path.find_first_of('?'); queryPos != std::string::npos) {
+					header.query = header.path.substr(queryPos + 1);
+					header.path = header.path.substr(0, queryPos);
+				}
 				(*mClientHandler)(header, std::move(client));
 			}
 		}

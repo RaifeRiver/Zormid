@@ -16,6 +16,7 @@ namespace zormid::net::http {
 	struct HTTPRequestHeader : HTTPHeader {
 		std::string type;
 		std::string path;
+		std::string query;
 	};
 
 	struct HTTPResponseHeader : HTTPHeader {

@@ -6,6 +6,8 @@
 #include "net/Socket.h"
 #include "net/http/HTTPServer.h"
 #include "net/http/WebSocket.h"
+#include "site/Auth.h"
+#include "user/UserManager.h"
 #include "util/FileHelper.h"
 
 namespace zormid {
@@ -27,6 +29,7 @@ namespace zormid {
 	}
 
 	Zormid::Zormid() : mServer(8082) {
+		user::manager::init();
 		mServer.setClientHandler([&](net::http::HTTPRequestHeader request, std::unique_ptr<net::Socket> client) {
 			net::http::HTTPResponseHeader response;
 			if (request.headers["Connection"] == "Upgrade" && request.headers["Upgrade"] == "websocket") {
@@ -42,6 +45,12 @@ namespace zormid {
 					client->close();
 					return;
 				}
+			}
+			else if (request.path == "/auth") {
+				site::auth(request, response);
+				response.write(*client);
+				client->close();
+				return;
 			}
 			const std::optional<std::string> data = util::file::readFile("../res/site/" + request.path);
 			if (!data.has_value()) {

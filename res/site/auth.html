@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Zormid - Auth</title>
+
+        <meta charset="utf-8">
+
+        <link rel="stylesheet" href="/res/style/login.css">
+    </head>
+    <body>
+        <form action="" method="post">
+            <div id="container">
+                <h1>Zormid %login-type%</h1>
+
+                <div class="text-input-container">
+                    <label for="username">Username</label>
+                    <input id="username" type="text" name="username" placeholder="Username" required>
+                </div>
+
+                <div class="text-input-container">
+                    <label for="password">Password</label>
+                    <input id="password" type="password" name="password" placeholder="Password" required>
+                </div>
+
+                <button type="submit">%login-type%</button>
+
+                <div>
+                    <input id="remember" type="checkbox" checked="checked" name="remember">
+                    <label for="remember">Remember me</label>
+                </div>
+
+                %switch-link%
+
+                %response-message%
+            </div>
+        </form>
+    </body>
+</html>
