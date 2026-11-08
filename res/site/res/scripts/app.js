@@ -1,5 +1,5 @@
 import * as api from "./api.js";
-import {requestUsername} from "./api.js";
+import * as cookies from "./cookies.js";
 
 const messageInput = document.getElementById("message-input");
 const messageTemplate = document.getElementById("message-template");
@@ -25,23 +25,21 @@ let addFriendCopyURL;
 let userID;
 
 api.setConnectHandler(() => {
-    cookieStore.get("user").then((userCookie) => {
-        if (userCookie) {
-            userID = userCookie.value;
-            cookieStore.get("sessionID").then((sessionCookie) => {
-                if (sessionCookie) {
-                    api.authenticate(atob(userCookie.value), atob(sessionCookie.value));
-                }
-            });
-        }
-    });
+    const userCookie = cookies.getCookie("user");
+    if (!userCookie) {
+        return;
+    }
+    const sessionCookie = cookies.getCookie("sessionID");
+    if (!sessionCookie) {
+        return;
+    }
+    api.authenticate(atob(userCookie), atob(sessionCookie));
 });
 api.setAuthHandler(() => {
-    cookieStore.get("add-friend").then((addFriendCookie) => {
-        if (addFriendCookie) {
-            openAcceptFriendMenu(addFriendCookie.value);
-        }
-    })
+    const addFriendCookie = cookies.getCookie("add-friend");
+    if (addFriendCookie) {
+        openAcceptFriendMenu(addFriendCookie);
+    }
 });
 api.setMessageHandler((message) => {
     const messageElement = document.importNode(messageTemplate.content, true);
@@ -84,12 +82,12 @@ function closeAddFriendMenu() {
 
 function openAcceptFriendMenu(id) {
     if (userID === id) {
-        cookieStore.delete("add-friend");
+        cookies.deleteCookie("add-friend");
         return;
     }
     openingAcceptFriendMenu = true;
     acceptFriendUserID = id;
-    requestUsername(id);
+    api.requestUsername(id);
 }
 function closeAcceptFriendMenu() {
     acceptFriendMenu.close();
@@ -97,12 +95,12 @@ function closeAcceptFriendMenu() {
 function acceptFriend() {
     api.acceptFriendRequest(acceptFriendUserID);
     closeAcceptFriendMenu();
-    cookieStore.delete("add-friend");
+    cookies.deleteCookie("add-friend");
 }
 
 function declineFriend() {
     closeAcceptFriendMenu();
-    cookieStore.delete("add-friend");
+    cookies.deleteCookie("add-friend");
 }
 
 messageInput.addEventListener("keydown", (event) => {
