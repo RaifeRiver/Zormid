@@ -7,13 +7,15 @@
 namespace zormid::util {
 	class IFileStream {
 	public:
-		explicit IFileStream(std::string path);
+		explicit IFileStream(const std::string& path);
 
 		void seek(uint32_t pos);
 
 		void read(void* buffer, uint32_t size);
 
 		void operator>>(uint32_t& value);
+
+		void operator>>(std::string& value);
 
 		~IFileStream();
 
@@ -23,11 +25,13 @@ namespace zormid::util {
 
 	class OFileStream {
 	public:
-		explicit OFileStream(std::string path);
+		explicit OFileStream(const std::string& path);
 
 		void write(const void* buffer, uint32_t size);
 
 		void operator<<(uint32_t value);
+
+		void operator<<(const std::string& value);
 
 		~OFileStream();
 

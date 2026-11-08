@@ -7,11 +7,17 @@
 namespace zormid::net {
 	Socket::Socket(const int fd) : mFD(fd) {}
 
-	void Socket::write(const void* data, const size_t size) const {
+	void Socket::write(const void* data, const size_t size) {
 		size_t sent = 0;
 		while (sent < size) {
-			if (const ssize_t s = send(mFD, static_cast<const char*>(data) + sent, size - sent, 0); s > 0) {
+			if (const ssize_t s = send(mFD, static_cast<const char*>(data) + sent, size - sent, MSG_NOSIGNAL); s > 0) {
 				sent += s;
+			}
+			else if (s == -1) {
+				if (errno == EPIPE || errno == ECONNRESET) {
+					close();
+					return;
+				}
 			}
 		}
 	}
@@ -19,7 +25,7 @@ namespace zormid::net {
 	void Socket::writeString(const std::string& str) {
 		ssize_t result = 0;
 		size_t sent = 0;
-		while ((result = send(mFD, str.c_str() + sent, str.length() - sent, 0)) < str.length()) {
+		while ((result = send(mFD, str.c_str() + sent, str.length() - sent, MSG_NOSIGNAL)) < str.length()) {
 			if (result == -1) {
 				if (errno == EPIPE || errno == ECONNRESET) {
 					close();

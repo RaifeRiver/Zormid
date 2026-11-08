@@ -132,7 +132,7 @@ namespace zormid::site {
 					response.body = getPage("Sign Up", "User already exists");
 					return;
 				}
-				user::manager::create(userID, *password);
+				user::manager::create(*username, *password);
 			}
 			else {
 				if (!user::manager::exists(userID)) {

@@ -27,7 +27,7 @@ namespace zormid::user::manager {
 
 	bool exists(const UserID& id);
 
-	void create(const UserID& id, const std::string& password);
+	User create(const std::string& username, const std::string& password);
 
 	bool verify(const UserID& id, const std::string& password);
 

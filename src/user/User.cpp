@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <random>
+#include <utility>
 
 namespace zormid::user {
 	Session::Session(const char* id) {
@@ -16,6 +17,18 @@ namespace zormid::user {
 		}
 		mSessions.emplace_back(sessionID);
 		return mSessions.back();
+	}
+
+	void User::setPasswordSalt(const char* salt) {
+		memcpy(mPasswordSalt, salt, 16);
+	}
+
+	void User::setPasswordDigest(const char* digest) {
+		memcpy(mPasswordDigest, digest, 20);
+	}
+
+	void User::setUsername(const std::string& username) {
+		mUsername = username;
 	}
 
 	User::User(const manager::UserID& id) : mID(id) {}

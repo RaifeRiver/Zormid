@@ -60,6 +60,14 @@ namespace zormid {
 			response.statusCode = 200;
 			response.statusMessage = "OK";
 			response.body = data.value();
+			std::string mimeType = "text/plain";
+			if (request.path.ends_with(".js")) {
+				mimeType = "text/javascript";
+			}
+			else if (request.path.ends_with(".css")) {
+				mimeType = "text/css";
+			}
+			response.headers["Content-Type"] = mimeType;
 			response.write(*client);
 			client->close();
 		});

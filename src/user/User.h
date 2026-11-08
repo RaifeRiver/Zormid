@@ -28,22 +28,34 @@ namespace zormid::user {
 			return mPasswordSalt;
 		}
 
+		void setPasswordSalt(const char* salt);
+
 		[[nodiscard]] char* getPasswordDigest() {
 			return mPasswordDigest;
 		}
+
+		void setPasswordDigest(const char* digest);
 
 		[[nodiscard]] std::vector<Session>& getSessions() {
 			return mSessions;
 		}
 
+		[[nodiscard]] std::string& getUsername() {
+			return mUsername;
+		}
+
+		void setUsername(const std::string& username);
+
 	private:
 		manager::UserID mID;
 		char mPasswordSalt[16] = {};
 		char mPasswordDigest[20] = {};
+		std::string mUsername;
 		std::vector<Session> mSessions = {};
 
 		explicit User(const manager::UserID& id);
 
-		friend User manager::loadUser(const manager::UserID& id);
+		friend User manager::create(const std::string&, const std::string&);
+		friend User manager::loadUser(const manager::UserID&);
 	};
 }

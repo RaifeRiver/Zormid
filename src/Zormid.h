@@ -10,6 +10,10 @@ namespace zormid {
 	public:
 		void run();
 
+		[[nodiscard]] std::vector<client::Client>& getClients() {
+			return mClients;
+		}
+
 		static void init();
 
 		static Zormid& getInstance() {

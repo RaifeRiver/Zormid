@@ -43,10 +43,10 @@ namespace zormid::user {
 		return std::filesystem::exists(USERS_DIR + dir + "/" + file + ".dat");
 	}
 
-	void manager::create(const UserID& id, const std::string& password) {
+	User manager::create(const std::string& username, const std::string& password) {
+		const UserID id = getUserID(username);
 		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
-		const std::string dir = hash.substr(0, 2);
-		if (!std::filesystem::exists(USERS_DIR + dir)) {
+		if (const std::string dir = hash.substr(0, 2); !std::filesystem::exists(USERS_DIR + dir)) {
 			std::filesystem::create_directories(USERS_DIR + dir);
 		}
 		const std::string file = hash.substr(2);
@@ -55,15 +55,17 @@ namespace zormid::user {
 		for (int i = 0; i < 16; i++) {
 			salt += static_cast<char>(randomDevice());
 		}
-		std::string passwordWithSalt = password + salt;
+		const std::string passwordWithSalt = password + salt;
 		sha1::SHA1 sha;
 		sha.processBlock(passwordWithSalt.c_str(), passwordWithSalt.c_str() + passwordWithSalt.length());
 		uint8_t digest[20];
 		sha.getDigestBytes(digest);
-		std::ofstream fileStream(USERS_DIR + dir + "/" + file + ".dat", std::ios::binary);
-		fileStream.write(reinterpret_cast<char*>(digest), sizeof(digest));
-		fileStream.write(salt.c_str(), static_cast<ssize_t>(salt.length()));
-		fileStream.close();
+		User user(id);
+		user.setPasswordSalt(salt.data());
+		user.setPasswordDigest(reinterpret_cast<char*>(digest));
+		user.setUsername(username);
+		saveUser(user);
+		return user;
 	}
 
 	bool manager::verify(const UserID& id, const std::string& password) {
@@ -76,9 +78,9 @@ namespace zormid::user {
 		if (!std::filesystem::exists(file)) {
 			return false;
 		}
-		std::ifstream fileStream(file);
+		util::IFileStream fileStream(file);
 		uint8_t savedDigest[20];
-		fileStream.read(reinterpret_cast<char*>(savedDigest), sizeof(savedDigest));
+		fileStream.read(savedDigest, sizeof(savedDigest));
 		char salt[17];
 		fileStream.read(salt, sizeof(salt) - 1);
 		salt[16] = '\0';
@@ -106,6 +108,7 @@ namespace zormid::user {
 			fileStream.read(sessionID, sizeof(sessionID));
 			user.getSessions().emplace_back(sessionID);
 		}
+		fileStream >> user.getUsername();
 		return user;
 	}
 
@@ -118,5 +121,6 @@ namespace zormid::user {
 		for (const Session& session: user.getSessions()) {
 			fileStream.write(static_cast<const char*>(session), 16);
 		}
+		fileStream << user.getUsername();
 	}
 }

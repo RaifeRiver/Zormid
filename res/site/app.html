@@ -5,9 +5,20 @@
 
         <meta charset="UTF-8">
 
-        <link rel="stylesheet" href="/res/style/theme.css">
+        <link rel="stylesheet" href="/res/style/app.css">
     </head>
     <body>
+        <div id="message-container">
+
+        </div>
+
+        <template id="message-template">
+            <div class="message">
+                <p class="message-username"></p>
+                <p class="message-content"></p>
+            </div>
+        </template>
+
         <div id="input-container">
             <div id="input">
                 <textarea id="message-input" placeholder="Type message here"></textarea>
@@ -15,27 +26,6 @@
             </div>
         </div>
 
-        <script>
-            const messageInput = document.getElementById("message-input");
-
-            const socket = new WebSocket("ws://localhost:8082");
-
-            function sendMessage() {
-                socket.send(messageInput.value);
-                messageInput.value = "";
-            }
-
-            messageInput.addEventListener("keydown", (event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    sendMessage();
-                }
-            });
-            document.getElementById("send-button").addEventListener("click", sendMessage);
-
-            socket.addEventListener("message", (event) => {
-                console.log(event.data);
-            })
-        </script>
+        <script type="module" src="/res/scripts/app.js"></script>
     </body>
 </html>

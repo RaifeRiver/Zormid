@@ -8,7 +8,7 @@ namespace zormid::net {
 	public:
 		explicit Socket(int fd);
 
-		void write(const void* data, size_t size) const;
+		void write(const void* data, size_t size);
 
 		template <typename T> void write(const std::vector<T>& data) {
 			write(data.data(), data.size() * sizeof(T));
