@@ -10,4 +10,24 @@ namespace zormid::util::string {
 		}
 		return result;
 	}
+
+	std::vector<std::string> split(const std::string& str, const std::string& delimiter, size_t max) {
+		std::vector<std::string> result;
+		size_t pos = 0;
+		size_t nextPos = 0;
+		while ((nextPos = str.find(delimiter, pos)) != std::string::npos) {
+			result.push_back(str.substr(pos, nextPos - pos));
+			pos = nextPos + delimiter.length();
+			if (max != 0) {
+				max--;
+				if (max == 0) {
+					break;
+				}
+			}
+		}
+		if (pos < str.length()) {
+			result.push_back(str.substr(pos));
+		}
+		return result;
+	}
 }

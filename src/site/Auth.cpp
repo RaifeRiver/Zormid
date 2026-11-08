@@ -81,37 +81,50 @@ namespace zormid::site {
 			response.headers["Location"] = "/app/";
 			return;
 		}
+		const bool signup = request.query == "type=signup";
 		if (request.type == "GET") {
 			response.statusCode = 200;
 			response.statusMessage = "OK";
-			response.body = getPage(request.query == "type=signup" ? "Sign Up" : "Login");
+			response.body = getPage(signup ? "Sign Up" : "Login");
 		}
 		else if (request.type == "POST") {
 			const std::string body = request.body;
-			const bool signup = request.query == "type=signup";
-			const size_t usernameEnd = body.find_first_of('&');
-			if (usernameEnd == std::string::npos || !body.starts_with("username=")) {
+			std::optional<std::string> username = {};
+			std::optional<std::string> password = {};
+			bool remember = false;
+			for (const std::string& s : util::string::split(body, "&")) {
+				std::vector<std::string> pair = util::string::split(s, "=", 1);
+				if (pair.size() < 2) {
+					response.statusCode = 400;
+					response.statusMessage = "Bad Request";
+					response.body = getPage(signup ? "Sign Up" : "Login", "Invalid form data");
+					return;
+				}
+				const std::string& name = pair[0];
+				const std::string& value = pair[1];
+				if (name == "username") {
+					username = value;
+				}
+				else if (name == "password") {
+					password = value;
+				}
+				else if (name == "remember") {
+					remember = true;
+				}
+				else {
+					response.statusCode = 400;
+					response.statusMessage = "Bad Request";
+					response.body = getPage(signup ? "Sign Up" : "Login", "Invalid form data");
+					return;
+				}
+			}
+			if (!username.has_value() || !password.has_value()) {
 				response.statusCode = 400;
 				response.statusMessage = "Bad Request";
+				response.body = getPage(signup ? "Sign Up" : "Login", "Invalid form data");
 				return;
 			}
-			const size_t passwordEnd = body.find_first_of('&', usernameEnd + 1);
-			const std::string_view passwordView(body.data() + usernameEnd + 1, passwordEnd - usernameEnd - 1);
-			if (passwordEnd == std::string::npos || !passwordView.starts_with("password=")) {
-				response.statusCode = 400;
-				response.statusMessage = "Bad Request";
-				return;
-			}
-			const std::string_view rememberView(body.data() + passwordEnd + 1);
-			if (rememberView != "remember=on" && rememberView != "remember=off") {
-				response.statusCode = 400;
-				response.statusMessage = "Bad Request";
-				return;
-			}
-			const std::string username = body.substr(9, usernameEnd - 9);
-			const user::manager::UserID userID = user::manager::getUserID(username);
-			const std::string_view password = passwordView.substr(9);
-			const bool remember = rememberView == "remember=on";
+			const user::manager::UserID userID = user::manager::getUserID(*username);
 			if (signup) {
 				if (user::manager::exists(userID)) {
 					response.statusCode = 409;
@@ -119,7 +132,7 @@ namespace zormid::site {
 					response.body = getPage("Sign Up", "User already exists");
 					return;
 				}
-				user::manager::create(userID, std::string(password));
+				user::manager::create(userID, *password);
 			}
 			else {
 				if (!user::manager::exists(userID)) {
@@ -128,7 +141,7 @@ namespace zormid::site {
 					response.body = getPage("Login", "User not found");
 					return;
 				}
-				if (!user::manager::verify(userID, std::string(password))) {
+				if (!user::manager::verify(userID, *password)) {
 					response.statusCode = 401;
 					response.statusMessage = "Unauthorized";
 					response.body = getPage("Login", "Incorrect password");
