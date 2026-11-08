@@ -79,8 +79,9 @@ namespace zormid::user {
 		std::ifstream fileStream(file);
 		uint8_t savedDigest[20];
 		fileStream.read(reinterpret_cast<char*>(savedDigest), sizeof(savedDigest));
-		char salt[16];
-		fileStream.read(salt, sizeof(salt));
+		char salt[17];
+		fileStream.read(salt, sizeof(salt) - 1);
+		salt[16] = '\0';
 		std::string passwordWithSalt = password + salt;
 		sha1::SHA1 sha;
 		sha.processBlock(passwordWithSalt.c_str(), passwordWithSalt.c_str() + passwordWithSalt.length());

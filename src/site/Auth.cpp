@@ -123,6 +123,7 @@ namespace zormid::site {
 			else {
 				response.headers["Set-Cookie"] = "user=" + util::base64::encode(static_cast<const char*>(userID), 20) + "\nSet-Cookie: sessionID=" + sessionStr;
 			}
+			user::manager::saveUser(user);
 		}
 	}
 }
