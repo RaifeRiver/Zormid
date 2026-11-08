@@ -67,7 +67,7 @@ function processPacket(packet) {
 }
 
 export function connect() {
-    websocket = new WebSocket("ws://localhost:8082");
+    websocket = new WebSocket("ws://" + window.location.host);
     websocket.binaryType = "arraybuffer";
     websocket.addEventListener("message", (event) => {
         processPacket(event.data);
