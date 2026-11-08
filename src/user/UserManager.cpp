@@ -3,11 +3,18 @@
 #include <filesystem>
 #include <fstream>
 #include <random>
+#include <utility>
 
 #include "TinySHA1.hpp"
+#include "User.h"
 #include "util/Base16.h"
+#include "util/FileStream.h"
 
 namespace zormid::user {
+	manager::UserID::UserID(const char* id) {
+		memcpy(mID, id, 20);
+	}
+
 	void manager::init() {
 		if (!std::filesystem::exists(USERS_DIR)) {
 			std::filesystem::create_directories(USERS_DIR);
@@ -18,16 +25,16 @@ namespace zormid::user {
 		}
 	}
 
-	static std::string generateHash(const std::string& username) {
+	manager::UserID manager::getUserID(const std::string& username) {
 		sha1::SHA1 sha;
 		sha.processBlock(username.c_str(), username.c_str() + username.length());
 		uint8_t digest[20];
 		sha.getDigestBytes(digest);
-		return util::base16::encode(digest, sizeof(digest));
+		return UserID(reinterpret_cast<char*>(digest));
 	}
 
-	bool manager::exists(const std::string& username) {
-		const std::string hash = generateHash(username);
+	bool manager::exists(const UserID& id) {
+		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
 		const std::string dir = hash.substr(0, 2);
 		if (!std::filesystem::exists(USERS_DIR + dir)) {
 			return false;
@@ -36,8 +43,8 @@ namespace zormid::user {
 		return std::filesystem::exists(USERS_DIR + dir + "/" + file + ".dat");
 	}
 
-	void manager::create(const std::string& username, const std::string& password) {
-		const std::string hash = generateHash(username);
+	void manager::create(const UserID& id, const std::string& password) {
+		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
 		const std::string dir = hash.substr(0, 2);
 		if (!std::filesystem::exists(USERS_DIR + dir)) {
 			std::filesystem::create_directories(USERS_DIR + dir);
@@ -59,8 +66,8 @@ namespace zormid::user {
 		fileStream.close();
 	}
 
-	bool manager::verify(const std::string& username, const std::string& password) {
-		const std::string hash = generateHash(username);
+	bool manager::verify(const UserID& id, const std::string& password) {
+		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
 		const std::string dir = hash.substr(0, 2);
 		if (!std::filesystem::exists(USERS_DIR + dir)) {
 			return false;
@@ -80,5 +87,35 @@ namespace zormid::user {
 		uint8_t digest[20];
 		sha.getDigestBytes(digest);
 		return std::memcmp(digest, savedDigest, sizeof(digest)) == 0;
+	}
+
+	User manager::loadUser(const UserID& id) {
+		if (!exists(id)) {
+			throw std::runtime_error("User does not exist");
+		}
+		User user(id);
+		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
+		util::IFileStream fileStream(USERS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".dat");
+		fileStream.read(user.getPasswordSalt(), 16);
+		fileStream.read(user.getPasswordDigest(), 20);
+		uint32_t sessionCount;
+		fileStream >> sessionCount;
+		for (uint32_t i = 0; i < sessionCount; i++) {
+			char sessionID[16];
+			fileStream.read(sessionID, sizeof(sessionID));
+			user.getSessions().emplace_back(sessionID);
+		}
+		return user;
+	}
+
+	void manager::saveUser(User& user) {
+		const std::string hash = util::base16::encode(static_cast<const char*>(user.getID()), 20);
+		util::OFileStream fileStream(USERS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".dat");
+		fileStream.write(user.getPasswordSalt(), 16);
+		fileStream.write(user.getPasswordDigest(), 20);
+		fileStream << user.getSessions().size();
+		for (const Session& session: user.getSessions()) {
+			fileStream.write(static_cast<const char*>(session), 16);
+		}
 	}
 }

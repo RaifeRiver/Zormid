@@ -6,6 +6,7 @@
 #include "net/Socket.h"
 #include "net/http/HTTPServer.h"
 #include "net/http/WebSocket.h"
+#include "site/App.h"
 #include "site/Auth.h"
 #include "user/UserManager.h"
 #include "util/FileHelper.h"
@@ -37,16 +38,12 @@ namespace zormid {
 				return;
 			}
 			if (request.path.starts_with("/app/")) {
-				if (const std::optional<std::string> data = util::file::readFile("../res/site/app.html"); data.has_value()) {
-					response.statusCode = 200;
-					response.statusMessage = "OK";
-					response.body = data.value();
-					response.write(*client);
-					client->close();
-					return;
-				}
+				site::app(request, response);
+				response.write(*client);
+				client->close();
+				return;
 			}
-			else if (request.path == "/auth") {
+			if (request.path == "/auth") {
 				site::auth(request, response);
 				response.write(*client);
 				client->close();

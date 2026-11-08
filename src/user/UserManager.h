@@ -1,15 +1,37 @@
 #pragma once
 
 #include <string>
+#include <bits/hashtable_policy.h>
+
+namespace zormid::user {
+	class User;
+}
 
 namespace zormid::user::manager {
 	constexpr std::string USERS_DIR = "../data/users/";
 
+	struct UserID {
+		explicit UserID(const char* id);
+
+		explicit operator const char*() const {
+			return mID;
+		}
+
+	private:
+		char mID[20] = {};
+	};
+
 	void init();
 
-	bool exists(const std::string& username);
+	UserID getUserID(const std::string& username);
 
-	void create(const std::string& username, const std::string& password);
+	bool exists(const UserID& id);
 
-	bool verify(const std::string& username, const std::string& password);
+	void create(const UserID& id, const std::string& password);
+
+	bool verify(const UserID& id, const std::string& password);
+
+	User loadUser(const UserID& id);
+
+	void saveUser(User& user);
 }
