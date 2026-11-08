@@ -32,6 +32,10 @@
                 }
             });
             document.getElementById("send-button").addEventListener("click", sendMessage);
+
+            socket.addEventListener("message", (event) => {
+                console.log(event.data);
+            })
         </script>
     </body>
 </html>

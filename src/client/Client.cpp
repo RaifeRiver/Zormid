@@ -10,6 +10,7 @@ namespace zormid::client {
 		while ((payload = mSocket->read()).has_value()) {
 			std::cout << "Payload received" << std::endl;
 			std::cout << std::string(payload->data, payload->size) << std::endl;
+			mSocket->write(*payload);
 		}
 	}
 

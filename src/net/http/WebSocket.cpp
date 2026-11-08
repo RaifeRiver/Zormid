@@ -27,7 +27,8 @@ namespace zormid::net::http {
 		uint8_t firstByte;
 		mSocket->readBlocking(&firstByte, 1);
 		bool lastMessage = firstByte >> 7 == 1;
-		uint8_t opcode = firstByte & 0xF;
+		const uint8_t opcode = firstByte & 0xF;
+		PayloadType type = opcode == 1 ? PayloadType::TEXT : PayloadType::BINARY;
 		uint8_t payloadLength;
 		mSocket->readBlocking(&payloadLength, 1);
 		const bool masked = payloadLength >> 7 == 1;
@@ -57,7 +58,25 @@ namespace zormid::net::http {
 				data[i] = static_cast<char>(data[i] ^ mask[i % 4]);
 			}
 		}
-		return {{.data = data, .size = length}};
+		return {{.data = data, .size = length, .type = type}};
+	}
+
+	void WebSocket::write(const PayloadData& data) const {
+		uint8_t firstByte = 1 << 7;
+		firstByte |= data.type == PayloadType::TEXT ? 0x1 : 0x2;
+		mSocket->write(&firstByte, 1);
+		uint8_t payloadLength = 0;
+		if (data.size < 126) {
+			payloadLength = data.size;
+		}
+		else if (data.size < 65536) {
+			payloadLength = 126;
+		}
+		else {
+			payloadLength = 127;
+		}
+		mSocket->write(&payloadLength, 1);
+		mSocket->write(data.data, data.size);
 	}
 
 	bool WebSocket::isOpen() const {
