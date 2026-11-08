@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <bits/hashtable_policy.h>
 
 namespace zormid::user {
 	class User;
@@ -16,6 +15,8 @@ namespace zormid::user::manager {
 		explicit operator const char*() const {
 			return mID;
 		}
+
+		bool operator==(const UserID& other) const = default;
 
 	private:
 		char mID[20] = {};

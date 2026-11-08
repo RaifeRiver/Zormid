@@ -10,14 +10,24 @@ export function setAuthHandler(handler) {
     authHandler = handler;
 }
 
-export let messageHandler;
-export function setMessageHandler(handler) {
-    messageHandler = handler;
+export let globalMessageHandler;
+export function setGlobalMessageHandler(handler) {
+    globalMessageHandler = handler;
 }
 
 export let usernameRequestHandler;
 export function setUsernameRequestHandler(handler) {
     usernameRequestHandler = handler;
+}
+
+export let friendListRequestHandler;
+export function setFriendListRequestHandler(handler) {
+    friendListRequestHandler = handler;
+}
+
+export let messageHandler;
+export function setMessageHandler(handler) {
+    messageHandler = handler;
 }
 
 function readString(packet, pos) {
@@ -47,10 +57,11 @@ function processPacket(packet) {
             }
             break;
         case 0x1:
-            if (messageHandler) {
-                let content = readString(view, 4);
-                let username = readString(view, 8 + content.length);
-                messageHandler({content: content, username: username});
+            if (globalMessageHandler) {
+                let userID = readUserID(view, 4);
+                let content = readString(view, 24);
+                let username = readString(view, 28 + content.length);
+                globalMessageHandler({content: content, username: username, userID: userID});
             }
             break;
         case 0x2:
@@ -58,6 +69,31 @@ function processPacket(packet) {
                 let userID = readUserID(view, 4);
                 let username = readString(view, 24);
                 usernameRequestHandler(username, userID);
+            }
+            break;
+        case 0x3:
+            if (friendListRequestHandler) {
+                let userID = readUserID(view, 4);
+                let userCount = view.getUint32(24, true);
+                let users = [];
+                let pos = 28;
+                for (let i = 0; i < userCount; i++) {
+                    let user = {};
+                    user.userID = readUserID(view, pos);
+                    pos += 20;
+                    user.username = readString(view, pos);
+                    pos += user.username.length + 4;
+                    users.push(user);
+                }
+                friendListRequestHandler(users, userID);
+            }
+            break;
+        case 0x4:
+            if (messageHandler) {
+                let userID = readUserID(view, 4);
+                let content = readString(view, 24);
+                let username = readString(view, 28 + content.length);
+                messageHandler({content: content, username: username, userID: userID});
             }
             break;
         default:
@@ -92,7 +128,7 @@ export function authenticate(userID, sessionID) {
     websocket.send(buffer);
 }
 
-export function sendMessage(message) {
+export function sendGlobalMessage(message) {
     let buffer = new ArrayBuffer(message.length + 8);
     let view = new DataView(buffer);
     view.setUint32(0, 0x1, true);
@@ -120,6 +156,30 @@ export function acceptFriendRequest(userID) {
     view.setUint32(0, 0x3, true);
     for (let i = 0; i < 20; i++) {
         view.setUint8(i + 4, userID.charCodeAt(i));
+    }
+    websocket.send(buffer);
+}
+
+export function requestFriendList(userID) {
+    let buffer = new ArrayBuffer(24);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0x4, true);
+    for (let i = 0; i < 20; i++) {
+        view.setUint8(i + 4, userID.charCodeAt(i));
+    }
+    websocket.send(buffer);
+}
+
+export function sendMessage(message, userID) {
+    let buffer = new ArrayBuffer(message.length + 28);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0x5, true);
+    for (let i = 0; i < 20; i++) {
+        view.setUint8(i + 4, userID.charCodeAt(i));
+    }
+    view.setUint32(24, message.length, true);
+    for (let i = 0; i < message.length; i++) {
+        view.setUint8(i + 28, message.charCodeAt(i));
     }
     websocket.send(buffer);
 }

@@ -9,7 +9,7 @@ namespace zormid::client {
 	public:
 		explicit Client(std::unique_ptr<net::http::WebSocket> socket);
 
-		void sendMessage(const chat::Message& message) const;
+		void sendMessage(const chat::Message& message, bool global = false) const;
 
 		void process();
 
@@ -17,16 +17,24 @@ namespace zormid::client {
 
 		[[nodiscard]] bool isOpen() const;
 
+		[[nodiscard]] const user::manager::UserID& getUserID() const {
+			return mUser->getID();
+		}
+
 	private:
 		std::unique_ptr<net::http::WebSocket> mSocket;
 		std::optional<user::User> mUser;
 
 		void processPacket(const net::http::PayloadData& payload);
 
-		void processMessagePacket(const net::http::PayloadData& payload);
+		void processGlobalMessagePacket(const net::http::PayloadData& payload);
 
 		void processUsernameRequestPacket(const net::http::PayloadData& payload) const;
 
 		void processAcceptFriendRequestPacket(const net::http::PayloadData& payload);
+
+		void processFriendListRequestPacket(const net::http::PayloadData& payload) const;
+
+		void processMessagePacket(const net::http::PayloadData& payload);
 	};
 }

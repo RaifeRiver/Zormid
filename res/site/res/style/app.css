@@ -176,3 +176,24 @@ h3 {
     color: var(--theme-text);
     font-family: var(--theme-font-family), sans-serif;
 }
+
+#friend-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: 2vh;
+    gap: 1vh;
+}
+
+.friend {
+    background-color: var(--theme-secondary-background);
+    margin-left: 1vw;
+    margin-right: 1vw;
+    border: var(--theme-border) 2px solid;
+    color: var(--theme-text);
+    font-family: var(--theme-font-family), sans-serif;
+    width: 28vw;
+}
+
+.friend:hover {
+    background-color: var(--theme-background);
+}

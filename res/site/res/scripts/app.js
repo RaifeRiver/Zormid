@@ -11,6 +11,7 @@ let addFriendButton = document.getElementById("add-friend");
 let addFriendMenu = document.getElementById("add-friend-menu");
 let addFriendURL = document.getElementById("add-friend-url");
 let addFriendClose = document.getElementById("add-friend-close");
+let addFriendCopyURL;
 
 let acceptFriendMenu = document.getElementById("accept-friend-menu");
 let acceptFriendText = document.getElementById("accept-friend-text");
@@ -20,9 +21,11 @@ let acceptFriendClose = document.getElementById("accept-friend-close");
 let openingAcceptFriendMenu = false;
 let acceptFriendUserID;
 
-let addFriendCopyURL;
+let friendList = document.getElementById("friend-list");
+let friendTemplate = document.getElementById("friend-template");
 
 let userID;
+let currentFriendID;
 
 api.setConnectHandler(() => {
     const userCookie = cookies.getCookie("user");
@@ -33,15 +36,20 @@ api.setConnectHandler(() => {
     if (!sessionCookie) {
         return;
     }
-    api.authenticate(atob(userCookie), atob(sessionCookie));
+    userID = userCookie;
+    api.authenticate(atob(userID), atob(sessionCookie));
 });
 api.setAuthHandler(() => {
     const addFriendCookie = cookies.getCookie("add-friend");
     if (addFriendCookie) {
         openAcceptFriendMenu(addFriendCookie);
     }
+    api.requestFriendList(atob(userID));
 });
-api.setMessageHandler((message) => {
+api.setGlobalMessageHandler((message) => {
+    if (currentFriendID) {
+        return;
+    }
     const messageElement = document.importNode(messageTemplate.content, true);
     const usernameElement = messageElement.querySelector(".message-username");
     const contentElement = messageElement.querySelector(".message-content");
@@ -55,6 +63,30 @@ api.setUsernameRequestHandler((username, userID) => {
         acceptFriendMenu.showModal();
     }
 });
+api.setFriendListRequestHandler((friends, id) => {
+    if (btoa(id) !== userID) {
+        return;
+    }
+    friendList.replaceChildren();
+    for (let friend of friends) {
+        let friendElement = document.importNode(friendTemplate.content, true);
+        let friendButton = friendElement.firstElementChild;
+        friendButton.textContent = friend.username;
+        friendButton.addEventListener("click", () => changeFriend(friend.userID));
+        friendList.appendChild(friendElement);
+    }
+});
+api.setMessageHandler((message) => {
+    if (message.userID !== currentFriendID && message.userID !== atob(userID)) {
+        return;
+    }
+    const messageElement = document.importNode(messageTemplate.content, true);
+    const usernameElement = messageElement.querySelector(".message-username");
+    const contentElement = messageElement.querySelector(".message-content");
+    usernameElement.textContent = message.username;
+    contentElement.textContent = message.content;
+    messageContainer.appendChild(messageElement);
+});
 
 api.connect();
 
@@ -62,7 +94,12 @@ function sendMessage() {
     if (messageInput.value.length === 0) {
         return;
     }
-    api.sendMessage(messageInput.value);
+    if (currentFriendID) {
+        api.sendMessage(messageInput.value, currentFriendID);
+    }
+    else {
+        api.sendGlobalMessage(messageInput.value);
+    }
     messageInput.value = "";
 }
 
@@ -93,7 +130,7 @@ function closeAcceptFriendMenu() {
     acceptFriendMenu.close();
 }
 function acceptFriend() {
-    api.acceptFriendRequest(acceptFriendUserID);
+    api.acceptFriendRequest(atob(acceptFriendUserID));
     closeAcceptFriendMenu();
     cookies.deleteCookie("add-friend");
 }
@@ -101,6 +138,14 @@ function acceptFriend() {
 function declineFriend() {
     closeAcceptFriendMenu();
     cookies.deleteCookie("add-friend");
+}
+
+function changeFriend(friendID) {
+    if (friendID === currentFriendID) {
+        return;
+    }
+    currentFriendID = friendID;
+    messageContainer.replaceChildren();
 }
 
 messageInput.addEventListener("keydown", (event) => {
