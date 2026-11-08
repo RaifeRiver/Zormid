@@ -1,6 +1,7 @@
 #include "Socket.h"
 
 #include <cstring>
+#include <iostream>
 #include <unistd.h>
 #include <sys/socket.h>
 
@@ -14,7 +15,7 @@ namespace zormid::net {
 				sent += s;
 			}
 			else if (s == -1) {
-				if (errno == EPIPE || errno == ECONNRESET) {
+				if (errno == EPIPE || errno == ECONNRESET || errno == EBADF) {
 					close();
 					return;
 				}
@@ -27,7 +28,7 @@ namespace zormid::net {
 		size_t sent = 0;
 		while ((result = send(mFD, str.c_str() + sent, str.length() - sent, MSG_NOSIGNAL)) < str.length()) {
 			if (result == -1) {
-				if (errno == EPIPE || errno == ECONNRESET) {
+				if (errno == EPIPE || errno == ECONNRESET || errno == EBADF) {
 					close();
 					return;
 				}
@@ -50,7 +51,7 @@ namespace zormid::net {
 		}
 		const ssize_t read = recv(mFD, static_cast<char*>(buffer) + bufferCopySize, size - bufferCopySize, 0);
 		if (read == -1) {
-			if (errno == EPIPE || errno == ECONNRESET) {
+			if (errno == EPIPE || errno == ECONNRESET || errno == EBADF) {
 				close();
 			}
 			return bufferCopySize;
@@ -81,7 +82,7 @@ namespace zormid::net {
 				mBufferEnd = read;
 			}
 			else if (read == -1) {
-				if (errno == EPIPE || errno == ECONNRESET) {
+				if (errno == EPIPE || errno == ECONNRESET || errno == EBADF) {
 					close();
 					return result;
 				}
@@ -101,7 +102,7 @@ namespace zormid::net {
 			return true;
 		}
 		else if (read == -1) {
-			if (errno == EPIPE || errno == ECONNRESET) {
+			if (errno == EPIPE || errno == ECONNRESET || errno == EBADF) {
 				close();
 				return false;
 			}
