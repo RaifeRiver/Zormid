@@ -15,10 +15,10 @@ namespace zormid::site {
 			page = util::string::replaceAll(page, "%login-type%", type);
 			page = util::string::replaceAll(page, "%response-message%", message.empty() ? "" : "<p id=\"response-error\">" + message + "</p>");
 			if (type == "Login") {
-				page = util::string::replaceAll(page, "%switch-link%", "<a href=\"?type=signup\">Sign up</a>");
+				page = util::string::replaceAll(page, "%switch-link%", "<p>No account? <a href=\"?type=signup\">Sign up</a></p>");
 			}
 			else if (type == "Sign Up") {
-				page = util::string::replaceAll(page, "%switch-link%", "<a href=\"?type=login\">Login</a>");
+				page = util::string::replaceAll(page, "%switch-link%", "<p>Already have an account? <a href=\"?type=login\">Login</a></p>");
 			}
 			return page;
 		}

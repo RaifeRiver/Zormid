@@ -54,7 +54,16 @@ button {
 
 #response-error {
     color: red;
-    font-family: sans-serif;
     font-weight: bold;
     margin-top: 0;
+}
+
+a {
+    color: lightblue;
+    font-family: sans-serif;
+}
+
+p {
+    color: white;
+    font-family: sans-serif;
 }
