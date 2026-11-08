@@ -23,6 +23,14 @@ namespace zormid::net::http {
 					const std::string value = line.substr(line.find_first_not_of(' ', splitIndex + 1), line.find_last_not_of('\r') - line.find_first_not_of(' ', splitIndex + 1) + 1);
 					header.headers[key] = value;
 				}
+				char buffer[256];
+				while (client->available()) {
+					const size_t read = client->read(buffer, sizeof(buffer));
+					if (read == 0) {
+						break;
+					}
+					header.body.append(buffer, read);
+				}
 				(*mClientHandler)(header, std::move(client));
 			}
 		}

@@ -94,6 +94,13 @@ namespace zormid::net {
 			mBufferEnd = read;
 			return true;
 		}
+		else if (read == -1) {
+			if (errno == EPIPE || errno == ECONNRESET) {
+				close();
+				return false;
+			}
+			mBufferEnd = 0;
+		}
 		return false;
 	}
 
