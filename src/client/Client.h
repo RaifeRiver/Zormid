@@ -21,6 +21,14 @@ namespace zormid::client {
 			return mUser->getID();
 		}
 
+		[[nodiscard]] std::optional<user::User>& getUser() {
+			return mUser;
+		}
+
+		[[nodiscard]] net::http::WebSocket& getSocket() const {
+			return *mSocket;
+		}
+
 	private:
 		std::unique_ptr<net::http::WebSocket> mSocket;
 		std::optional<user::User> mUser;
@@ -31,7 +39,7 @@ namespace zormid::client {
 
 		void processUsernameRequestPacket(const net::http::PayloadData& payload) const;
 
-		void processAcceptFriendRequestPacket(const net::http::PayloadData& payload);
+		void processAcceptFriendRequestPacket(const net::http::PayloadData& payload) const;
 
 		void processFriendListRequestPacket(const net::http::PayloadData& payload) const;
 

@@ -124,15 +124,43 @@ namespace zormid::client {
 		free(response.data);
 	}
 
-	void Client::processAcceptFriendRequestPacket(const net::http::PayloadData& payload) {
+	void Client::processAcceptFriendRequestPacket(const net::http::PayloadData& payload) const {
 		char userIDChars[20];
 		memcpy(userIDChars, payload.data + 4, 20);
 		const user::manager::UserID userID(userIDChars);
 		user::User user = user::manager::loadUser(userID);
 		user.getFriends().push_back(mUser->getID());
 		user::manager::saveUser(user);
-		mUser->getFriends().push_back(userID);
-		user::manager::saveUser(*mUser);
+		for (Client& client : Zormid::getInstance().getClients()) {
+			if (client.getUserID() == userID || client.getUserID() == mUser->getID()) {
+				client.getUser()->getFriends().push_back(userID);
+				user::manager::saveUser(*client.getUser());
+				const std::vector<user::manager::UserID>& friends = user.getFriends();
+				net::http::PayloadData response = {};
+				response.type = net::http::PayloadType::BINARY;
+				std::vector<char> responseData = {};
+				constexpr uint32_t responseID = 0x3;
+				responseData.resize(28);
+				memcpy(responseData.data(), &responseID, 4);
+				memcpy(userIDChars, static_cast<const char*>(client.getUserID()), 20);
+				memcpy(responseData.data() + 4, userIDChars, 20);
+				const uint32_t friendCount = friends.size();
+				memcpy(responseData.data() + 24, &friendCount, 4);
+				size_t pos = 28;
+				for (uint32_t i = 0; i < friendCount; i++) {
+					const std::string& username = user::manager::loadUser(friends[i]).getUsername();
+					const uint32_t usernameLength = username.length();
+					responseData.resize(responseData.size() + 24 + usernameLength);
+					memcpy(responseData.data() + pos, static_cast<const char*>(friends[i]), 20);
+					memcpy(responseData.data() + pos + 20, &usernameLength, 4);
+					memcpy(responseData.data() + pos + 24, username.c_str(), usernameLength);
+					pos += usernameLength + 24;
+				}
+				response.data = responseData.data();
+				response.size = responseData.size();
+				client.getSocket().write(response);
+			}
+		}
 	}
 
 	void Client::processFriendListRequestPacket(const net::http::PayloadData& payload) const {
