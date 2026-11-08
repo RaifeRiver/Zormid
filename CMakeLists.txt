@@ -9,3 +9,5 @@ add_executable(zormid ${SRC_FILES})
 
 target_include_directories(zormid PUBLIC src)
 target_include_directories(zormid PUBLIC lib)
+
+target_link_options(zormid PRIVATE -static-libstdc++ -static-libgcc)
