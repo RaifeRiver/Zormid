@@ -44,7 +44,7 @@ namespace zormid {
 		client->close();
 	}
 
-	Zormid::Zormid() : mServer(8082) {
+	Zormid::Zormid() : mServer(80) {
 		user::manager::init();
 		mServer.setClientHandler([&](net::http::HTTPRequestHeader request, std::unique_ptr<net::Socket> client) {
 			net::http::HTTPResponseHeader response;
