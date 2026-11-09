@@ -29,6 +29,21 @@ namespace zormid {
 		sInstance = std::unique_ptr<Zormid>(new Zormid());
 	}
 
+	static void write404Message(const std::unique_ptr<net::Socket>& client) {
+		const std::optional<std::string> data = util::file::readFile("../res/site/not_found.html");
+		net::http::HTTPResponseHeader response;
+		response.statusCode = 404;
+		response.statusMessage = "Not Found";
+		if (data.has_value()) {
+			response.body = *data;
+		}
+		else {
+			response.body = "404 Not Found";
+		}
+		response.write(*client);
+		client->close();
+	}
+
 	Zormid::Zormid() : mServer(8082) {
 		user::manager::init();
 		mServer.setClientHandler([&](net::http::HTTPRequestHeader request, std::unique_ptr<net::Socket> client) {
@@ -43,7 +58,7 @@ namespace zormid {
 				client->close();
 				return;
 			}
-			if (request.path == "/auth") {
+			if (request.path.starts_with("/auth")) {
 				site::auth(request, response);
 				response.write(*client);
 				client->close();
@@ -58,12 +73,23 @@ namespace zormid {
 				client->close();
 				return;
 			}
-			const std::optional<std::string> data = util::file::readFile("../res/site/" + request.path);
-			if (!data.has_value()) {
-				response.statusCode = 404;
-				response.statusMessage = "Not Found";
+			if (request.path == "/") {
+				const std::optional<std::string> data = util::file::readFile("../res/site/home.html");
+				if (!data.has_value()) {
+					write404Message(client);
+					return;
+				}
+				response.statusCode = 200;
+				response.statusMessage = "OK";
+				response.body = data.value();
+				response.headers["Content-Type"] = "text/html";
 				response.write(*client);
 				client->close();
+				return;
+			}
+			const std::optional<std::string> data = util::file::readFile("../res/site/" + request.path);
+			if (!data.has_value()) {
+				write404Message(client);
 				return;
 			}
 			response.statusCode = 200;
