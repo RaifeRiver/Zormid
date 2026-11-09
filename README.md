@@ -19,7 +19,7 @@ It is designed for chatting to friends in real time over the internet.
 **NOTE: Zormid is currently WIP and these limitations will likely be addressed soon.**
 
 ## Hosting
-It requires a linux server as it relies on POSIX features. It uses port 80 for the web server so requires either `sudo` (not recommended) or running `sudo setcap 'cap_net_bind_service=+ep' /path/to/executable` to give it the correct permissions to bind the socket.
+It requires a linux server as it relies on POSIX features. The default port is `8080` however this can be changed in `data/zormid.conf`.
 
 ### Pre-built
 Download the latest [release](https://github.com/RaifeRiver/zormid/releases) from GitHub and extract. Run `./zormid` in the `bin` directory.
