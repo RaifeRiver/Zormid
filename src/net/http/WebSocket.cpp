@@ -1,5 +1,7 @@
 #include "WebSocket.h"
 
+#include <iostream>
+
 #include "TinySHA1.hpp"
 
 #include "util/Base64.h"
@@ -28,7 +30,7 @@ namespace zormid::net::http {
 		mSocket->readBlocking(&firstByte, 1);
 		bool lastMessage = firstByte >> 7 == 1;
 		const uint8_t opcode = firstByte & 0xF;
-		PayloadType type = opcode == 1 ? PayloadType::TEXT : PayloadType::BINARY;
+		const PayloadType type = opcode == 1 ? PayloadType::TEXT : PayloadType::BINARY;
 		uint8_t payloadLength;
 		mSocket->readBlocking(&payloadLength, 1);
 		const bool masked = payloadLength >> 7 == 1;
@@ -76,6 +78,24 @@ namespace zormid::net::http {
 			payloadLength = 127;
 		}
 		mSocket->write(&payloadLength, 1);
+		if (payloadLength == 126) {
+			uint8_t length[2];
+			length[0] = static_cast<uint8_t>(data.size >> 8);
+			length[1] = static_cast<uint8_t>(data.size & 0xFF);
+			mSocket->write(&length, 2);
+		}
+		else if (payloadLength == 127) {
+			uint8_t lengthBytes[8];
+			lengthBytes[0] = static_cast<uint8_t>(data.size >> 56);
+			lengthBytes[1] = static_cast<uint8_t>(data.size >> 48);
+			lengthBytes[2] = static_cast<uint8_t>(data.size >> 40);
+			lengthBytes[3] = static_cast<uint8_t>(data.size >> 32);
+			lengthBytes[4] = static_cast<uint8_t>(data.size >> 24);
+			lengthBytes[5] = static_cast<uint8_t>(data.size >> 16);
+			lengthBytes[6] = static_cast<uint8_t>(data.size >> 8);
+			lengthBytes[7] = static_cast<uint8_t>(data.size);
+			mSocket->write(&lengthBytes, 8);
+		}
 		mSocket->write(data.data, data.size);
 	}
 
