@@ -1,0 +1,49 @@
+:root {
+    --light-background-color: #FFFFFF;
+    --light-secondary-background-color: #F5F5F5;
+    --light-border-color: #E0E0E0;
+    --light-text-color: #000000;
+    --light-secondary-text-color: #505050;
+
+    --dark-background-color: #20202A;
+    --dark-secondary-background-color: #252530;
+    --dark-border-color: #404050;
+    --dark-text-color: #FFFFFF;
+    --dark-secondary-text-color: #A0A0A0;
+}
+
+:root[data-theme="light"] {
+    --theme-background-color: var(--light-background-color);
+    --theme-secondary-background-color: var(--light-secondary-background-color);
+    --theme-border-color: var(--light-border-color);
+    --theme-text-color: var(--light-text-color);
+    --theme-secondary-text-color: var(--light-secondary-text-color);
+}
+
+:root[data-theme="dark"] {
+    --theme-background-color: var(--dark-background-color);
+    --theme-secondary-background-color: var(--dark-secondary-background-color);
+    --theme-border-color: var(--dark-border-color);
+    --theme-text-color: var(--dark-text-color);
+    --theme-secondary-text-color: var(--dark-secondary-text-color);
+}
+
+@media (prefers-color-scheme: light) {
+    :root[data-theme="sync"] {
+        --theme-background-color: var(--light-background-color);
+        --theme-secondary-background-color: var(--light-secondary-background-color);
+        --theme-border-color: var(--light-border-color);
+        --theme-text-color: var(--light-text-color);
+        --theme-secondary-text-color: var(--light-secondary-text-color);
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root[data-theme="sync"] {
+        --theme-background-color: var(--dark-background-color);
+        --theme-secondary-background-color: var(--dark-secondary-background-color);
+        --theme-border-color: var(--dark-border-color);
+        --theme-text-color: var(--dark-text-color);
+        --theme-secondary-text-color: var(--dark-secondary-text-color);
+    }
+}

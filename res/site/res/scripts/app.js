@@ -29,6 +29,8 @@ let channelName = document.getElementById("channel-name");
 let userID;
 let currentChannelID;
 
+document.documentElement.setAttribute("data-theme", "sync");
+
 api.setConnectHandler(() => {
     const userCookie = cookies.getCookie("user");
     if (!userCookie) {
