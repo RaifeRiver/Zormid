@@ -38,11 +38,12 @@ body {
 #message-container {
     display: flex;
     flex-direction: column;
-    height: 78vh;
+    height: 93vh;
     padding-left: 2vw;
     padding-right: 2vw;
     padding-top: 2vh;
     gap: 1vh;
+    overflow: scroll;
 }
 
 .message-username {
@@ -59,13 +60,6 @@ body {
 
 #input-container {
     display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    height: 20vh;
-}
-
-#input-inner-container {
-    display: flex;
     flex-direction: row;
     background-color: var(--theme-secondary-background-color);
     border: var(--theme-border-color) 2px solid;
@@ -74,7 +68,6 @@ body {
     padding: 0.5vw;
     margin-bottom: 1vw;
     margin-left: 2vw;
-    vertical-align: bottom;
 }
 
 #message-input {
