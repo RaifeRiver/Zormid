@@ -105,9 +105,10 @@ function processPacket(packet) {
         case 0x5:
             if (channelContentsHandler) {
                 let channelID = readID(view, 4);
-                let messageCount = view.getUint32(24, true);
+                let channelName = readString(view, 24);
+                let messageCount = view.getUint32(28 + channelName.length, true);
                 let messages = [];
-                let pos = 28;
+                let pos = 32 + channelName.length;
                 for (let i = 0; i < messageCount; i++) {
                     let message = {};
                     message.userID = readID(view, pos);
@@ -118,7 +119,7 @@ function processPacket(packet) {
                     pos += message.username.length + 4;
                     messages.push(message);
                 }
-                channelContentsHandler({channelID: channelID, messages: messages});
+                channelContentsHandler({channelID: channelID, name: channelName, messages: messages});
             }
             break;
         default:

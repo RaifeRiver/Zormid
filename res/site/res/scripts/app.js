@@ -24,6 +24,8 @@ let acceptFriendUserID;
 let channelList = document.getElementById("channel-list");
 let channelTemplate = document.getElementById("channel-template");
 
+let channelName = document.getElementById("channel-name");
+
 let userID;
 let currentChannelID;
 
@@ -91,6 +93,7 @@ api.setChannelContentsHandler((channelContents) => {
     if (channelContents.channelID !== currentChannelID) {
         return;
     }
+    channelName.textContent = channelContents.name;
     messageContainer.replaceChildren();
     for (let message of channelContents.messages) {
         const messageElement = document.importNode(messageTemplate.content, true);

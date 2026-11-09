@@ -239,14 +239,18 @@ namespace zormid::client {
 		net::http::PayloadData response = {};
 		response.type = net::http::PayloadType::BINARY;
 		std::vector<char> responseData = {};
-		responseData.resize(28);
+		const std::string channelName = channel.getName();
+		const auto channelNameLength = static_cast<uint32_t>(channelName.length());
+		responseData.resize(32 + channelNameLength);
 		constexpr uint32_t responseID = 0x5;
 		memcpy(responseData.data(), &responseID, 4);
 		memcpy(responseData.data() + 4, channelIDChars, 20);
+		memcpy(responseData.data() + 24, &channelNameLength, 4);
+		memcpy(responseData.data() + 28, channelName.data(), channelNameLength);
 		const std::vector<chat::Message>& messages = channel.getMessages();
 		const uint32_t messageCount = messages.size();
-		memcpy(responseData.data() + 24, &messageCount, 4);
-		size_t pos = 28;
+		memcpy(responseData.data() + 28 + channelNameLength, &messageCount, 4);
+		size_t pos = 32 + channelNameLength;
 		for (uint32_t i = 0; i < messageCount; i++) {
 			const std::string& content = messages[i].content;
 			const std::string& username = messages[i].from;
