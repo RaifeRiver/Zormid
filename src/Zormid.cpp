@@ -1,7 +1,9 @@
 #include "Zormid.h"
 
+#include <iostream>
 #include <unistd.h>
 
+#include "CommandProcessor.h"
 #include "client/Client.h"
 #include "net/Socket.h"
 #include "net/http/HTTPServer.h"
@@ -13,16 +15,22 @@
 
 namespace zormid {
 	void Zormid::run() {
-		while (true) {
-			mServer.accept();
+		while (mRunning) {
+			mServer->accept();
 			for (uint32_t i = 0; i < mClients.size(); i++) {
 				mClients[i].process();
 				if (!mClients[i].isOpen()) {
 					mClients.erase(mClients.begin() + i--);
 				}
 			}
+			command::processInput(*this);
 			usleep(10000);
 		}
+	}
+
+	void Zormid::stop() {
+		mRunning = false;
+		std::cout << "Stopping Zormid..." << std::endl;
 	}
 
 	void Zormid::init() {
@@ -44,9 +52,12 @@ namespace zormid {
 		client->close();
 	}
 
-	Zormid::Zormid() : mServer(mConfig.getPort()) {
+	Zormid::Zormid() {
+		std::cout << "Starting Zormid server " << ZORMID_VERSION << "..." << std::endl;
 		user::manager::init();
-		mServer.setClientHandler([&](net::http::HTTPRequestHeader request, std::unique_ptr<net::Socket> client) {
+		std::cout << "Starting HTTP server..." << std::endl;
+		mServer = std::make_unique<net::http::HTTPServer>(mConfig.getPort());
+		mServer->setClientHandler([&](net::http::HTTPRequestHeader request, std::unique_ptr<net::Socket> client) {
 			net::http::HTTPResponseHeader response;
 			if (request.headers["Connection"] == "Upgrade" && request.headers["Upgrade"] == "websocket") {
 				mClients.emplace_back(std::make_unique<net::http::WebSocket>(std::move(client), request));
@@ -106,5 +117,6 @@ namespace zormid {
 			response.write(*client);
 			client->close();
 		});
+		std::cout << "Zormid started successfully" << std::endl;
 	}
 }

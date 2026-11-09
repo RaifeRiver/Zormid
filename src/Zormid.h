@@ -7,9 +7,13 @@
 #include "net/http/HTTPServer.h"
 
 namespace zormid {
+	static constexpr std::string ZORMID_VERSION = "v0.1";
+
 	class Zormid {
 	public:
 		void run();
+
+		void stop();
 
 		[[nodiscard]] Config& getConfig() {
 			return mConfig;
@@ -28,8 +32,9 @@ namespace zormid {
 	private:
 		static inline std::unique_ptr<Zormid> sInstance = nullptr;
 
+		bool mRunning = true;
 		Config mConfig;
-		net::http::HTTPServer mServer;
+		std::unique_ptr<net::http::HTTPServer> mServer;
 		std::vector<client::Client> mClients;
 
 		Zormid();
