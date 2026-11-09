@@ -17,7 +17,7 @@ namespace zormid::net::http {
 				std::string protocol = client->readString('\n');
 				header.protocol = protocol.substr(0, protocol.size() - 1);
 				std::string line;
-				while ((line = client->readString('\n')) != "\r") {
+				while ((line = client->readString('\n')) != "\r" && !line.empty()) {
 					const size_t splitIndex = line.find(':');
 					std::string key = line.substr(0, splitIndex);
 					const std::string value = line.substr(line.find_first_not_of(' ', splitIndex + 1), line.find_last_not_of('\r') - line.find_first_not_of(' ', splitIndex + 1) + 1);
