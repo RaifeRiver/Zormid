@@ -14,17 +14,18 @@ namespace zormid::client {
 		}
 		net::http::PayloadData payload = {};
 		payload.type = net::http::PayloadType::BINARY;
-		payload.size = message.content.size() + message.from.size() + 32;
+		payload.size = message.content.size() + message.from.size() + 52;
 		payload.data = static_cast<char*>(malloc(payload.size));
 		const uint32_t packetID = global ? 0x1 : 0x4;
 		memcpy(payload.data, &packetID, 4);
 		memcpy(payload.data + 4, static_cast<const char*>(message.fromID), 20);
+		memcpy(payload.data + 24, static_cast<const char*>(message.channelID), 20);
 		const uint32_t messageLength = message.content.size();
-		memcpy(payload.data + 24, &messageLength, 4);
-		memcpy(payload.data + 28, message.content.data(), message.content.size());
+		memcpy(payload.data + 44, &messageLength, 4);
+		memcpy(payload.data + 48, message.content.data(), message.content.size());
 		const uint32_t fromLength = message.from.size();
-		memcpy(payload.data + 28 + message.content.size(), &fromLength, 4);
-		memcpy(payload.data + 32 + message.content.size(), message.from.data(), message.from.size());
+		memcpy(payload.data + 48 + message.content.size(), &fromLength, 4);
+		memcpy(payload.data + 52 + message.content.size(), message.from.data(), message.from.size());
 		mSocket->write(payload);
 		free(payload.data);
 	}
@@ -82,10 +83,13 @@ namespace zormid::client {
 				processAcceptFriendRequestPacket(payload);
 				break;
 			case 0x4:
-				processFriendListRequestPacket(payload);
+				processChannelListRequestPacket(payload);
 				break;
 			case 0x5:
 				processMessagePacket(payload);
+				break;
+			case 0x6:
+				processChannelContentsRequestPacket(payload);
 				break;
 			default:
 				break;
@@ -124,37 +128,44 @@ namespace zormid::client {
 		free(response.data);
 	}
 
-	void Client::processAcceptFriendRequestPacket(const net::http::PayloadData& payload) const {
+	void Client::processAcceptFriendRequestPacket(const net::http::PayloadData& payload) {
 		char userIDChars[20];
 		memcpy(userIDChars, payload.data + 4, 20);
 		const user::manager::UserID userID(userIDChars);
 		user::User user = user::manager::loadUser(userID);
 		user.getFriends().push_back(mUser->getID());
+		const chat::ChannelID channelID;
+		chat::Channel channel(channelID);
+		channel.setName(mUser->getUsername() + " & " + user.getUsername());
+		channel.getUsers().push_back(mUser->getID());
+		channel.getUsers().push_back(userID);
+		channel.save();
+		user.getChannels().push_back(channelID);
 		user::manager::saveUser(user);
 		for (Client& client : Zormid::getInstance().getClients()) {
 			if (client.getUserID() == userID || client.getUserID() == mUser->getID()) {
 				client.getUser()->getFriends().push_back(userID);
+				client.getUser()->getChannels().push_back(channelID);
 				user::manager::saveUser(*client.getUser());
-				const std::vector<user::manager::UserID>& friends = user.getFriends();
+				const std::vector<chat::ChannelID>& channels = user.getChannels();
 				net::http::PayloadData response = {};
 				response.type = net::http::PayloadType::BINARY;
 				std::vector<char> responseData = {};
 				constexpr uint32_t responseID = 0x3;
 				responseData.resize(28);
 				memcpy(responseData.data(), &responseID, 4);
-				memcpy(userIDChars, static_cast<const char*>(client.getUserID()), 20);
 				memcpy(responseData.data() + 4, userIDChars, 20);
-				const uint32_t friendCount = friends.size();
-				memcpy(responseData.data() + 24, &friendCount, 4);
+				const uint32_t channelCount = channels.size();
+				memcpy(responseData.data() + 24, &channelCount, 4);
 				size_t pos = 28;
-				for (uint32_t i = 0; i < friendCount; i++) {
-					const std::string& username = user::manager::loadUser(friends[i]).getUsername();
-					const uint32_t usernameLength = username.length();
-					responseData.resize(responseData.size() + 24 + usernameLength);
-					memcpy(responseData.data() + pos, static_cast<const char*>(friends[i]), 20);
-					memcpy(responseData.data() + pos + 20, &usernameLength, 4);
-					memcpy(responseData.data() + pos + 24, username.c_str(), usernameLength);
-					pos += usernameLength + 24;
+				for (uint32_t i = 0; i < channelCount; i++) {
+					std::string channelName = chat::Channel(channels[i]).getName();
+					const uint32_t channelNameLength = channelName.length();
+					responseData.resize(responseData.size() + 24 + channelNameLength);
+					memcpy(responseData.data() + pos, static_cast<const char*>(channels[i]), 20);
+					memcpy(responseData.data() + pos + 20, &channelNameLength, 4);
+					memcpy(responseData.data() + pos + 24, channelName.c_str(), channelNameLength);
+					pos += channelNameLength + 24;
 				}
 				response.data = responseData.data();
 				response.size = responseData.size();
@@ -163,12 +174,12 @@ namespace zormid::client {
 		}
 	}
 
-	void Client::processFriendListRequestPacket(const net::http::PayloadData& payload) const {
+	void Client::processChannelListRequestPacket(const net::http::PayloadData& payload) const {
 		char userIDChars[20];
 		memcpy(userIDChars, payload.data + 4, 20);
 		const user::manager::UserID userID(userIDChars);
 		user::User user = user::manager::loadUser(userID);
-		const std::vector<user::manager::UserID>& friends = user.getFriends();
+		const std::vector<chat::ChannelID>& channels = user.getChannels();
 		net::http::PayloadData response = {};
 		response.type = net::http::PayloadType::BINARY;
 		std::vector<char> responseData = {};
@@ -176,17 +187,17 @@ namespace zormid::client {
 		responseData.resize(28);
 		memcpy(responseData.data(), &responseID, 4);
 		memcpy(responseData.data() + 4, userIDChars, 20);
-		const uint32_t friendCount = friends.size();
-		memcpy(responseData.data() + 24, &friendCount, 4);
+		const uint32_t channelCount = channels.size();
+		memcpy(responseData.data() + 24, &channelCount, 4);
 		size_t pos = 28;
-		for (uint32_t i = 0; i < friendCount; i++) {
-			const std::string& username = user::manager::loadUser(friends[i]).getUsername();
-			const uint32_t usernameLength = username.length();
-			responseData.resize(responseData.size() + 24 + usernameLength);
-			memcpy(responseData.data() + pos, static_cast<const char*>(friends[i]), 20);
-			memcpy(responseData.data() + pos + 20, &usernameLength, 4);
-			memcpy(responseData.data() + pos + 24, username.c_str(), usernameLength);
-			pos += usernameLength + 24;
+		for (uint32_t i = 0; i < channelCount; i++) {
+			std::string channelName = chat::Channel(channels[i]).getName();
+			const uint32_t channelNameLength = channelName.length();
+			responseData.resize(responseData.size() + 24 + channelNameLength);
+			memcpy(responseData.data() + pos, static_cast<const char*>(channels[i]), 20);
+			memcpy(responseData.data() + pos + 20, &channelNameLength, 4);
+			memcpy(responseData.data() + pos + 24, channelName.c_str(), channelNameLength);
+			pos += channelNameLength + 24;
 		}
 		response.data = responseData.data();
 		response.size = responseData.size();
@@ -194,19 +205,67 @@ namespace zormid::client {
 	}
 
 	void Client::processMessagePacket(const net::http::PayloadData& payload) {
-		char userIDChars[20];
-		memcpy(userIDChars, payload.data + 4, 20);
-		const user::manager::UserID userID(userIDChars);
+		char channelIDChars[20];
+		memcpy(channelIDChars, payload.data + 4, 20);
+		const chat::ChannelID channelID(channelIDChars);
+		uint32_t length = 0;
+		memcpy(&length, payload.data + 24, 4);
+		std::string message(length, 0);
+		for (uint32_t i = 0; i < length; i++) {
+			message[i] = payload.data[i + 28];
+		}
+		chat::Channel channel(channelID);
+		channel.getMessages().push_back({.content = message, .from = mUser->getUsername(), .fromID = mUser->getID(), .channelID = channelID});
+		channel.save();
 		for (Client& client : Zormid::getInstance().getClients()) {
-			if (client.getUserID() == userID || client.getUserID() == mUser->getID()) {
-				uint32_t length = 0;
-				memcpy(&length, payload.data + 24, 4);
-				std::string message(length, 0);
-				for (uint32_t i = 0; i < length; i++) {
-					message[i] = payload.data[i + 28];
+			bool found = false;
+			for (const chat::ChannelID& c : client.getUser()->getChannels()) {
+				if (c == channelID) {
+					found = true;
+					break;
 				}
-				client.sendMessage({.content = message, .from = mUser->getUsername(), .fromID = mUser->getID()});
+			}
+			if (found) {
+				client.sendMessage({.content = message, .from = mUser->getUsername(), .fromID = mUser->getID(), .channelID = channelID});
 			}
 		}
+	}
+
+	void Client::processChannelContentsRequestPacket(const net::http::PayloadData& payload) const {
+		char channelIDChars[20];
+		memcpy(channelIDChars, payload.data + 4, 20);
+		const chat::ChannelID channelID(channelIDChars);
+		chat::Channel channel(channelID);
+		net::http::PayloadData response = {};
+		response.type = net::http::PayloadType::BINARY;
+		std::vector<char> responseData = {};
+		responseData.resize(28);
+		constexpr uint32_t responseID = 0x5;
+		memcpy(responseData.data(), &responseID, 4);
+		memcpy(responseData.data() + 4, channelIDChars, 20);
+		const std::vector<chat::Message>& messages = channel.getMessages();
+		const uint32_t messageCount = messages.size();
+		memcpy(responseData.data() + 24, &messageCount, 4);
+		size_t pos = 28;
+		for (uint32_t i = 0; i < messageCount; i++) {
+			const std::string& content = messages[i].content;
+			const std::string& username = messages[i].from;
+			auto contentLength = static_cast<uint32_t>(content.length());
+			auto usernameLength = static_cast<uint32_t>(username.length());
+			responseData.resize(responseData.size() + 28 + contentLength + usernameLength);
+			memcpy(responseData.data() + pos, static_cast<const char*>(messages[i].fromID), 20);
+			pos += 20;
+			memcpy(responseData.data() + pos, &contentLength, 4);
+			pos += 4;
+			memcpy(responseData.data() + pos, content.data(), contentLength);
+			pos += contentLength;
+			memcpy(responseData.data() + pos, &usernameLength, 4);
+			pos += 4;
+			memcpy(responseData.data() + pos, username.data(), usernameLength);
+			pos += usernameLength;
+		}
+		response.data = responseData.data();
+		response.size = responseData.size();
+		mSocket->write(response);
 	}
 }

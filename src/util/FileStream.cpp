@@ -1,7 +1,7 @@
 #include "FileStream.h"
 
 namespace zormid::util {
-	IFileStream::IFileStream(const std::string& path) : mFileStream(path) {}
+	IFileStream::IFileStream(const std::string& path) : mFileStream(path, std::ios::binary) {}
 
 	void IFileStream::seek(const uint32_t pos) {
 		mFileStream.seekg(pos);
@@ -26,7 +26,7 @@ namespace zormid::util {
 		mFileStream.close();
 	}
 
-	OFileStream::OFileStream(const std::string& path) : mFileStream(path) {}
+	OFileStream::OFileStream(const std::string& path) : mFileStream(path, std::ios::binary) {}
 
 	void OFileStream::write(const void* buffer, const uint32_t size) {
 		mFileStream.write(static_cast<const char*>(buffer), size);

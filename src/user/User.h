@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "UserManager.h"
+#include "chat/Channel.h"
 
 namespace zormid::user {
 	struct Session {
@@ -50,6 +51,10 @@ namespace zormid::user {
 			return mFriends;
 		}
 
+		[[nodiscard]] std::vector<chat::ChannelID>& getChannels() {
+			return mChannels;
+		}
+
 	private:
 		manager::UserID mID;
 		char mPasswordSalt[16] = {};
@@ -57,6 +62,7 @@ namespace zormid::user {
 		std::string mUsername;
 		std::vector<Session> mSessions = {};
 		std::vector<manager::UserID> mFriends = {};
+		std::vector<chat::ChannelID> mChannels = {};
 
 		explicit User(const manager::UserID& id);
 

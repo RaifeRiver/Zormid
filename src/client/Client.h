@@ -39,10 +39,12 @@ namespace zormid::client {
 
 		void processUsernameRequestPacket(const net::http::PayloadData& payload) const;
 
-		void processAcceptFriendRequestPacket(const net::http::PayloadData& payload) const;
+		void processAcceptFriendRequestPacket(const net::http::PayloadData& payload);
 
-		void processFriendListRequestPacket(const net::http::PayloadData& payload) const;
+		void processChannelListRequestPacket(const net::http::PayloadData& payload) const;
 
 		void processMessagePacket(const net::http::PayloadData& payload);
+
+		void processChannelContentsRequestPacket(const net::http::PayloadData& payload) const;
 	};
 }

@@ -79,10 +79,10 @@ namespace zormid::user {
 			return false;
 		}
 		util::IFileStream fileStream(file);
-		uint8_t savedDigest[20];
-		fileStream.read(savedDigest, sizeof(savedDigest));
 		char salt[17];
 		fileStream.read(salt, sizeof(salt) - 1);
+		uint8_t savedDigest[20];
+		fileStream.read(savedDigest, sizeof(savedDigest));
 		salt[16] = '\0';
 		std::string passwordWithSalt = password + salt;
 		sha1::SHA1 sha;
@@ -116,6 +116,13 @@ namespace zormid::user {
 			fileStream.read(friendID, sizeof(friendID));
 			user.getFriends().emplace_back(friendID);
 		}
+		uint32_t channelCount;
+		fileStream >> channelCount;
+		for (uint32_t i = 0; i < channelCount; i++) {
+			char channelID[20];
+			fileStream.read(channelID, sizeof(channelID));
+			user.getChannels().emplace_back(channelID);
+		}
 		return user;
 	}
 
@@ -124,14 +131,18 @@ namespace zormid::user {
 		util::OFileStream fileStream(USERS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".dat");
 		fileStream.write(user.getPasswordSalt(), 16);
 		fileStream.write(user.getPasswordDigest(), 20);
-		fileStream << user.getSessions().size();
+		fileStream << static_cast<uint32_t>(user.getSessions().size());
 		for (const Session& session: user.getSessions()) {
 			fileStream.write(static_cast<const char*>(session), 16);
 		}
 		fileStream << user.getUsername();
-		fileStream << user.getFriends().size();
+		fileStream << static_cast<uint32_t>(user.getFriends().size());
 		for (const UserID& friendID: user.getFriends()) {
 			fileStream.write(static_cast<const char*>(friendID), 20);
+		}
+		fileStream << static_cast<uint32_t>(user.getChannels().size());
+		for (const chat::ChannelID& channelID: user.getChannels()) {
+			fileStream.write(static_cast<const char*>(channelID), 20);
 		}
 	}
 }

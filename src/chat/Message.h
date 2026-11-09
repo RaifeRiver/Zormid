@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "Channel.h"
 #include "user/UserManager.h"
 
 namespace zormid::chat {
@@ -9,5 +10,6 @@ namespace zormid::chat {
 		std::string content;
 		std::string from;
 		user::manager::UserID fromID;
+		ChannelID channelID;
 	};
 }

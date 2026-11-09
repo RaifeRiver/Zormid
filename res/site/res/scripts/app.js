@@ -21,11 +21,11 @@ let acceptFriendClose = document.getElementById("accept-friend-close");
 let openingAcceptFriendMenu = false;
 let acceptFriendUserID;
 
-let friendList = document.getElementById("friend-list");
-let friendTemplate = document.getElementById("friend-template");
+let channelList = document.getElementById("channel-list");
+let channelTemplate = document.getElementById("channel-template");
 
 let userID;
-let currentFriendID;
+let currentChannelID;
 
 api.setConnectHandler(() => {
     const userCookie = cookies.getCookie("user");
@@ -44,10 +44,10 @@ api.setAuthHandler(() => {
     if (addFriendCookie) {
         openAcceptFriendMenu(addFriendCookie);
     }
-    api.requestFriendList(atob(userID));
+    api.requestChannelList(atob(userID));
 });
 api.setGlobalMessageHandler((message) => {
-    if (currentFriendID) {
+    if (currentChannelID) {
         return;
     }
     const messageElement = document.importNode(messageTemplate.content, true);
@@ -63,21 +63,21 @@ api.setUsernameRequestHandler((username, userID) => {
         acceptFriendMenu.showModal();
     }
 });
-api.setFriendListRequestHandler((friends, id) => {
+api.setChannelListRequestHandler((channels, id) => {
     if (btoa(id) !== userID) {
         return;
     }
-    friendList.replaceChildren();
-    for (let friend of friends) {
-        let friendElement = document.importNode(friendTemplate.content, true);
-        let friendButton = friendElement.firstElementChild;
-        friendButton.textContent = friend.username;
-        friendButton.addEventListener("click", () => changeFriend(friend.userID));
-        friendList.appendChild(friendElement);
+    channelList.replaceChildren();
+    for (let channel of channels) {
+        let channelElement = document.importNode(channelTemplate.content, true);
+        let channelButton = channelElement.firstElementChild;
+        channelButton.textContent = channel.channelName;
+        channelButton.addEventListener("click", () => changeChannel(channel.channelID));
+        channelList.appendChild(channelElement);
     }
 });
 api.setMessageHandler((message) => {
-    if (message.userID !== currentFriendID && message.userID !== atob(userID)) {
+    if (message.channelID !== currentChannelID && message.userID !== atob(userID)) {
         return;
     }
     const messageElement = document.importNode(messageTemplate.content, true);
@@ -87,6 +87,20 @@ api.setMessageHandler((message) => {
     contentElement.textContent = message.content;
     messageContainer.appendChild(messageElement);
 });
+api.setChannelContentsHandler((channelContents) => {
+    if (channelContents.channelID !== currentChannelID) {
+        return;
+    }
+    messageContainer.replaceChildren();
+    for (let message of channelContents.messages) {
+        const messageElement = document.importNode(messageTemplate.content, true);
+        const usernameElement = messageElement.querySelector(".message-username");
+        const contentElement = messageElement.querySelector(".message-content");
+        usernameElement.textContent = message.username;
+        contentElement.textContent = message.content;
+        messageContainer.appendChild(messageElement);
+    }
+});
 
 api.connect();
 
@@ -94,8 +108,8 @@ function sendMessage() {
     if (messageInput.value.length === 0) {
         return;
     }
-    if (currentFriendID) {
-        api.sendMessage(messageInput.value, currentFriendID);
+    if (currentChannelID) {
+        api.sendMessage(messageInput.value, currentChannelID);
     }
     else {
         api.sendGlobalMessage(messageInput.value);
@@ -140,12 +154,13 @@ function declineFriend() {
     cookies.deleteCookie("add-friend");
 }
 
-function changeFriend(friendID) {
-    if (friendID === currentFriendID) {
+function changeChannel(channelID) {
+    if (channelID === currentChannelID) {
         return;
     }
-    currentFriendID = friendID;
+    currentChannelID = channelID;
     messageContainer.replaceChildren();
+    api.requestChannelContents(channelID);
 }
 
 messageInput.addEventListener("keydown", (event) => {

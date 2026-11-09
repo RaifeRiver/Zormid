@@ -177,14 +177,14 @@ h3 {
     font-family: var(--theme-font-family), sans-serif;
 }
 
-#friend-list {
+#channel-list {
     display: flex;
     flex-direction: column;
     margin-top: 2vh;
     gap: 1vh;
 }
 
-.friend {
+.channel {
     background-color: var(--theme-secondary-background);
     margin-left: 1vw;
     margin-right: 1vw;
@@ -194,6 +194,6 @@ h3 {
     width: 28vw;
 }
 
-.friend:hover {
+.channel:hover {
     background-color: var(--theme-background);
 }
