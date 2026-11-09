@@ -92,7 +92,7 @@ namespace zormid::site {
 			std::optional<std::string> username = {};
 			std::optional<std::string> password = {};
 			bool remember = false;
-			for (const std::string& s : util::string::split(body, "&")) {
+			for (const std::string& s : util::string::split(body, "\n")) {
 				std::vector<std::string> pair = util::string::split(s, "=", 1);
 				if (pair.size() < 2) {
 					response.statusCode = 400;
