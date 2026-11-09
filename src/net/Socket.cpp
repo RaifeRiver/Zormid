@@ -56,6 +56,10 @@ namespace zormid::net {
 			}
 			return bufferCopySize;
 		}
+		if (read == 0) {
+			close();
+			return bufferCopySize;
+		}
 		return read + bufferCopySize;
 	}
 
@@ -88,6 +92,10 @@ namespace zormid::net {
 				}
 				mBufferEnd = 0;
 			}
+			else if (read == 0) {
+				close();
+				return result;
+			}
 		}
 	}
 
@@ -107,6 +115,10 @@ namespace zormid::net {
 				return false;
 			}
 			mBufferEnd = 0;
+		}
+		else if (read == 0) {
+			close();
+			return false;
 		}
 		return false;
 	}
