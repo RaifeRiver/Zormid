@@ -166,9 +166,11 @@ namespace zormid::net::http {
 		PayloadData payload = {.data = data, .size = length, .type = type};
 		if (opcode == 0x9) {
 			write_(payload, 0xA);
+			free(data);
 			return {};
 		}
 		if (opcode == 0x8) {
+			free(data);
 			if (mClosing) {
 				mSocket->close();
 			}
