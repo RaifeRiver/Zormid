@@ -7,6 +7,109 @@
 #include "util/Base64.h"
 
 namespace zormid::net::http {
+	PayloadWriter& PayloadWriter::write(const void* data, const size_t size) {
+		mBuffer.insert(mBuffer.end(), static_cast<const char*>(data), static_cast<const char*>(data) + size);
+		return *this;
+	}
+
+	PayloadWriter& PayloadWriter::operator<<(const uint32_t data) {
+		write(&data, sizeof(uint32_t));
+		return *this;
+	}
+
+	PayloadWriter& PayloadWriter::operator<<(const std::string& data) {
+		*this << static_cast<uint32_t>(data.size());
+		write(data.c_str(), data.size());
+		return *this;
+	}
+
+	PayloadWriter& PayloadWriter::operator<<(const chat::ChannelID& data) {
+		write(static_cast<const char*>(data), 20);
+		return *this;
+	}
+
+	PayloadWriter& PayloadWriter::operator<<(const user::Session& data) {
+		write(static_cast<const char*>(data), 20);
+		return *this;
+	}
+
+	PayloadWriter& PayloadWriter::operator<<(const user::manager::UserID& data) {
+		write(static_cast<const char*>(data), 20);
+		return *this;
+	}
+
+	PayloadData PayloadWriter::buildPayload() {
+		PayloadData data = {};
+		data.type = PayloadType::BINARY;
+		data.size = mBuffer.size();
+		data.data = mBuffer.data();
+		return data;
+	}
+
+	PayloadReader::PayloadReader(const PayloadData& data) : mData(data) {}
+
+	void PayloadReader::read(void* data, const size_t size) {
+		if (mIndex + size > mData.size) {
+			throw std::out_of_range("Payload read out of bounds");
+		}
+		memcpy(data, mData.data + mIndex, size);
+		mIndex += size;
+	}
+
+	void PayloadReader::operator>>(uint32_t& data) {
+		if (mIndex + sizeof(uint32_t) > mData.size) {
+			throw std::out_of_range("Payload read out of bounds");
+		}
+		memcpy(&data, mData.data + mIndex, sizeof(uint32_t));
+		mIndex += sizeof(uint32_t);
+	}
+
+	void PayloadReader::operator>>(std::string& data) {
+		uint32_t size;
+		*this >> size;
+		if (mIndex + size > mData.size) {
+			throw std::out_of_range("Payload read out of bounds");
+		}
+		data.resize(size);
+		memcpy(data.data(), mData.data + mIndex, size);
+		mIndex += size;
+	}
+
+	chat::ChannelID PayloadReader::readChannelID() {
+		if (mIndex + 20 > mData.size) {
+			throw std::out_of_range("Payload read out of bounds");
+		}
+		char buffer[20];
+		memcpy(buffer, mData.data + mIndex, 20);
+		mIndex += 20;
+		return chat::ChannelID(buffer);
+	}
+
+	user::Session PayloadReader::readSession() {
+		if (mIndex + 16 > mData.size) {
+			throw std::out_of_range("Payload read out of bounds");
+		}
+		char buffer[16];
+		memcpy(buffer, mData.data + mIndex, 16);
+		mIndex += 16;
+		return user::Session(buffer);
+	}
+
+	user::manager::UserID PayloadReader::readUserID() {
+		if (mIndex + 20 > mData.size) {
+			throw std::out_of_range("Payload read out of bounds");
+		}
+		char buffer[20];
+		memcpy(buffer, mData.data + mIndex, 20);
+		mIndex += 20;
+		return user::manager::UserID(buffer);
+	}
+
+	PayloadReader::~PayloadReader() {
+		free(mData.data);
+		mData.size = 0;
+	}
+
 	WebSocket::WebSocket(std::unique_ptr<Socket> socket, HTTPRequestHeader request) : mSocket(std::move(socket)) {
 		HTTPResponseHeader response;
 		response.statusCode = 101;
@@ -28,7 +131,7 @@ namespace zormid::net::http {
 		}
 		uint8_t firstByte;
 		mSocket->readBlocking(&firstByte, 1);
-		bool lastMessage = firstByte >> 7 == 1;
+		//bool lastMessage = firstByte >> 7 == 1; TODO: implement split packets
 		const uint8_t opcode = firstByte & 0xF;
 		const PayloadType type = opcode == 1 ? PayloadType::TEXT : PayloadType::BINARY;
 		uint8_t payloadLength;

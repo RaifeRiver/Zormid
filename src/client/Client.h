@@ -33,18 +33,18 @@ namespace zormid::client {
 		std::unique_ptr<net::http::WebSocket> mSocket;
 		std::optional<user::User> mUser;
 
-		void processPacket(const net::http::PayloadData& payload);
+		void processPacket(net::http::PayloadReader& payload);
 
-		void processGlobalMessagePacket(const net::http::PayloadData& payload);
+		void processGlobalMessagePacket(net::http::PayloadReader& payload);
 
-		void processUsernameRequestPacket(const net::http::PayloadData& payload) const;
+		void processUsernameRequestPacket(net::http::PayloadReader& payload) const;
 
-		void processAcceptFriendRequestPacket(const net::http::PayloadData& payload);
+		void processAcceptFriendRequestPacket(net::http::PayloadReader& payload);
 
-		void processChannelListRequestPacket(const net::http::PayloadData& payload) const;
+		void processChannelListRequestPacket(net::http::PayloadReader& payload) const;
 
-		void processMessagePacket(const net::http::PayloadData& payload);
+		void processMessagePacket(net::http::PayloadReader& payload);
 
-		void processChannelContentsRequestPacket(const net::http::PayloadData& payload) const;
+		void processChannelContentsRequestPacket(net::http::PayloadReader& payload) const;
 	};
 }
