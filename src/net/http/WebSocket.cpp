@@ -163,12 +163,39 @@ namespace zormid::net::http {
 				data[i] = static_cast<char>(data[i] ^ mask[i % 4]);
 			}
 		}
-		return {{.data = data, .size = length, .type = type}};
+		PayloadData payload = {.data = data, .size = length, .type = type};
+		if (opcode == 0x9) {
+			write_(payload, 0xA);
+			return {};
+		}
+		if (opcode == 0x8) {
+			if (mClosing) {
+				mSocket->close();
+			}
+			else {
+				write_({.size = 0, .type = PayloadType::BINARY}, 0x8);
+			}
+			return {};
+		}
+		return payload;
 	}
 
 	void WebSocket::write(const PayloadData& data) const {
+		write_(data, data.type == PayloadType::TEXT ? 0x1 : 0x2);
+	}
+
+	bool WebSocket::isOpen() const {
+		return mSocket->isOpen();
+	}
+
+	void WebSocket::close() {
+		write_({.size = 0, .type = PayloadType::BINARY}, 0x8);
+		mClosing = true;
+	}
+
+	void WebSocket::write_(const PayloadData& data, const uint8_t opcode) const {
 		uint8_t firstByte = 1 << 7;
-		firstByte |= data.type == PayloadType::TEXT ? 0x1 : 0x2;
+		firstByte |= opcode;
 		mSocket->write(&firstByte, 1);
 		uint8_t payloadLength = 0;
 		if (data.size < 126) {
@@ -199,14 +226,8 @@ namespace zormid::net::http {
 			lengthBytes[7] = static_cast<uint8_t>(data.size);
 			mSocket->write(&lengthBytes, 8);
 		}
-		mSocket->write(data.data, data.size);
-	}
-
-	bool WebSocket::isOpen() const {
-		return mSocket->isOpen();
-	}
-
-	void WebSocket::close() const {
-		mSocket->close();
+		if (data.size > 0) {
+			mSocket->write(data.data, data.size);
+		}
 	}
 }

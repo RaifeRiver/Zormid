@@ -74,9 +74,12 @@ namespace zormid::net::http {
 
 		[[nodiscard]] bool isOpen() const;
 
-		void close() const;
+		void close();
 
 	private:
 		std::unique_ptr<Socket> mSocket;
+		bool mClosing = false;
+
+		void write_(const PayloadData& data, uint8_t opcode) const;
 	};
 }
