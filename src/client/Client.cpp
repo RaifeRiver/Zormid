@@ -143,11 +143,8 @@ namespace zormid::client {
 		response << userID;
 		response << channels.size();
 		for (const chat::ChannelID& c: channels) {
-			std::string channelName = chat::Channel(c).getName();
-			const uint32_t channelNameLength = channelName.length();
 			response << c;
-			response << channelNameLength;
-			response << channelName;
+			response << chat::Channel(c).getName();
 		}
 		mSocket->write(response.buildPayload());
 	}
