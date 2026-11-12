@@ -13,16 +13,16 @@ namespace zormid::client {
 
 		void process();
 
-		void close() const;
+		void close();
 
-		[[nodiscard]] bool isOpen() const;
+		[[nodiscard]] bool isOpen();
 
 		[[nodiscard]] const user::manager::UserID& getUserID() const {
 			return mUser->getID();
 		}
 
-		[[nodiscard]] std::optional<user::User>& getUser() {
-			return mUser;
+		[[nodiscard]] user::User& getUser() const {
+			return *mUser;
 		}
 
 		[[nodiscard]] net::http::WebSocket& getSocket() const {
@@ -31,19 +31,19 @@ namespace zormid::client {
 
 	private:
 		std::unique_ptr<net::http::WebSocket> mSocket;
-		std::optional<user::User> mUser;
+		user::User* mUser = nullptr;
 
 		void processPacket(net::http::PayloadReader& payload);
 
-		void processFriendListRequestPacket(net::http::PayloadReader& payload);
+		void processFriendListRequestPacket(net::http::PayloadReader& payload) const;
 
 		void processUsernameRequestPacket(net::http::PayloadReader& payload) const;
 
-		void processAcceptFriendRequestPacket(net::http::PayloadReader& payload);
+		void processAcceptFriendRequestPacket(net::http::PayloadReader& payload) const;
 
 		void processChannelListRequestPacket(net::http::PayloadReader& payload) const;
 
-		void processMessagePacket(net::http::PayloadReader& payload);
+		void processMessagePacket(net::http::PayloadReader& payload) const;
 
 		void processChannelContentsRequestPacket(net::http::PayloadReader& payload) const;
 

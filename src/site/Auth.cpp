@@ -64,11 +64,13 @@ namespace zormid::site {
 				if (!user::manager::exists(userID)) {
 					return false;
 				}
-				for (user::User user = user::manager::loadUser(userID); user::Session session : user.getSessions()) {
+				for (user::User& user = user::manager::loadUser(userID); user::Session session : user.getSessions()) {
 					if (memcmp(sessionChars.data(), static_cast<const char*>(session), 16) == 0) {
+						user::manager::unloadUser(userID);
 						return true;
 					}
 				}
+				user::manager::unloadUser(userID);
 			}
 		}
 		return false;
@@ -125,6 +127,7 @@ namespace zormid::site {
 				return;
 			}
 			const user::manager::UserID userID = user::manager::getUserID(*username);
+			user::User* user;
 			if (signup) {
 				if (user::manager::exists(userID)) {
 					response.statusCode = 409;
@@ -132,7 +135,7 @@ namespace zormid::site {
 					response.body = getPage("Sign Up", "User already exists");
 					return;
 				}
-				user::manager::create(*username, *password);
+				user = &user::manager::create(*username, *password);
 			}
 			else {
 				if (!user::manager::exists(userID)) {
@@ -147,12 +150,12 @@ namespace zormid::site {
 					response.body = getPage("Login", "Incorrect password");
 					return;
 				}
+				user = &user::manager::loadUser(userID);
 			}
 			response.statusCode = 303;
 			response.statusMessage = "See Other";
 			response.headers["Location"] = "/app/";
-			user::User user = user::manager::loadUser(userID);
-			const user::Session& session = user.startSession();
+			const user::Session& session = user->startSession();
 			const std::string sessionStr = util::base64::encode(static_cast<const char*>(session), 16);
 			if (remember) {
 				std::chrono::system_clock::time_point expiryTime = std::chrono::system_clock::now() + std::chrono::days(30);
@@ -162,7 +165,7 @@ namespace zormid::site {
 			else {
 				response.headers["Set-Cookie"] = "user=" + util::base64::encode(static_cast<const char*>(userID), 20) + "\nSet-Cookie: sessionID=" + sessionStr;
 			}
-			user::manager::saveUser(user);
+			user::manager::unloadUser(userID);
 		}
 	}
 }

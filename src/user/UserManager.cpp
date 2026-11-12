@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <random>
 #include <utility>
 
@@ -43,7 +44,9 @@ namespace zormid::user {
 		return std::filesystem::exists(USERS_DIR + dir + "/" + file + ".dat");
 	}
 
-	User manager::create(const std::string& username, const std::string& password) {
+	static std::unordered_map<manager::UserID, User> users;
+
+	User& manager::create(const std::string& username, const std::string& password) {
 		const UserID id = getUserID(username);
 		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
 		if (const std::string dir = hash.substr(0, 2); !std::filesystem::exists(USERS_DIR + dir)) {
@@ -64,8 +67,9 @@ namespace zormid::user {
 		user.setPasswordSalt(salt.data());
 		user.setPasswordDigest(reinterpret_cast<char*>(digest));
 		user.setUsername(username);
-		saveUser(user);
-		return user;
+		user.setActiveClients(1);
+		users.emplace(id, user);
+		return users.at(id);
 	}
 
 	bool manager::verify(const UserID& id, const std::string& password) {
@@ -92,9 +96,14 @@ namespace zormid::user {
 		return std::memcmp(digest, savedDigest, sizeof(digest)) == 0;
 	}
 
-	User manager::loadUser(const UserID& id) {
+	User& manager::loadUser(const UserID& id) {
 		if (!exists(id)) {
 			throw std::runtime_error("User does not exist");
+		}
+		if (const auto it = users.find(id); it != users.end()) {
+			User& user = it->second;
+			user.getActiveClients()++;
+			return user;
 		}
 		User user(id);
 		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
@@ -123,11 +132,21 @@ namespace zormid::user {
 			fileStream.read(channelID, sizeof(channelID));
 			user.getChannels().emplace_back(channelID);
 		}
-		return user;
+		user.setActiveClients(1);
+		users.emplace(id, user);
+		return users.at(id);
 	}
 
-	void manager::saveUser(User& user) {
-		const std::string hash = util::base16::encode(static_cast<const char*>(user.getID()), 20);
+	void manager::unloadUser(const UserID& id) {
+		const auto it = users.find(id);
+		if (it == users.end()) {
+			return;
+		}
+		User& user = it->second;
+		if (--user.getActiveClients() > 0) {
+			return;
+		}
+		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
 		util::OFileStream fileStream(USERS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".dat");
 		fileStream.write(user.getPasswordSalt(), 16);
 		fileStream.write(user.getPasswordDigest(), 20);
@@ -144,5 +163,14 @@ namespace zormid::user {
 		for (const chat::ChannelID& channelID: user.getChannels()) {
 			fileStream.write(static_cast<const char*>(channelID), 20);
 		}
+		users.erase(id);
 	}
+
+	std::unordered_map<manager::UserID, User>& manager::getLoadedUsers() {
+		return users;
+	}
+}
+
+std::size_t std::hash<zormid::user::manager::UserID>::operator()(const zormid::user::manager::UserID& id) const noexcept {
+	return std::hash<std::string_view>{}(std::string_view(static_cast<const char*>(id), 20));
 }

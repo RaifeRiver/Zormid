@@ -9,7 +9,7 @@ namespace zormid::client {
 	Client::Client(std::unique_ptr<net::http::WebSocket> socket) : mSocket(std::move(socket)) {}
 
 	void Client::sendMessage(const chat::Message& message, const bool global) const {
-		if (!mUser.has_value()) {
+		if (!mUser) {
 			return;
 		}
 		net::http::PayloadWriter payload;
@@ -29,30 +29,40 @@ namespace zormid::client {
 		}
 	}
 
-	void Client::close() const {
+	void Client::close() {
 		mSocket->close();
+		user::manager::unloadUser(mUser->getID());
+		mUser = nullptr;
+		std::cout << "Client closed" << std::endl;
 	}
 
-	bool Client::isOpen() const {
-		return mSocket->isOpen();
+	bool Client::isOpen() {
+		const bool open = mSocket->isOpen();
+		if (!open && mUser) {
+			user::manager::unloadUser(mUser->getID());
+			mUser = nullptr;
+			std::cout << "Client closed" << std::endl;
+		}
+		return open;
 	}
 
 	void Client::processPacket(net::http::PayloadReader& payload) {
 		uint32_t id = 0;
 		payload >> id;
-		if (!mUser.has_value()) {
+		if (!mUser) {
 			if (id == 0x0) {
 				const user::manager::UserID userID = payload.readUserID();
 				const user::Session sessionID = payload.readSession();
-				for (user::User user = user::manager::loadUser(userID); user::Session session : user.getSessions()) {
+				for (user::User& user = user::manager::loadUser(userID); user::Session session : user.getSessions()) {
 					if (memcmp(static_cast<const char*>(sessionID), static_cast<const char*>(session), 16) == 0) {
-						mUser = user;
+						mUser = &user;
 						net::http::PayloadWriter response;
 						response << 0x0;
 						mSocket->write(response.buildPayload());
 						return;
 					}
 				}
+				user::manager::unloadUser(userID);
 			}
 			return;
 		}
@@ -84,7 +94,7 @@ namespace zormid::client {
 		}
 	}
 
-	void Client::processFriendListRequestPacket(net::http::PayloadReader& payload) {
+	void Client::processFriendListRequestPacket(net::http::PayloadReader&) const {
 		net::http::PayloadWriter response;
 		response << 0x1;
 		const std::vector<user::manager::UserID>& friends = mUser->getFriends();
@@ -92,33 +102,34 @@ namespace zormid::client {
 		for (const user::manager::UserID& friendID : friends) {
 			response << friendID;
 			response << user::manager::loadUser(friendID).getUsername();
+			user::manager::unloadUser(friendID);
 		}
 		mSocket->write(response.buildPayload());
 	}
 
 	void Client::processUsernameRequestPacket(net::http::PayloadReader& payload) const {
 		const user::manager::UserID userID = payload.readUserID();
-		user::User user = user::manager::loadUser(userID);
+		user::User& user = user::manager::loadUser(userID);
 		const std::string& username = user.getUsername();
 		net::http::PayloadWriter response;
 		response << 0x2;
 		response << userID;
 		response << username;
 		mSocket->write(response.buildPayload());
+		user::manager::unloadUser(userID);
 	}
 
-	void Client::processAcceptFriendRequestPacket(net::http::PayloadReader& payload) {
+	void Client::processAcceptFriendRequestPacket(net::http::PayloadReader& payload) const {
 		const user::manager::UserID userID = payload.readUserID();
 		mUser->getFriends().push_back(userID);
-		user::manager::saveUser(*mUser);
-		user::User user = user::manager::loadUser(userID);
+		user::User& user = user::manager::loadUser(userID);
 		user.getFriends().push_back(mUser->getID());
-		user::manager::saveUser(user);
+		user::manager::unloadUser(userID);
 	}
 
 	void Client::processChannelListRequestPacket(net::http::PayloadReader& payload) const {
 		const user::manager::UserID userID = payload.readUserID();
-		user::User user = user::manager::loadUser(userID);
+		user::User& user = user::manager::loadUser(userID);
 		const std::vector<chat::ChannelID>& channels = user.getChannels();
 		net::http::PayloadWriter response;
 		response << 0x3;
@@ -128,10 +139,11 @@ namespace zormid::client {
 			response << c;
 			response << chat::Channel(c).getName();
 		}
+		user::manager::unloadUser(userID);
 		mSocket->write(response.buildPayload());
 	}
 
-	void Client::processMessagePacket(net::http::PayloadReader& payload) {
+	void Client::processMessagePacket(net::http::PayloadReader& payload) const {
 		const chat::ChannelID channelID = payload.readChannelID();
 		std::string message;
 		payload >> message;
@@ -140,7 +152,7 @@ namespace zormid::client {
 		channel.save();
 		for (Client& client : Zormid::getInstance().getClients()) {
 			bool found = false;
-			for (const chat::ChannelID& c : client.getUser()->getChannels()) {
+			for (const chat::ChannelID& c : client.getUser().getChannels()) {
 				if (c == channelID) {
 					found = true;
 					break;
@@ -181,9 +193,9 @@ namespace zormid::client {
 		for (uint32_t i = 0; i < userCount; i++) {
 			user::manager::UserID userID = payload.readUserID();
 			channel.getUsers().push_back(userID);
-			user::User user = user::manager::loadUser(userID);
+			user::User& user = user::manager::loadUser(userID);
 			user.getChannels().push_back(channelID);
-			user::manager::saveUser(user);
+			user::manager::unloadUser(userID);
 		}
 		channel.save();
 	}

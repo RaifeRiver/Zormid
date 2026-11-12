@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 namespace zormid::user {
 	class User;
@@ -28,11 +29,17 @@ namespace zormid::user::manager {
 
 	bool exists(const UserID& id);
 
-	User create(const std::string& username, const std::string& password);
+	User& create(const std::string& username, const std::string& password);
 
 	bool verify(const UserID& id, const std::string& password);
 
-	User loadUser(const UserID& id);
+	User& loadUser(const UserID& id);
 
-	void saveUser(User& user);
+	void unloadUser(const UserID& id);
+
+	std::unordered_map<UserID, User>& getLoadedUsers();
 }
+
+template <> struct std::hash<zormid::user::manager::UserID> {
+	size_t operator()(const zormid::user::manager::UserID& id) const noexcept;
+};

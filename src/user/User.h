@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
 #include "UserManager.h"
@@ -19,6 +20,8 @@ namespace zormid::user {
 
 	class User {
 	public:
+		explicit User(const manager::UserID& id);
+
 		const Session& startSession();
 
 		[[nodiscard]] const manager::UserID& getID() const {
@@ -55,6 +58,12 @@ namespace zormid::user {
 			return mChannels;
 		}
 
+		[[nodiscard]] uint32_t& getActiveClients() {
+			return mActiveClients;
+		}
+
+		void setActiveClients(uint32_t clients);
+
 	private:
 		manager::UserID mID;
 		char mPasswordSalt[16] = {};
@@ -63,10 +72,6 @@ namespace zormid::user {
 		std::vector<Session> mSessions = {};
 		std::vector<manager::UserID> mFriends = {};
 		std::vector<chat::ChannelID> mChannels = {};
-
-		explicit User(const manager::UserID& id);
-
-		friend User manager::create(const std::string&, const std::string&);
-		friend User manager::loadUser(const manager::UserID&);
+		uint32_t mActiveClients = 0;
 	};
 }

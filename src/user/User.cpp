@@ -9,6 +9,8 @@ namespace zormid::user {
 		memcpy(mID, id, 16);
 	}
 
+	User::User(const manager::UserID& id) : mID(id) {}
+
 	const Session& User::startSession() {
 		std::random_device randomDevice;
 		char sessionID[16];
@@ -31,5 +33,7 @@ namespace zormid::user {
 		mUsername = username;
 	}
 
-	User::User(const manager::UserID& id) : mID(id) {}
+	void User::setActiveClients(const uint32_t clients) {
+		mActiveClients = clients;
+	}
 }

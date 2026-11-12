@@ -2,6 +2,7 @@
 
 #include <fcntl.h>
 #include <iostream>
+#include <ranges>
 #include <string>
 #include <unistd.h>
 
@@ -31,6 +32,18 @@ namespace zormid::command {
 				std::cout << "Available commands:" << std::endl;
 				std::cout << "\texit, quit\t - closes Zormid server" << std::endl;
 				std::cout << "\thelp, ?\t\t - displays this help message" << std::endl;
+				std::cout << "\tusers\t\t - displays a list of active users" << std::endl;
+			}
+			else if (command[0] == "users") {
+				std::unordered_map<user::manager::UserID, user::User>& users = user::manager::getLoadedUsers();
+				if (users.empty()) {
+					std::cout << "No active users" << std::endl;
+					continue;
+				}
+				std::cout << "Active users:" << std::endl;
+				for (user::User& user: users | std::views::values) {
+					std::cout << "\t" << user.getUsername() << " - " << user.getActiveClients() << std::endl;
+				}
 			}
 			else {
 				std::cout << "Unknown command: " << command[0] << ", run help for a command list" << std::endl;
