@@ -17,11 +17,17 @@
     <body>
         <div id="app-container">
             <div id="side-panel">
-                <button id="add-friend">Add Friend</button>
+                <button id="open-friends-list" class="channel">Friends</button>
+
+                <div id="channel-list-break"></div>
 
                 <div id="channel-list">
 
                 </div>
+
+                <template id="add-channel-template">
+                    <button id="add-channel" class="channel">Add Channel</button>
+                </template>
 
                 <template id="channel-template">
                     <button class="channel">
@@ -32,23 +38,41 @@
 
             <div id="main-area">
                 <div id="channel-info-container">
-                    <p id="channel-name">None</p>
+                    <p id="channel-name">Friends</p>
                 </div>
 
-                <div id="message-container">
+                <div id="friend-list-container">
+                    <div id="friend-container">
 
-                </div>
-
-                <template id="message-template">
-                    <div class="message">
-                        <p class="message-username"></p>
-                        <p class="message-content"></p>
                     </div>
-                </template>
 
-                <div id="input-container">
-                    <textarea id="message-input" placeholder="Type message here"></textarea>
-                    <button id="send-button">➤</button>
+                    <template id="add-friend-template">
+                        <button id="add-friend" class="friend">Add Friend</button>
+                    </template>
+
+                    <template id="friend-template">
+                        <button class="friend">
+
+                        </button>
+                    </template>
+                </div>
+
+                <div id="channel-container" style="display: none;">
+                    <div id="message-container">
+
+                    </div>
+
+                    <template id="message-template">
+                        <div class="message">
+                            <p class="message-username"></p>
+                            <p class="message-content"></p>
+                        </div>
+                    </template>
+
+                    <div id="input-container">
+                        <textarea id="message-input" placeholder="Type message here"></textarea>
+                        <button id="send-button">➤</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -74,6 +98,25 @@
 
             <button id="accept-friend-close" class="close-button">X</button>
         </dialog>
+
+        <dialog id="add-channel-menu" class="popup-menu">
+            <h3>Add Channel</h3>
+
+            <input id="add-channel-name" placeholder="Channel name">
+
+            <p>Friends:</p>
+            <div id="add-channel-friends"></div>
+
+            <button id="add-channel-add" class="add-channel-button">Add</button>
+            <button id="add-channel-close" class="close-button">X</button>
+        </dialog>
+
+        <template id="add-channel-friend-template">
+            <div class="add-channel-friend">
+                <p class="add-channel-friend-name"></p>
+                <button class="add-channel-friend-button">Add</button>
+            </div>
+        </template>
 
         <script type="module" src="/res/scripts/app.js"></script>
     </body>

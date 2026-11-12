@@ -10,9 +10,9 @@ export function setAuthHandler(handler) {
     authHandler = handler;
 }
 
-export let globalMessageHandler;
-export function setGlobalMessageHandler(handler) {
-    globalMessageHandler = handler;
+export let friendListRequestHandler;
+export function setFriendListRequestHandler(handler) {
+    friendListRequestHandler = handler;
 }
 
 export let usernameRequestHandler;
@@ -62,11 +62,18 @@ function processPacket(packet) {
             }
             break;
         case 0x1:
-            if (globalMessageHandler) {
-                let userID = readID(view, 4);
-                let content = readString(view, 24);
-                let username = readString(view, 28 + content.length);
-                globalMessageHandler({content: content, username: username, userID: userID});
+            if (friendListRequestHandler) {
+                let friendCount = view.getUint32(4, true);
+                let friends = [];
+                let pos = 8;
+                for (let i = 0; i < friendCount; i++) {
+                    let friend = {};
+                    friend.userID = readID(view, pos);
+                    friend.username = readString(view, pos + 20);
+                    pos += 20 + friend.username.length;
+                    friends.push(friend);
+                }
+                friendListRequestHandler(friends);
             }
             break;
         case 0x2:
@@ -154,14 +161,10 @@ export function authenticate(userID, sessionID) {
     websocket.send(buffer);
 }
 
-export function sendGlobalMessage(message) {
-    let buffer = new ArrayBuffer(message.length + 8);
+export function requestFriendList() {
+    let buffer = new ArrayBuffer(4);
     let view = new DataView(buffer);
     view.setUint32(0, 0x1, true);
-    view.setUint32(4, message.length, true);
-    for (let i = 0; i < message.length; i++) {
-        view.setUint8(i + 8, message.charCodeAt(i));
-    }
     websocket.send(buffer);
 }
 
@@ -216,6 +219,23 @@ export function requestChannelContents(channelID) {
     view.setUint32(0, 0x6, true);
     for (let i = 0; i < 20; i++) {
         view.setUint8(i + 4, channelID.charCodeAt(i));
+    }
+    websocket.send(buffer);
+}
+
+export function createChannel(name, users) {
+    let buffer = new ArrayBuffer(12 + name.length + users.length * 20);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0x7, true);
+    view.setUint32(4, name.length, true);
+    for (let i = 0; i < name.length; i++) {
+        view.setUint8(i + 8, name.charCodeAt(i));
+    }
+    view.setUint32(8 + name.length, users.length, true);
+    for (let i = 0; i < users.length; i++) {
+        for (let j = 0; j < 20; j++) {
+            view.setUint8(i * 20 + j + 12 + name.length, users[i].charCodeAt(j));
+        }
     }
     websocket.send(buffer);
 }

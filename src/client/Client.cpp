@@ -58,7 +58,7 @@ namespace zormid::client {
 		}
 		switch (id) {
 			case 0x1:
-				processGlobalMessagePacket(payload);
+				processFriendListRequestPacket(payload);
 				break;
 			case 0x2:
 				processUsernameRequestPacket(payload);
@@ -75,18 +75,25 @@ namespace zormid::client {
 			case 0x6:
 				processChannelContentsRequestPacket(payload);
 				break;
+			case 0x7:
+				processCreateChannelPacket(payload);
+				break;
 			default:
 				std::cout << "Unknown packet ID: " << id << std::endl;
 				break;
 		}
 	}
 
-	void Client::processGlobalMessagePacket(net::http::PayloadReader& payload) {
-		std::string message;
-		payload >> message;
-		for (Client& c : Zormid::getInstance().getClients()) {
-			c.sendMessage({.content = message, .from = mUser->getUsername(), .fromID = mUser->getID()}, true);
+	void Client::processFriendListRequestPacket(net::http::PayloadReader& payload) {
+		net::http::PayloadWriter response;
+		response << 0x1;
+		const std::vector<user::manager::UserID>& friends = mUser->getFriends();
+		response << friends.size();
+		for (const user::manager::UserID& friendID : friends) {
+			response << friendID;
+			response << user::manager::loadUser(friendID).getUsername();
 		}
+		mSocket->write(response.buildPayload());
 	}
 
 	void Client::processUsernameRequestPacket(net::http::PayloadReader& payload) const {
@@ -102,36 +109,11 @@ namespace zormid::client {
 
 	void Client::processAcceptFriendRequestPacket(net::http::PayloadReader& payload) {
 		const user::manager::UserID userID = payload.readUserID();
+		mUser->getFriends().push_back(userID);
+		user::manager::saveUser(*mUser);
 		user::User user = user::manager::loadUser(userID);
 		user.getFriends().push_back(mUser->getID());
-		const chat::ChannelID channelID;
-		chat::Channel channel(channelID);
-		channel.setName(mUser->getUsername() + " & " + user.getUsername());
-		channel.getUsers().push_back(mUser->getID());
-		channel.getUsers().push_back(userID);
-		channel.save();
-		user.getChannels().push_back(channelID);
 		user::manager::saveUser(user);
-		for (Client& client : Zormid::getInstance().getClients()) {
-			if (client.getUserID() == userID || client.getUserID() == mUser->getID()) {
-				client.getUser()->getFriends().push_back(userID);
-				client.getUser()->getChannels().push_back(channelID);
-				user::manager::saveUser(*client.getUser());
-				const std::vector<chat::ChannelID>& channels = user.getChannels();
-				net::http::PayloadWriter response;
-				response << 0x3;
-				response << userID;
-				response << channels.size();
-				for (const chat::ChannelID& c: channels) {
-					std::string channelName = chat::Channel(c).getName();
-					const uint32_t channelNameLength = channelName.length();
-					response << c;
-					response << channelNameLength;
-					response << channelName;
-				}
-				client.getSocket().write(response.buildPayload());
-			}
-		}
 	}
 
 	void Client::processChannelListRequestPacket(net::http::PayloadReader& payload) const {
@@ -186,5 +168,23 @@ namespace zormid::client {
 			response << messages[i].from;
 		}
 		mSocket->write(response.buildPayload());
+	}
+
+	void Client::processCreateChannelPacket(net::http::PayloadReader& payload) {
+		const chat::ChannelID channelID;
+		chat::Channel channel(channelID);
+		std::string channelName;
+		payload >> channelName;
+		channel.setName(channelName);
+		uint32_t userCount;
+		payload >> userCount;
+		for (uint32_t i = 0; i < userCount; i++) {
+			user::manager::UserID userID = payload.readUserID();
+			channel.getUsers().push_back(userID);
+			user::User user = user::manager::loadUser(userID);
+			user.getChannels().push_back(channelID);
+			user::manager::saveUser(user);
+		}
+		channel.save();
 	}
 }

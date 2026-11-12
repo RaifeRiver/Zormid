@@ -1,13 +1,13 @@
 import * as api from "./api.js";
 import * as cookies from "./cookies.js";
 
+let channelContainer = document.getElementById("channel-container");
 const messageInput = document.getElementById("message-input");
 const messageTemplate = document.getElementById("message-template");
 const messageContainer = document.getElementById("message-container");
 
 let sendButton = document.getElementById("send-button");
 
-let addFriendButton = document.getElementById("add-friend");
 let addFriendMenu = document.getElementById("add-friend-menu");
 let addFriendURL = document.getElementById("add-friend-url");
 let addFriendClose = document.getElementById("add-friend-close");
@@ -22,12 +22,28 @@ let openingAcceptFriendMenu = false;
 let acceptFriendUserID;
 
 let channelList = document.getElementById("channel-list");
+let addChannelTemplate = document.getElementById("add-channel-template");
 let channelTemplate = document.getElementById("channel-template");
 
 let channelName = document.getElementById("channel-name");
 
+let friendListContainer = document.getElementById("friend-list-container");
+let friendContainer = document.getElementById("friend-container");
+let addFriendTemplate = document.getElementById("add-friend-template");
+let friendTemplate = document.getElementById("friend-template");
+
+let addChannelMenu = document.getElementById("add-channel-menu");
+let addChannelClose = document.getElementById("add-channel-close");
+let addChannelFriends = document.getElementById("add-channel-friends");
+let addChannelFriendTemplate = document.getElementById("add-channel-friend-template");
+let addChannelAdd = document.getElementById("add-channel-add");
+let addChannelName = document.getElementById("add-channel-name");
+
+let openFriendsListButton = document.getElementById("open-friends-list");
+
 let userID;
 let currentChannelID;
+let friends = [];
 
 document.documentElement.setAttribute("data-theme", "sync");
 
@@ -49,17 +65,20 @@ api.setAuthHandler(() => {
         openAcceptFriendMenu(addFriendCookie);
     }
     api.requestChannelList(atob(userID));
+    api.requestFriendList();
 });
-api.setGlobalMessageHandler((message) => {
-    if (currentChannelID) {
-        return;
+api.setFriendListRequestHandler((f) => {
+    friends = f;
+    friendContainer.replaceChildren();
+    let addFriendElement = document.importNode(addFriendTemplate.content, true);
+    friendContainer.appendChild(addFriendElement);
+    document.getElementById("add-friend").addEventListener("click", openAddFriendMenu);
+    for (let friend of friends) {
+        let friendElement = document.importNode(friendTemplate.content, true);
+        let friendButton = friendElement.firstElementChild;
+        friendButton.textContent = friend.username;
+        friendContainer.appendChild(friendElement);
     }
-    const messageElement = document.importNode(messageTemplate.content, true);
-    const usernameElement = messageElement.querySelector(".message-username");
-    const contentElement = messageElement.querySelector(".message-content");
-    usernameElement.textContent = message.username;
-    contentElement.textContent = message.content;
-    messageContainer.appendChild(messageElement);
 });
 api.setUsernameRequestHandler((username, userID) => {
     if (openingAcceptFriendMenu && btoa(userID) === acceptFriendUserID) {
@@ -72,6 +91,9 @@ api.setChannelListRequestHandler((channels, id) => {
         return;
     }
     channelList.replaceChildren();
+    let addChannelElement = document.importNode(addChannelTemplate.content, true);
+    channelList.appendChild(addChannelElement);
+    document.getElementById("add-channel").addEventListener("click", openAddChannelMenu);
     for (let channel of channels) {
         let channelElement = document.importNode(channelTemplate.content, true);
         let channelButton = channelElement.firstElementChild;
@@ -116,9 +138,6 @@ function sendMessage() {
     if (currentChannelID) {
         api.sendMessage(messageInput.value, currentChannelID);
     }
-    else {
-        api.sendGlobalMessage(messageInput.value);
-    }
     messageInput.value = "";
 }
 
@@ -132,6 +151,7 @@ function openAddFriendMenu() {
         });
     });
 }
+
 function closeAddFriendMenu() {
     addFriendMenu.close();
 }
@@ -145,9 +165,11 @@ function openAcceptFriendMenu(id) {
     acceptFriendUserID = id;
     api.requestUsername(id);
 }
+
 function closeAcceptFriendMenu() {
     acceptFriendMenu.close();
 }
+
 function acceptFriend() {
     api.acceptFriendRequest(atob(acceptFriendUserID));
     closeAcceptFriendMenu();
@@ -163,9 +185,63 @@ function changeChannel(channelID) {
     if (channelID === currentChannelID) {
         return;
     }
+    if (!currentChannelID) {
+        friendListContainer.style.display = "none";
+        channelContainer.style.display = "flex";
+    }
     currentChannelID = channelID;
     messageContainer.replaceChildren();
     api.requestChannelContents(channelID);
+}
+
+function openAddChannelMenu() {
+    addChannelFriends.replaceChildren();
+    for (let friend of friends) {
+        let friendElement = document.importNode(addChannelFriendTemplate.content, true);
+        friendElement.querySelector(".add-channel-friend-name").textContent = friend.username;
+        friendElement.querySelector(".add-channel-friend-button").addEventListener("click", (e) => {
+            e.target.textContent = e.target.textContent === "Add" ? "Remove" : "Add";
+        })
+        addChannelFriends.appendChild(friendElement);
+    }
+    addChannelMenu.showModal();
+}
+
+function closeAddChannelMenu() {
+    addChannelMenu.close();
+}
+
+function addChannelFromMenu() {
+    let name = addChannelName.value;
+    if (name === "") {
+        addChannelName.placeholder = "Name is required";
+        return;
+    }
+    let selectedFriends = [];
+    selectedFriends.push(atob(userID));
+    for (let friend of addChannelFriends.children) {
+        let selected = friend.querySelector(".add-channel-friend-button").textContent === "Remove";
+        if (selected) {
+            let username = friend.querySelector(".add-channel-friend-name").textContent;
+            for (let f of friends) {
+                if (f.username === username) {
+                    selectedFriends.push(f.userID);
+                }
+            }
+        }
+    }
+    api.createChannel(name, selectedFriends);
+    addChannelMenu.close();
+}
+
+function openFriendsList() {
+    if (!currentChannelID) {
+        return;
+    }
+    currentChannelID = undefined;
+    channelContainer.style.display = "none";
+    channelName.textContent = "Friends";
+    friendListContainer.style.display = "block";
 }
 
 messageInput.addEventListener("keydown", (event) => {
@@ -177,9 +253,13 @@ messageInput.addEventListener("keydown", (event) => {
 
 sendButton.addEventListener("click", sendMessage);
 
-addFriendButton.addEventListener("click", openAddFriendMenu);
 addFriendClose.addEventListener("click", closeAddFriendMenu);
 
 acceptFriendClose.addEventListener("click", closeAcceptFriendMenu);
 acceptFriendAccept.addEventListener("click", acceptFriend);
 acceptFriendDecline.addEventListener("click", declineFriend);
+
+addChannelClose.addEventListener("click", closeAddChannelMenu);
+addChannelAdd.addEventListener("click", addChannelFromMenu);
+
+openFriendsListButton.addEventListener("click", openFriendsList);
