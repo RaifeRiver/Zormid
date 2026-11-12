@@ -1,6 +1,9 @@
 import * as api from "./api.js";
 import * as cookies from "./cookies.js";
 
+let appContainer = document.getElementById("app-container");
+let loadingScreen = document.getElementById("loading-screen");
+
 let channelContainer = document.getElementById("channel-container");
 const messageInput = document.getElementById("message-input");
 const messageTemplate = document.getElementById("message-template");
@@ -66,6 +69,9 @@ api.setAuthHandler(() => {
     }
     api.requestChannelList(atob(userID));
     api.requestFriendList();
+
+    loadingScreen.style.display = "none";
+    appContainer.style.display = "flex";
 });
 api.setFriendListRequestHandler((f) => {
     friends = f;

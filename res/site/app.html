@@ -15,7 +15,7 @@
         </script>
     </head>
     <body>
-        <div id="app-container">
+        <div id="app-container" style="display: none;">
             <div id="side-panel">
                 <button id="open-friends-list" class="channel">Friends</button>
 
@@ -75,6 +75,12 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div id="loading-screen">
+            <img id="loading-logo" src="/res/images/favicon.png" alt="Logo">
+
+            <p id="loading-text">Loading Zormid...</p>
         </div>
 
         <dialog id="add-friend-menu" class="popup-menu">

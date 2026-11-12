@@ -303,3 +303,35 @@ p {
     display: flex;
     flex-direction: column;
 }
+
+#loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+#loading-logo {
+    --loading-logo-size: calc(min(20vh, 20vw));
+    width: var(--loading-logo-size);
+    height: var(--loading-logo-size);
+    animation: loading-logo-animation 2s infinite alternate ease-in-out;
+}
+
+@keyframes loading-logo-animation {
+    0% {
+        transform: scale(0.9) translateZ(1px);
+    }
+    100% {
+        transform: scale(1) translateZ(1px);
+    }
+}
+
+#loading-text {
+    color: var(--theme-text-color);
+    font-family: var(--theme-font-family), sans-serif;
+    margin-top: 1vh;
+    font-size: 22px;
+    font-weight: bold;
+}
