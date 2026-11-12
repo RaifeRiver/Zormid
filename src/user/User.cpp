@@ -36,4 +36,18 @@ namespace zormid::user {
 	void User::setActiveClients(const uint32_t clients) {
 		mActiveClients = clients;
 	}
+
+	void User::pushPayload(const net::http::PayloadData& payload) {
+		mWriteQueue.push_back(payload);
+	}
+
+	void User::clearWriteQueue() {
+		for (net::http::PayloadData& payload : mWriteQueue) {
+			if (payload.data) {
+				free(payload.data);
+				payload.data = nullptr;
+			}
+		}
+		mWriteQueue.clear();
+	}
 }

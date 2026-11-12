@@ -9,9 +9,9 @@ namespace zormid::client {
 	public:
 		explicit Client(std::unique_ptr<net::http::WebSocket> socket);
 
-		void sendMessage(const chat::Message& message, bool global = false) const;
-
 		void process();
+
+		void writeAll() const;
 
 		void close();
 

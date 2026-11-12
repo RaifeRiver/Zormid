@@ -49,6 +49,7 @@ namespace zormid::chat {
 			fileStream >> content;
 			const std::string& username = user::manager::loadUser(fromID).getUsername();
 			mMessages.push_back({.content = content, .from = username, .fromID = fromID, .channelID = mID});
+			user::manager::unloadUser(fromID);
 		}
 		uint32_t userCount;
 		fileStream >> userCount;

@@ -1,6 +1,7 @@
 #include "Zormid.h"
 
 #include <iostream>
+#include <ranges>
 #include <unistd.h>
 
 #include "CommandProcessor.h"
@@ -23,9 +24,16 @@ namespace zormid {
 					mClients.erase(mClients.begin() + i--);
 				}
 			}
+			for (const client::Client& client: mClients) {
+				client.writeAll();
+			}
+			for (user::User& user : user::manager::getLoadedUsers() | std::views::values) {
+				user.clearWriteQueue();
+			}
 			command::processInput(*this);
 			usleep(10000);
 		}
+		user::manager::unloadAllUsers();
 	}
 
 	void Zormid::stop() {

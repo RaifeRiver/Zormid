@@ -38,6 +38,10 @@ namespace zormid::user::manager {
 	void unloadUser(const UserID& id);
 
 	std::unordered_map<UserID, User>& getLoadedUsers();
+
+	bool isActive(const UserID& userId);
+
+	void unloadAllUsers();
 }
 
 template <> struct std::hash<zormid::user::manager::UserID> {

@@ -5,6 +5,7 @@
 
 #include "UserManager.h"
 #include "chat/Channel.h"
+#include "net/http/WebSocket.h"
 
 namespace zormid::user {
 	struct Session {
@@ -64,6 +65,14 @@ namespace zormid::user {
 
 		void setActiveClients(uint32_t clients);
 
+		[[nodiscard]] std::vector<net::http::PayloadData>& getWriteQueue() {
+			return mWriteQueue;
+		}
+
+		void pushPayload(const net::http::PayloadData& payload);
+
+		void clearWriteQueue();
+
 	private:
 		manager::UserID mID;
 		char mPasswordSalt[16] = {};
@@ -73,5 +82,6 @@ namespace zormid::user {
 		std::vector<manager::UserID> mFriends = {};
 		std::vector<chat::ChannelID> mChannels = {};
 		uint32_t mActiveClients = 0;
+		std::vector<net::http::PayloadData> mWriteQueue = {};
 	};
 }

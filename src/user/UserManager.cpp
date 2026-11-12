@@ -169,6 +169,17 @@ namespace zormid::user {
 	std::unordered_map<manager::UserID, User>& manager::getLoadedUsers() {
 		return users;
 	}
+
+	bool manager::isActive(const UserID& userId) {
+		return users.contains(userId);
+	}
+
+	void manager::unloadAllUsers() {
+		while (!users.empty()) {
+			users.begin()->second.setActiveClients(1);
+			unloadUser(users.begin()->first);
+		}
+	}
 }
 
 std::size_t std::hash<zormid::user::manager::UserID>::operator()(const zormid::user::manager::UserID& id) const noexcept {

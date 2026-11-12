@@ -7,7 +7,10 @@
 #include "HTTPHeader.h"
 #include "chat/Channel.h"
 #include "net/Socket.h"
-#include "user/User.h"
+
+namespace zormid::user {
+	struct Session;
+}
 
 namespace zormid::net::http {
 	enum class PayloadType {
@@ -36,6 +39,8 @@ namespace zormid::net::http {
 		PayloadWriter& operator<<(const user::manager::UserID& data);
 
 		[[nodiscard]] PayloadData buildPayload();
+
+		[[nodiscard]] PayloadData buildAllocatedPayload() const;
 
 	private:
 		std::vector<char> mBuffer;

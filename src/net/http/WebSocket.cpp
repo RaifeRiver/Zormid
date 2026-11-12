@@ -4,6 +4,7 @@
 
 #include "TinySHA1.hpp"
 
+#include "user/User.h"
 #include "util/Base64.h"
 
 namespace zormid::net::http {
@@ -43,6 +44,15 @@ namespace zormid::net::http {
 		data.type = PayloadType::BINARY;
 		data.size = mBuffer.size();
 		data.data = mBuffer.data();
+		return data;
+	}
+
+	PayloadData PayloadWriter::buildAllocatedPayload() const {
+		PayloadData data = {};
+		data.type = PayloadType::BINARY;
+		data.size = mBuffer.size();
+		data.data = static_cast<char*>(malloc(data.size));
+		memcpy(data.data, mBuffer.data(), data.size);
 		return data;
 	}
 

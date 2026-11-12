@@ -8,19 +8,6 @@
 namespace zormid::client {
 	Client::Client(std::unique_ptr<net::http::WebSocket> socket) : mSocket(std::move(socket)) {}
 
-	void Client::sendMessage(const chat::Message& message, const bool global) const {
-		if (!mUser) {
-			return;
-		}
-		net::http::PayloadWriter payload;
-		payload << (global ? 0x1 : 0x4);
-		payload << message.fromID;
-		payload << message.channelID;
-		payload << message.content;
-		payload << message.from;
-		mSocket->write(payload.buildPayload());
-	}
-
 	void Client::process() {
 		std::optional<net::http::PayloadData> payload;
 		while ((payload = mSocket->read()).has_value()) {
@@ -29,11 +16,21 @@ namespace zormid::client {
 		}
 	}
 
+	void Client::writeAll() const {
+		if (!mUser) {
+			return;
+		}
+		for (net::http::PayloadData& writePayload : mUser->getWriteQueue()) {
+			mSocket->write(writePayload);
+		}
+	}
+
 	void Client::close() {
 		mSocket->close();
-		user::manager::unloadUser(mUser->getID());
-		mUser = nullptr;
-		std::cout << "Client closed" << std::endl;
+		if (mUser) {
+			user::manager::unloadUser(mUser->getID());
+			mUser = nullptr;
+		}
 	}
 
 	bool Client::isOpen() {
@@ -41,7 +38,6 @@ namespace zormid::client {
 		if (!open && mUser) {
 			user::manager::unloadUser(mUser->getID());
 			mUser = nullptr;
-			std::cout << "Client closed" << std::endl;
 		}
 		return open;
 	}
@@ -150,17 +146,19 @@ namespace zormid::client {
 		chat::Channel channel(channelID);
 		channel.getMessages().push_back({.content = message, .from = mUser->getUsername(), .fromID = mUser->getID(), .channelID = channelID});
 		channel.save();
-		for (Client& client : Zormid::getInstance().getClients()) {
-			bool found = false;
-			for (const chat::ChannelID& c : client.getUser().getChannels()) {
-				if (c == channelID) {
-					found = true;
-					break;
-				}
+		for (user::manager::UserID& userID : channel.getUsers()) {
+			if (!user::manager::isActive(userID)) {
+				continue;
 			}
-			if (found) {
-				client.sendMessage({.content = message, .from = mUser->getUsername(), .fromID = mUser->getID(), .channelID = channelID});
-			}
+			user::User& user = user::manager::loadUser(userID);
+			net::http::PayloadWriter messagePayload;
+			messagePayload << 0x4;
+			messagePayload << mUser->getID();
+			messagePayload << channelID;
+			messagePayload << message;
+			messagePayload << mUser->getUsername();
+			user.pushPayload(messagePayload.buildAllocatedPayload());
+			user::manager::unloadUser(userID);
 		}
 	}
 
