@@ -16,6 +16,7 @@ body {
     height: 100vh;
     width: 30vw;
     border-right: var(--theme-border-color) 2px solid;
+    flex: 1;
 }
 
 #main-area {
@@ -32,7 +33,7 @@ body {
     padding-right: 2vw;
     padding-top: 2vh;
     gap: 1vh;
-    overflow: scroll;
+    overflow-y: auto;
     min-height: 0;
 }
 
@@ -174,6 +175,8 @@ p {
     display: flex;
     flex-direction: column;
     gap: 1vh;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .channel {
@@ -215,6 +218,7 @@ p {
     padding-top: 1vh;
     margin-left: 1vw;
     margin-right: 1vw;
+    overflow-y: auto;
 }
 
 .friend {
@@ -233,7 +237,7 @@ p {
     flex-direction: column;
     gap: 0.5vh;
     height: 20vh;
-    overflow-y: scroll;
+    overflow-y: auto;
     width: inherit;
 }
 
