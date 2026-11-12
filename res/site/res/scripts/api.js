@@ -58,7 +58,8 @@ function processPacket(packet) {
     switch (id) {
         case 0x0:
             if (authHandler) {
-                authHandler();
+                let username = readString(view, 4);
+                authHandler(username);
             }
             break;
         case 0x1:

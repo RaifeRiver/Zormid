@@ -35,6 +35,8 @@ namespace zormid::client {
 
 		void processPacket(net::http::PayloadReader& payload);
 
+		void processAuthPacket(net::http::PayloadReader& payload);
+
 		void processFriendListRequestPacket(net::http::PayloadReader& payload) const;
 
 		void processUsernameRequestPacket(net::http::PayloadReader& payload) const;

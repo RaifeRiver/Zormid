@@ -44,6 +44,8 @@ let addChannelName = document.getElementById("add-channel-name");
 
 let openFriendsListButton = document.getElementById("open-friends-list");
 
+let userNameDisplay = document.getElementById("user-name");
+
 let userID;
 let currentChannelID;
 let friends = [];
@@ -62,7 +64,9 @@ api.setConnectHandler(() => {
     userID = userCookie;
     api.authenticate(atob(userID), atob(sessionCookie));
 });
-api.setAuthHandler(() => {
+api.setAuthHandler((username) => {
+    userNameDisplay.textContent = username;
+
     const addFriendCookie = cookies.getCookie("add-friend");
     if (addFriendCookie) {
         openAcceptFriendMenu(addFriendCookie);

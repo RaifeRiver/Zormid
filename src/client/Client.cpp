@@ -47,18 +47,7 @@ namespace zormid::client {
 		payload >> id;
 		if (!mUser) {
 			if (id == 0x0) {
-				const user::manager::UserID userID = payload.readUserID();
-				const user::Session sessionID = payload.readSession();
-				for (user::User& user = user::manager::loadUser(userID); user::Session session : user.getSessions()) {
-					if (memcmp(static_cast<const char*>(sessionID), static_cast<const char*>(session), 16) == 0) {
-						mUser = &user;
-						net::http::PayloadWriter response;
-						response << 0x0;
-						mSocket->write(response.buildPayload());
-						return;
-					}
-				}
-				user::manager::unloadUser(userID);
+				processAuthPacket(payload);
 			}
 			return;
 		}
@@ -88,6 +77,22 @@ namespace zormid::client {
 				std::cout << "Unknown packet ID: " << id << std::endl;
 				break;
 		}
+	}
+
+	void Client::processAuthPacket(net::http::PayloadReader& payload) {
+		const user::manager::UserID userID = payload.readUserID();
+		const user::Session sessionID = payload.readSession();
+		for (user::User& user = user::manager::loadUser(userID); user::Session session : user.getSessions()) {
+			if (memcmp(static_cast<const char*>(sessionID), static_cast<const char*>(session), 16) == 0) {
+				mUser = &user;
+				net::http::PayloadWriter response;
+				response << 0x0;
+				response << mUser->getUsername();
+				mSocket->write(response.buildPayload());
+				return;
+			}
+		}
+		user::manager::unloadUser(userID);
 	}
 
 	void Client::processFriendListRequestPacket(net::http::PayloadReader&) const {
