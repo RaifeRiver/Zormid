@@ -41,6 +41,7 @@ body {
     color: var(--theme-text-color);
     font-family: var(--theme-font-family), sans-serif;
     margin: 0;
+    font-weight: bold;
 }
 
 .message-content {
@@ -339,4 +340,28 @@ p {
     font-family: var(--theme-font-family), sans-serif;
     font-size: 20px;
     margin-left: 1vw;
+}
+
+.message-link {
+    color: var(--theme-link-color);
+    font-family: var(--theme-font-family), sans-serif;
+}
+
+.message-code {
+    background-color: var(--theme-secondary-background-color);
+    border: var(--theme-border-color) 1px solid;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.message-heading {
+    color: var(--theme-secondary-text-color);
+    font-family: var(--theme-font-family), sans-serif;
+    margin: 0;
+    display: inline;
+}
+
+.message-mini-text {
+    color: var(--theme-tertiary-text-color);
+    font-size: 12px;
 }

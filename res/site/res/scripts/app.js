@@ -116,12 +116,7 @@ api.setMessageHandler((message) => {
     if (message.channelID !== currentChannelID && message.userID !== atob(userID)) {
         return;
     }
-    const messageElement = document.importNode(messageTemplate.content, true);
-    const usernameElement = messageElement.querySelector(".message-username");
-    const contentElement = messageElement.querySelector(".message-content");
-    usernameElement.textContent = message.username;
-    contentElement.textContent = message.content;
-    messageContainer.appendChild(messageElement);
+    appendMessage(message.username, message.content);
 });
 api.setChannelContentsHandler((channelContents) => {
     if (channelContents.channelID !== currentChannelID) {
@@ -130,12 +125,7 @@ api.setChannelContentsHandler((channelContents) => {
     channelName.textContent = channelContents.name;
     messageContainer.replaceChildren();
     for (let message of channelContents.messages) {
-        const messageElement = document.importNode(messageTemplate.content, true);
-        const usernameElement = messageElement.querySelector(".message-username");
-        const contentElement = messageElement.querySelector(".message-content");
-        usernameElement.textContent = message.username;
-        contentElement.textContent = message.content;
-        messageContainer.appendChild(messageElement);
+        appendMessage(message.username, message.content);
     }
 });
 
@@ -252,6 +242,42 @@ function openFriendsList() {
     channelContainer.style.display = "none";
     channelName.textContent = "Friends";
     friendListContainer.style.display = "block";
+}
+
+function processMessageContents(message) {
+    message = message.replaceAll("&", "&amp;");
+    message = message.replaceAll("<", "&lt;");
+    message = message.replaceAll(">", "&gt;");
+    message = message.replace(/`(.*)`/g, "<code class=\"message-code\">$1</code>");
+    message = message.replace(/\*\*(.*)\*\*/g, "<strong>$1</strong>");
+    message = message.replace(/__(.*)__/g, "<strong>$1</strong>");
+    message = message.replace(/\*(.*)\*/g, "<em>$1</em>");
+    message = message.replace(/_(.*)_/g, "<em>$1</em>");
+    message = message.replace(/~~(.*)~~/g, "<s>$1</s>");
+    message = message.replace(/(?<!\()(https?:\/\/.*)/g, "<a class=\"message-link\" href=\"$1\">$1</a>");
+    message = message.replace(/\[(.*)]\((.*)\)/g, "<a class=\"message-link\" href=\"$2\">$1</a>");
+    message = message.replace(/^###### (.*)/gm, "<h6 class=\"message-heading\">$1</h6>");
+    message = message.replace(/^##### (.*)/gm, "<h5 class=\"message-heading\">$1</h5>");
+    message = message.replace(/^#### (.*)/gm, "<h4 class=\"message-heading\">$1</h4>");
+    message = message.replace(/^### (.*)/gm, "<h3 class=\"message-heading\">$1</h3>");
+    message = message.replace(/^## (.*)/gm, "<h2 class=\"message-heading\">$1</h2>");
+    message = message.replace(/^# (.*)/gm, "<h1 class=\"message-heading\">$1</h1>");
+    message = message.replace(/^-# (.*)/gm, "<span class=\"message-mini-text\">$1</span>");
+    return message;
+}
+function appendMessage(from, content) {
+    let previousMessageElement = messageContainer.lastElementChild;
+    if (previousMessageElement?.dataset.username === from) {
+        previousMessageElement.querySelector(".message-content").innerHTML += "\n" + processMessageContents(content);
+        return;
+    }
+    let messageElement = document.importNode(messageTemplate.content, true);
+    let usernameElement = messageElement.querySelector(".message-username");
+    let contentElement = messageElement.querySelector(".message-content");
+    usernameElement.textContent = from;
+    contentElement.innerHTML = processMessageContents(content);
+    messageElement.firstElementChild.dataset.username = from;
+    messageContainer.appendChild(messageElement);
 }
 
 messageInput.addEventListener("keydown", (event) => {
