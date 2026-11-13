@@ -126,10 +126,10 @@ namespace zormid::user {
 		User user(id);
 		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
 		const std::string file = USERS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".dat";
-		util::IFileStream fileStream(file);
+		auto fileStream = std::make_unique<util::IFileStream>(file);
 		char header[USER_FILE_HEADER.size() + 1];
 		header[USER_FILE_HEADER.size()] = '\0';
-		if (uint32_t read = fileStream.read(header, USER_FILE_HEADER.size()); read != USER_FILE_HEADER.size() || header != USER_FILE_HEADER) {
+		if (const uint32_t read = fileStream->read(header, USER_FILE_HEADER.size()); read != USER_FILE_HEADER.size() || header != USER_FILE_HEADER) {
 			int32_t attempt = -1;
 			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
 			std::filesystem::rename(file, file + "." + std::to_string(attempt));
@@ -137,7 +137,7 @@ namespace zormid::user {
 			throw std::runtime_error("Invalid user file");
 		}
 		uint32_t version;
-		fileStream >> version;
+		*fileStream >> version;
 		if (version > USER_FILE_VERSION) {
 			int32_t attempt = -1;
 			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
@@ -145,28 +145,37 @@ namespace zormid::user {
 			std::cerr << "Unsupported user file version for user " << hash << std::endl;
 			throw std::runtime_error("Unsupported user file version");
 		}
-		fileStream.read(user.getPasswordSalt(), 16);
-		fileStream.read(user.getPasswordDigest(), 20);
+		if (version != USER_FILE_VERSION) {
+			fileStream = nullptr;
+			if (!migrateUserFile(file)) {
+				std::cerr << "Failed to migrate user file for user " << hash << std::endl;
+				throw std::runtime_error("Failed to migrate user file");
+			}
+			fileStream = std::make_unique<util::IFileStream>(file);
+			fileStream->read(nullptr, USER_FILE_HEADER.size() + 4);
+		}
+		fileStream->read(user.getPasswordSalt(), 16);
+		fileStream->read(user.getPasswordDigest(), 20);
 		uint32_t sessionCount;
-		fileStream >> sessionCount;
+		*fileStream >> sessionCount;
 		for (uint32_t i = 0; i < sessionCount; i++) {
 			char sessionID[16];
-			fileStream.read(sessionID, sizeof(sessionID));
+			fileStream->read(sessionID, sizeof(sessionID));
 			user.getSessions().emplace_back(sessionID);
 		}
-		fileStream >> user.getUsername();
+		*fileStream >> user.getUsername();
 		uint32_t friendCount;
-		fileStream >> friendCount;
+		*fileStream >> friendCount;
 		for (uint32_t i = 0; i < friendCount; i++) {
 			char friendID[20];
-			fileStream.read(friendID, sizeof(friendID));
+			fileStream->read(friendID, sizeof(friendID));
 			user.getFriends().emplace_back(friendID);
 		}
 		uint32_t channelCount;
-		fileStream >> channelCount;
+		*fileStream >> channelCount;
 		for (uint32_t i = 0; i < channelCount; i++) {
 			char channelID[20];
-			fileStream.read(channelID, sizeof(channelID));
+			fileStream->read(channelID, sizeof(channelID));
 			user.getChannels().emplace_back(channelID);
 		}
 		user.setActiveClients(1);
@@ -218,6 +227,43 @@ namespace zormid::user {
 			users.begin()->second.setActiveClients(1);
 			unloadUser(users.begin()->first);
 		}
+	}
+
+	bool manager::migrateUserFile(const std::string& file) {
+		util::IFileStream fileStream(file);
+		char header[USER_FILE_HEADER.size() + 1];
+		header[USER_FILE_HEADER.size()] = '\0';
+		if (const uint32_t read = fileStream.read(header, USER_FILE_HEADER.size()); read != USER_FILE_HEADER.size() || header != USER_FILE_HEADER) {
+			int32_t attempt = -1;
+			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
+			std::filesystem::rename(file, file + "." + std::to_string(attempt));
+			std::cerr << "Invalid user file " << file << std::endl;
+			return false;
+		}
+		uint32_t version;
+		fileStream >> version;
+		if (version > USER_FILE_VERSION) {
+			int32_t attempt = -1;
+			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
+			std::filesystem::rename(file, file + "." + std::to_string(attempt));
+			std::cerr << "Unsupported user file " << file << std::endl;
+			return false;
+		}
+		return false;
+	}
+
+	uint32_t manager::migrateAllUsers() {
+		uint32_t count = 0;
+		for (const std::filesystem::directory_entry& userFolder : std::filesystem::directory_iterator(USERS_DIR)) {
+			if (userFolder.is_directory()) {
+				for (const std::filesystem::directory_entry& userFile : std::filesystem::directory_iterator(userFolder.path())) {
+					if (userFile.is_regular_file()) {
+						count += migrateUserFile(userFile.path().string());
+					}
+				}
+			}
+		}
+		return count;
 	}
 }
 

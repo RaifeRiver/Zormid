@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 
@@ -42,6 +43,10 @@ namespace zormid::user::manager {
 	bool isActive(const UserID& userId);
 
 	void unloadAllUsers();
+
+	bool migrateUserFile(const std::string& file);
+
+	uint32_t migrateAllUsers();
 }
 
 template <> struct std::hash<zormid::user::manager::UserID> {

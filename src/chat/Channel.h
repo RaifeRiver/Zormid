@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "user/UserManager.h"
+#include "util/FileStream.h"
 
 namespace zormid::chat {
 	struct Message;
@@ -56,4 +57,8 @@ namespace zormid::chat {
 		std::vector<Message> mMessages;
 		std::vector<user::manager::UserID> mUsers;
 	};
+
+	bool migrateChannelFile(const std::string& file);
+
+	uint32_t migrateAllChannels();
 }

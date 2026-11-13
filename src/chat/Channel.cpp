@@ -37,10 +37,10 @@ namespace zormid::chat {
 		if (!std::filesystem::exists(file)) {
 			return;
 		}
-		util::IFileStream fileStream(file);
+		auto fileStream = std::make_unique<util::IFileStream>(file);
 		char header[CHANNEL_FILE_HEADER.size() + 1];
 		header[CHANNEL_FILE_HEADER.size()] = '\0';
-		if (uint32_t read = fileStream.read(header, CHANNEL_FILE_HEADER.size()); read != CHANNEL_FILE_HEADER.size() || header != CHANNEL_FILE_HEADER) {
+		if (const uint32_t read = fileStream->read(header, CHANNEL_FILE_HEADER.size()); read != CHANNEL_FILE_HEADER.size() || header != CHANNEL_FILE_HEADER) {
 			int32_t attempt = -1;
 			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
 			std::filesystem::rename(file, file + "." + std::to_string(attempt));
@@ -48,7 +48,7 @@ namespace zormid::chat {
 			return;
 		}
 		uint32_t version;
-		fileStream >> version;
+		*fileStream >> version;
 		if (version > CHANNEL_FILE_VERSION) {
 			int32_t attempt = -1;
 			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
@@ -56,26 +56,35 @@ namespace zormid::chat {
 			std::cerr << "Unsupported channel file version for channel " << hash << std::endl;
 			return;
 		}
+		if (version != CHANNEL_FILE_VERSION) {
+			fileStream = nullptr;
+			if (!migrateChannelFile(file)) {
+				std::cerr << "Failed to migrate channel file for channel " << hash << std::endl;
+				return;
+			}
+			fileStream = std::make_unique<util::IFileStream>(file);
+			fileStream->read(nullptr, CHANNEL_FILE_HEADER.size() + 4);
+		}
 		if (version == 0) {
-			fileStream >> mName;
+			*fileStream >> mName;
 			uint32_t messageCount;
-			fileStream >> messageCount;
+			*fileStream >> messageCount;
 			mMessages.reserve(messageCount);
 			for (uint32_t i = 0; i < messageCount; i++) {
 				char userIDChars[20];
-				fileStream.read(userIDChars, 20);
+				fileStream->read(userIDChars, 20);
 				user::manager::UserID fromID(userIDChars);
 				std::string content;
-				fileStream >> content;
+				*fileStream >> content;
 				const std::string& username = user::manager::loadUser(fromID).getUsername();
 				mMessages.push_back({.content = content, .from = username, .fromID = fromID, .channelID = mID});
 				user::manager::unloadUser(fromID);
 			}
 			uint32_t userCount;
-			fileStream >> userCount;
+			*fileStream >> userCount;
 			for (uint32_t i = 0; i < userCount; i++) {
 				char userIDChars[20];
-				fileStream.read(userIDChars, 20);
+				fileStream->read(userIDChars, 20);
 				mUsers.emplace_back(userIDChars);
 			}
 		}
@@ -105,5 +114,42 @@ namespace zormid::chat {
 		for (const user::manager::UserID& userID : mUsers) {
 			fileStream.write(static_cast<const char*>(userID), 20);
 		}
+	}
+
+	bool migrateChannelFile(const std::string& file) {
+		util::IFileStream fileStream(file);
+		char header[CHANNEL_FILE_HEADER.size() + 1];
+		header[CHANNEL_FILE_HEADER.size()] = '\0';
+		if (const uint32_t read = fileStream.read(header, CHANNEL_FILE_HEADER.size()); read != CHANNEL_FILE_HEADER.size() || header != CHANNEL_FILE_HEADER) {
+			int32_t attempt = -1;
+			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
+			std::filesystem::rename(file, file + "." + std::to_string(attempt));
+			std::cerr << "Invalid channel file " << file << std::endl;
+			return false;
+		}
+		uint32_t version;
+		fileStream >> version;
+		if (version > CHANNEL_FILE_VERSION) {
+			int32_t attempt = -1;
+			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
+			std::filesystem::rename(file, file + "." + std::to_string(attempt));
+			std::cerr << "Unsupported channel file " << file << std::endl;
+			return false;
+		}
+		return false;
+	}
+
+	uint32_t migrateAllChannels() {
+		uint32_t count = 0;
+		for (const std::filesystem::directory_entry& channelFolder : std::filesystem::directory_iterator(CHANNELS_DIR)) {
+			if (channelFolder.is_directory()) {
+				for (const std::filesystem::directory_entry& channelFile : std::filesystem::directory_iterator(channelFolder.path())) {
+					if (channelFile.is_regular_file()) {
+						count += migrateChannelFile(channelFile.path().string());
+					}
+				}
+			}
+		}
+		return count;
 	}
 }
