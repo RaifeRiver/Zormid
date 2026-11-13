@@ -7,8 +7,9 @@ namespace zormid::util {
 		mFileStream.seekg(pos);
 	}
 
-	void IFileStream::read(void* buffer, const uint32_t size) {
+	uint32_t IFileStream::read(void* buffer, const uint32_t size) {
 		mFileStream.read(static_cast<char*>(buffer), size);
+		return mFileStream.gcount();
 	}
 
 	void IFileStream::operator>>(uint32_t& value) {

@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <filesystem>
+#include <iostream>
 #include <random>
 
 #include "Message.h"
@@ -37,26 +38,46 @@ namespace zormid::chat {
 			return;
 		}
 		util::IFileStream fileStream(file);
-		fileStream >> mName;
-		uint32_t messageCount;
-		fileStream >> messageCount;
-		mMessages.reserve(messageCount);
-		for (uint32_t i = 0; i < messageCount; i++) {
-			char userIDChars[20];
-			fileStream.read(userIDChars, 20);
-			user::manager::UserID fromID(userIDChars);
-			std::string content;
-			fileStream >> content;
-			const std::string& username = user::manager::loadUser(fromID).getUsername();
-			mMessages.push_back({.content = content, .from = username, .fromID = fromID, .channelID = mID});
-			user::manager::unloadUser(fromID);
+		char header[CHANNEL_FILE_HEADER.size() + 1];
+		header[CHANNEL_FILE_HEADER.size()] = '\0';
+		if (uint32_t read = fileStream.read(header, CHANNEL_FILE_HEADER.size()); read != CHANNEL_FILE_HEADER.size() || header != CHANNEL_FILE_HEADER) {
+			int32_t attempt = -1;
+			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
+			std::filesystem::rename(file, file + "." + std::to_string(attempt));
+			std::cerr << "Invalid channel file for channel " << hash << std::endl;
+			return;
 		}
-		uint32_t userCount;
-		fileStream >> userCount;
-		for (uint32_t i = 0; i < userCount; i++) {
-			char userIDChars[20];
-			fileStream.read(userIDChars, 20);
-			mUsers.emplace_back(userIDChars);
+		uint32_t version;
+		fileStream >> version;
+		if (version > CHANNEL_FILE_VERSION) {
+			int32_t attempt = -1;
+			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
+			std::filesystem::rename(file, file + "." + std::to_string(attempt));
+			std::cerr << "Unsupported channel file version for channel " << hash << std::endl;
+			return;
+		}
+		if (version == 0) {
+			fileStream >> mName;
+			uint32_t messageCount;
+			fileStream >> messageCount;
+			mMessages.reserve(messageCount);
+			for (uint32_t i = 0; i < messageCount; i++) {
+				char userIDChars[20];
+				fileStream.read(userIDChars, 20);
+				user::manager::UserID fromID(userIDChars);
+				std::string content;
+				fileStream >> content;
+				const std::string& username = user::manager::loadUser(fromID).getUsername();
+				mMessages.push_back({.content = content, .from = username, .fromID = fromID, .channelID = mID});
+				user::manager::unloadUser(fromID);
+			}
+			uint32_t userCount;
+			fileStream >> userCount;
+			for (uint32_t i = 0; i < userCount; i++) {
+				char userIDChars[20];
+				fileStream.read(userIDChars, 20);
+				mUsers.emplace_back(userIDChars);
+			}
 		}
 	}
 
@@ -72,6 +93,8 @@ namespace zormid::chat {
 		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
 		std::filesystem::create_directories(CHANNELS_DIR + hash.substr(0, 2));
 		util::OFileStream fileStream(CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".dat");
+		fileStream.write(CHANNEL_FILE_HEADER.c_str(), CHANNEL_FILE_HEADER.size());
+		fileStream << CHANNEL_FILE_VERSION;
 		fileStream << mName;
 		fileStream << mMessages.size();
 		for (const Message& message : mMessages) {

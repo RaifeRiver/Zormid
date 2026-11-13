@@ -8,6 +8,9 @@
 #include "net/http/WebSocket.h"
 
 namespace zormid::user {
+	constexpr std::string USER_FILE_HEADER = "ZORMUSER";
+	constexpr uint32_t USER_FILE_VERSION = 0;
+
 	struct Session {
 		explicit Session(const char* id);
 

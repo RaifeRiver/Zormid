@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -7,7 +8,10 @@
 
 namespace zormid::chat {
 	struct Message;
+
 	const std::string CHANNELS_DIR = "../data/channels/";
+	constexpr std::string CHANNEL_FILE_HEADER = "ZORMCHAN";
+	constexpr uint32_t CHANNEL_FILE_VERSION = 0;
 
 	struct ChannelID {
 		ChannelID();

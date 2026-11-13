@@ -11,7 +11,7 @@ namespace zormid::util {
 
 		void seek(uint32_t pos);
 
-		void read(void* buffer, uint32_t size);
+		uint32_t read(void* buffer, uint32_t size);
 
 		void operator>>(uint32_t& value);
 

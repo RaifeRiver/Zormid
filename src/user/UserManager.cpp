@@ -83,6 +83,24 @@ namespace zormid::user {
 			return false;
 		}
 		util::IFileStream fileStream(file);
+		char header[USER_FILE_HEADER.size() + 1];
+		header[USER_FILE_HEADER.size()] = '\0';
+		if (uint32_t read = fileStream.read(header, USER_FILE_HEADER.size()); read != USER_FILE_HEADER.size() || header != USER_FILE_HEADER) {
+			int32_t attempt = -1;
+			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
+			std::filesystem::rename(file, file + "." + std::to_string(attempt));
+			std::cerr << "Invalid user file for user " << hash << std::endl;
+			return false;
+		}
+		uint32_t version;
+		fileStream >> version;
+		if (version > USER_FILE_VERSION) {
+			int32_t attempt = -1;
+			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
+			std::filesystem::rename(file, file + "." + std::to_string(attempt));
+			std::cerr << "Unsupported user file version for user " << hash << std::endl;
+			return false;
+		}
 		char salt[17];
 		fileStream.read(salt, sizeof(salt) - 1);
 		uint8_t savedDigest[20];
@@ -107,7 +125,26 @@ namespace zormid::user {
 		}
 		User user(id);
 		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
-		util::IFileStream fileStream(USERS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".dat");
+		const std::string file = USERS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".dat";
+		util::IFileStream fileStream(file);
+		char header[USER_FILE_HEADER.size() + 1];
+		header[USER_FILE_HEADER.size()] = '\0';
+		if (uint32_t read = fileStream.read(header, USER_FILE_HEADER.size()); read != USER_FILE_HEADER.size() || header != USER_FILE_HEADER) {
+			int32_t attempt = -1;
+			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
+			std::filesystem::rename(file, file + "." + std::to_string(attempt));
+			std::cerr << "Invalid user file for user " << hash << std::endl;
+			throw std::runtime_error("Invalid user file");
+		}
+		uint32_t version;
+		fileStream >> version;
+		if (version > USER_FILE_VERSION) {
+			int32_t attempt = -1;
+			while (std::filesystem::exists(file + "." + std::to_string(++attempt))) {}
+			std::filesystem::rename(file, file + "." + std::to_string(attempt));
+			std::cerr << "Unsupported user file version for user " << hash << std::endl;
+			throw std::runtime_error("Unsupported user file version");
+		}
 		fileStream.read(user.getPasswordSalt(), 16);
 		fileStream.read(user.getPasswordDigest(), 20);
 		uint32_t sessionCount;
@@ -148,6 +185,8 @@ namespace zormid::user {
 		}
 		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
 		util::OFileStream fileStream(USERS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".dat");
+		fileStream.write(USER_FILE_HEADER.c_str(), USER_FILE_HEADER.size());
+		fileStream << USER_FILE_VERSION;
 		fileStream.write(user.getPasswordSalt(), 16);
 		fileStream.write(user.getPasswordDigest(), 20);
 		fileStream << static_cast<uint32_t>(user.getSessions().size());
