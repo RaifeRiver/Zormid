@@ -188,6 +188,8 @@ p {
     font-family: var(--theme-font-family), sans-serif;
     width: 28vw;
     height: 3vh;
+    text-wrap: nowrap;
+    overflow: hidden;
 }
 
 .channel:hover {
@@ -209,6 +211,8 @@ p {
     font-family: var(--theme-font-family), sans-serif;
     font-size: 20px;
     margin: 0;
+    text-wrap: nowrap;
+    overflow: hidden;
 }
 
 #friend-container {
@@ -226,6 +230,8 @@ p {
     color: var(--theme-text-color);
     font-family: var(--theme-font-family), sans-serif;
     border: var(--theme-border-color) 2px solid;
+    text-wrap: nowrap;
+    overflow: hidden;
 }
 
 .friend:hover {
