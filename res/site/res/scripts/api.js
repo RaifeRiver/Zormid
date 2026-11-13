@@ -71,7 +71,7 @@ function processPacket(packet) {
                     let friend = {};
                     friend.userID = readID(view, pos);
                     friend.username = readString(view, pos + 20);
-                    pos += 20 + friend.username.length;
+                    pos += 24 + friend.username.length;
                     friends.push(friend);
                 }
                 friendListRequestHandler(friends);
