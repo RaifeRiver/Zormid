@@ -116,7 +116,7 @@ api.setMessageHandler((message) => {
     if (message.channelID !== currentChannelID && message.userID !== atob(userID)) {
         return;
     }
-    appendMessage(message.username, message.content);
+    appendMessage(message.username, btoa(message.userID), message.content);
 });
 api.setChannelContentsHandler((channelContents) => {
     if (channelContents.channelID !== currentChannelID) {
@@ -125,7 +125,7 @@ api.setChannelContentsHandler((channelContents) => {
     channelName.textContent = channelContents.name;
     messageContainer.replaceChildren();
     for (let message of channelContents.messages) {
-        appendMessage(message.username, message.content);
+        appendMessage(message.username, btoa(message.userID), message.content);
     }
 });
 
@@ -265,10 +265,11 @@ function processMessageContents(message) {
     message = message.replace(/^-# (.*)/gm, "<span class=\"message-mini-text\">$1</span>");
     return message;
 }
-function appendMessage(from, content) {
+function appendMessage(from, fromID, content) {
     let previousMessageElement = messageContainer.lastElementChild;
     if (previousMessageElement?.dataset.username === from) {
         previousMessageElement.querySelector(".message-content").innerHTML += "\n" + processMessageContents(content);
+        messageContainer.scrollTop = messageContainer.scrollHeight;
         return;
     }
     let messageElement = document.importNode(messageTemplate.content, true);
@@ -278,6 +279,9 @@ function appendMessage(from, content) {
     contentElement.innerHTML = processMessageContents(content);
     messageElement.firstElementChild.dataset.username = from;
     messageContainer.appendChild(messageElement);
+    if (fromID === userID) {
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
 }
 
 messageInput.addEventListener("keydown", (event) => {

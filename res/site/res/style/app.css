@@ -29,9 +29,7 @@ body {
 #message-container {
     display: flex;
     flex-direction: column;
-    padding-left: 2vw;
-    padding-right: 2vw;
-    padding-top: 2vh;
+    padding: 1vh 2vw;
     gap: 1vh;
     overflow-y: auto;
     min-height: 0;
