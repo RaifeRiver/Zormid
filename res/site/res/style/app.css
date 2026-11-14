@@ -71,6 +71,8 @@ body {
     width: 66vw;
     field-sizing: content;
     resize: none;
+    max-height: 30vh;
+    overflow-y: auto;
 }
 
 #message-input:focus {
