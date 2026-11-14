@@ -309,10 +309,6 @@ function processMessageContents(message) {
 
 function insertMessage(index, from, fromID, content) {
     let shouldScroll = messageContainer.scrollTop + messageContainer.clientHeight >= messageContainer.scrollHeight - 2;
-    console.info("Scrolling: " + shouldScroll);
-    console.info(messageContainer.scrollTop);
-    console.info(messageContainer.clientHeight);
-    console.info(messageContainer.scrollHeight);
     let previousMessageElement;
     let previousIndex;
     let nextMessageElement;
