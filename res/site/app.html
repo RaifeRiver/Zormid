@@ -83,6 +83,10 @@
             <div id="main-area">
                 <div id="channel-info-container">
                     <p id="channel-name">Friends</p>
+
+                    <div id="channel-settings-container">
+                        <button id="channel-user-list-button" class="channel-settings-button">User List</button>
+                    </div>
                 </div>
 
                 <div id="friend-list-container">
@@ -125,6 +129,16 @@
                     </div>
                 </div>
             </div>
+
+            <div id="user-list-container" style="display: none;">
+
+            </div>
+
+            <template id="user-list-user-template">
+                <div class="user-list-user">
+                    <p class="user-list-username"></p>
+                </div>
+            </template>
         </div>
 
         <div id="loading-screen">

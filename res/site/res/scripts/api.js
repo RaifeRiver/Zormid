@@ -132,7 +132,16 @@ function processPacket(packet) {
                 let channelID = readID(view, 4);
                 let channelName = readString(view, 24);
                 let messageCount = view.getUint32(28 + channelName.length, true);
-                channelInfoHandler({channelID: channelID, name: channelName, messageCount: messageCount});
+                let userCount = view.getUint32(32 + channelName.length, true);
+                let users = [];
+                let pos = 36 + channelName.length;
+                for (let i = 0; i < userCount; i++) {
+                    let userID = readID(view, pos);
+                    let username = readString(view, pos + 20);
+                    users.push({userID: userID, username: username});
+                    pos += 24 + username.length;
+                }
+                channelInfoHandler({channelID: channelID, name: channelName, messageCount: messageCount, users: users});
             }
             break;
         case 0x6:

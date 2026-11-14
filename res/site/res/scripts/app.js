@@ -47,6 +47,12 @@ let openFriendsListButton = document.getElementById("open-friends-list");
 
 let userNameDisplay = document.getElementById("user-name");
 
+let channelSettingsContainer = document.getElementById("channel-settings-container");
+let channelUserListButton = document.getElementById("channel-user-list-button");
+
+let userListContainer = document.getElementById("user-list-container");
+let userListUserTemplate = document.getElementById("user-list-user-template");
+
 let userID;
 let currentChannelID;
 let channelMessageCount;
@@ -130,10 +136,17 @@ api.setChannelInfoHandler((info) => {
     }
     channelName.textContent = info.name;
     channelMessageCount = info.messageCount;
+    channelSettingsContainer.style.display = "flex";
     messageContainer.replaceChildren();
     if (channelMessageCount > 0) {
         api.requestChannelMessages(currentChannelID, Math.max(channelMessageCount - 50, 0));
         waitingForChannelMessages = true;
+    }
+    userListContainer.replaceChildren();
+    for (let user of info.users) {
+        let userElement = userListUserTemplate.content.cloneNode(true);
+        userElement.querySelector(".user-list-username").textContent = user.username;
+        userListContainer.appendChild(userElement);
     }
 });
 api.setChannelMessagesHandler((messageInfo) => {
@@ -282,6 +295,7 @@ function openFriendsList() {
     currentChannelID = undefined;
     channelContainer.style.display = "none";
     channelName.textContent = "Friends";
+    channelSettingsContainer.style.display = "none";
     friendListContainer.style.display = "block";
 }
 
@@ -387,6 +401,10 @@ function setupMessageScrollObserver() {
     messageScrollObserver.observe(messageContainer.firstElementChild);
 }
 
+function toggleUserList() {
+    userListContainer.style.display = userListContainer.style.display === "none" ? "flex" : "none";
+}
+
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -406,3 +424,5 @@ addChannelClose.addEventListener("click", closeAddChannelMenu);
 addChannelAdd.addEventListener("click", addChannelFromMenu);
 
 openFriendsListButton.addEventListener("click", openFriendsList);
+
+channelUserListButton.addEventListener("click", toggleUserList);

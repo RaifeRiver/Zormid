@@ -17,13 +17,15 @@ body {
     width: 30vw;
     border-right: var(--theme-border-color) 2px solid;
     flex: 1;
+    flex-grow: 0;
 }
 
 #main-area {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    width: 70vw;
+    flex: 1;
+    min-width: 0;
 }
 
 #message-container {
@@ -56,11 +58,8 @@ body {
     background-color: var(--theme-secondary-background-color);
     border: var(--theme-border-color) 2px solid;
     border-radius: 5px;
-    width: 64vw;
     padding: 0.5vw;
-    margin-bottom: 1vw;
-    margin-left: 2vw;
-    margin-top: auto;
+    margin: auto 2vw 1vw;
 }
 
 #message-input {
@@ -68,7 +67,7 @@ body {
     background-color: inherit;
     color: var(--theme-text-color);
     font-size: 20px;
-    width: 66vw;
+    width: 100%;
     field-sizing: content;
     resize: none;
     max-height: 30vh;
@@ -365,4 +364,39 @@ p {
 .message-mini-text {
     color: var(--theme-tertiary-text-color);
     font-size: 12px;
+}
+
+#channel-settings-container {
+    display: none;
+    margin-left: auto;
+    padding-right: 1vw;
+    gap: 1vw;
+}
+
+.channel-settings-button {
+    background-color: var(--theme-secondary-background-color);
+    border: var(--theme-border-color) 2px solid;
+    color: var(--theme-text-color);
+    height: 3vh;
+}
+
+.channel-settings-button:hover {
+    background-color: var(--theme-background-color);
+}
+
+#user-list-container {
+    display: flex;
+    flex-direction: column;
+    min-width: 20vw;
+    height: 100vh;
+    border-left: var(--theme-border-color) 2px solid;
+    overflow-y: auto;
+    padding-left: 1vw;
+    padding-right: 1vw;
+    padding-top: 1vh;
+    gap: 1vh;
+}
+
+.user-list-user {
+    color: var(--theme-text-color);
 }

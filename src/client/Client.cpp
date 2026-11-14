@@ -178,6 +178,13 @@ namespace zormid::client {
 		response << channelID;
 		response << channel.getName();
 		response << channel.getMessageCount();
+		const std::vector<user::manager::UserID>& users = channel.getUsers();
+		response << users.size();
+		for (const user::manager::UserID& userID : users) {
+			response << userID;
+			response << user::manager::loadUser(userID).getUsername();
+			user::manager::unloadUser(userID);
+		}
 		mSocket->write(response.buildPayload());
 	}
 
