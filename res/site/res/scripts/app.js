@@ -52,6 +52,7 @@ let currentChannelID;
 let channelMessageCount;
 let friends = [];
 let waitingForChannelMessages = false;
+let connectionAttempts = 0;
 
 let messageScrollObserver;
 
@@ -147,7 +148,27 @@ api.setChannelMessagesHandler((messageInfo) => {
         waitingForChannelMessages = false;
     }
 });
+api.setConnectionLostHandler(() => {
+    appContainer.style.display = "none";
+    loadingScreen.querySelector("#loading-text").innerHTML = "Connection lost. Reconnecting...";
+    loadingScreen.style.display = "flex";
+    connectionAttempts = 1;
+    api.connect();
+});
 
+api.setTimeoutHandler(() => {
+    if (connectionAttempts === 5) {
+        loadingScreen.querySelector("#loading-text").innerHTML = "Failed to connect. Please try again later.";
+        return;
+    }
+    loadingScreen.querySelector("#loading-text").innerHTML = "Error connecting. Retrying...";
+    setTimeout(() => {
+        connectionAttempts++;
+        api.connect();
+    }, 5000);
+});
+
+connectionAttempts++;
 api.connect();
 
 function sendMessage() {

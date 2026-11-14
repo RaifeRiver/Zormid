@@ -1,4 +1,5 @@
 let websocket;
+let connected = false;
 
 export let connectHandler;
 export function setConnectHandler(handler) {
@@ -38,6 +39,16 @@ export function setChannelInfoHandler(handler) {
 export let channelMessagesHandler;
 export function setChannelMessagesHandler(handler) {
     channelMessagesHandler = handler;
+}
+
+export let connectionLostHandler;
+export function setConnectionLostHandler(handler) {
+    connectionLostHandler = handler;
+}
+
+export let timeoutHandler;
+export function setTimeoutHandler(handler) {
+    timeoutHandler = handler;
 }
 
 function readString(packet, pos) {
@@ -151,16 +162,33 @@ function processPacket(packet) {
 }
 
 export function connect() {
+    connected = false;
     websocket = new WebSocket("ws://" + window.location.host);
     websocket.binaryType = "arraybuffer";
     websocket.addEventListener("message", (event) => {
         processPacket(event.data);
     });
     websocket.addEventListener("open", () => {
+        connected = true;
         if (connectHandler) {
             connectHandler();
         }
     });
+    websocket.addEventListener("close", (event) => {
+        if (connected) {
+            if (connectionLostHandler) {
+                connectionLostHandler();
+            }
+        }
+        else if (!event.wasClean && timeoutHandler) {
+            timeoutHandler();
+        }
+    })
+    setTimeout(() => {
+        if (websocket.readyState === WebSocket.CONNECTING && timeoutHandler) {
+            timeoutHandler();
+        }
+    }, 5000);
 }
 
 export function authenticate(userID, sessionID) {
