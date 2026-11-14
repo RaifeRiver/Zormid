@@ -5,9 +5,10 @@ let appContainer = document.getElementById("app-container");
 let loadingScreen = document.getElementById("loading-screen");
 
 let channelContainer = document.getElementById("channel-container");
-const messageInput = document.getElementById("message-input");
-const messageTemplate = document.getElementById("message-template");
-const messageContainer = document.getElementById("message-container");
+let messageInput = document.getElementById("message-input");
+let messageTemplate = document.getElementById("message-template");
+let continuationMessageTemplate = document.getElementById("continuation-message-template");
+let messageContainer = document.getElementById("message-container");
 
 let sendButton = document.getElementById("send-button");
 
@@ -48,7 +49,11 @@ let userNameDisplay = document.getElementById("user-name");
 
 let userID;
 let currentChannelID;
+let channelMessageCount;
 let friends = [];
+let waitingForChannelMessages = false;
+
+let messageScrollObserver;
 
 document.documentElement.setAttribute("data-theme", "sync");
 
@@ -116,16 +121,30 @@ api.setMessageHandler((message) => {
     if (message.channelID !== currentChannelID && message.userID !== atob(userID)) {
         return;
     }
-    appendMessage(message.username, btoa(message.userID), message.content);
+    insertMessage(message.index, message.username, btoa(message.userID), message.content);
 });
-api.setChannelContentsHandler((channelContents) => {
-    if (channelContents.channelID !== currentChannelID) {
+api.setChannelInfoHandler((info) => {
+    if (info.channelID !== currentChannelID) {
         return;
     }
-    channelName.textContent = channelContents.name;
+    channelName.textContent = info.name;
+    channelMessageCount = info.messageCount;
     messageContainer.replaceChildren();
-    for (let message of channelContents.messages) {
-        appendMessage(message.username, btoa(message.userID), message.content);
+    if (channelMessageCount > 0) {
+        api.requestChannelMessages(currentChannelID, Math.max(channelMessageCount - 50, 0));
+        waitingForChannelMessages = true;
+    }
+});
+api.setChannelMessagesHandler((messageInfo) => {
+    if (messageInfo.channelID !== currentChannelID) {
+        return;
+    }
+    for (let i = 0; i < messageInfo.messages.length; i++) {
+        insertMessage(messageInfo.firstMessage + i, messageInfo.messages[i].username, btoa(messageInfo.messages[i].userID), messageInfo.messages[i].content);
+    }
+    if (waitingForChannelMessages) {
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+        waitingForChannelMessages = false;
     }
 });
 
@@ -139,6 +158,7 @@ function sendMessage() {
         api.sendMessage(messageInput.value, currentChannelID);
     }
     messageInput.value = "";
+    messageContainer.scrollTop = messageContainer.scrollHeight;
 }
 
 function openAddFriendMenu() {
@@ -191,7 +211,7 @@ function changeChannel(channelID) {
     }
     currentChannelID = channelID;
     messageContainer.replaceChildren();
-    api.requestChannelContents(channelID);
+    api.requestChannelInfo(channelID);
 }
 
 function openAddChannelMenu() {
@@ -265,23 +285,89 @@ function processMessageContents(message) {
     message = message.replace(/^-# (.*)/gm, "<span class=\"message-mini-text\">$1</span>");
     return message;
 }
-function appendMessage(from, fromID, content) {
-    let previousMessageElement = messageContainer.lastElementChild;
-    if (previousMessageElement?.dataset.username === from) {
-        previousMessageElement.querySelector(".message-content").innerHTML += "\n" + processMessageContents(content);
-        messageContainer.scrollTop = messageContainer.scrollHeight;
-        return;
+
+function insertMessage(index, from, fromID, content) {
+    let shouldScroll = messageContainer.scrollTop + messageContainer.clientHeight >= messageContainer.scrollHeight - 2;
+    console.info("Scrolling: " + shouldScroll);
+    console.info(messageContainer.scrollTop);
+    console.info(messageContainer.clientHeight);
+    console.info(messageContainer.scrollHeight);
+    let previousMessageElement;
+    let previousIndex;
+    let nextMessageElement;
+    for (let i = 0; i < messageContainer.children.length; i++) {
+        let child = messageContainer.children[i];
+        let childIndex = parseInt(child.dataset.index);
+        if (childIndex === index) {
+            return;
+        }
+        if (childIndex > index - 1) {
+            if (child.dataset.username === from) {
+                nextMessageElement = child;
+            }
+            break;
+        }
+        if (child.dataset.username === from) {
+            previousMessageElement = child;
+        }
+        else {
+            previousMessageElement = null;
+        }
+        previousIndex = i;
     }
-    let messageElement = document.importNode(messageTemplate.content, true);
-    let usernameElement = messageElement.querySelector(".message-username");
-    let contentElement = messageElement.querySelector(".message-content");
-    usernameElement.textContent = from;
-    contentElement.innerHTML = processMessageContents(content);
-    messageElement.firstElementChild.dataset.username = from;
-    messageContainer.appendChild(messageElement);
-    if (fromID === userID) {
+    if (previousMessageElement) {
+        let messageElement = document.importNode(continuationMessageTemplate.content, true);
+        let contentElement = messageElement.querySelector(".message-content");
+        contentElement.innerHTML = processMessageContents(content);
+        messageElement.firstElementChild.dataset.username = from;
+        messageElement.firstElementChild.dataset.index = index;
+        messageContainer.insertBefore(messageElement, messageContainer.children[previousIndex + 1]);
+    }
+    else {
+        let messageElement = document.importNode(messageTemplate.content, true);
+        let usernameElement = messageElement.querySelector(".message-username");
+        let contentElement = messageElement.querySelector(".message-content");
+        usernameElement.textContent = from;
+        contentElement.innerHTML = processMessageContents(content);
+        messageElement.firstElementChild.dataset.username = from;
+        messageElement.firstElementChild.dataset.index = index;
+        if (previousIndex !== undefined) {
+            messageContainer.insertBefore(messageElement, messageContainer.children[previousIndex + 1]);
+        }
+        else {
+            messageContainer.prepend(messageElement);
+        }
+    }
+    if (nextMessageElement) {
+        let modifiedNextElement = document.importNode(continuationMessageTemplate.content, true);
+        let contentElement = modifiedNextElement.querySelector(".message-content");
+        contentElement.innerHTML = nextMessageElement.querySelector(".message-content").innerHTML;
+        modifiedNextElement.firstElementChild.dataset.username = nextMessageElement.dataset.username;
+        modifiedNextElement.firstElementChild.dataset.index = nextMessageElement.dataset.index;
+        messageContainer.replaceChild(modifiedNextElement, nextMessageElement);
+    }
+    if (shouldScroll) {
         messageContainer.scrollTop = messageContainer.scrollHeight;
     }
+    setupMessageScrollObserver();
+}
+
+function setupMessageScrollObserver() {
+    if (messageScrollObserver) {
+        messageScrollObserver.disconnect();
+    }
+    messageScrollObserver = new IntersectionObserver((entries, _) => {
+        for (let entry of entries) {
+            if (!entry.isIntersecting) {
+                continue;
+            }
+            let currentFirstMessage = parseInt(entry.target.dataset.index);
+            api.requestChannelMessages(currentChannelID, currentFirstMessage <= 50 ? 0 : currentFirstMessage - 50);
+        }
+    }, {
+        threshold: 1
+    });
+    messageScrollObserver.observe(messageContainer.firstElementChild);
 }
 
 messageInput.addEventListener("keydown", (event) => {

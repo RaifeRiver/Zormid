@@ -30,9 +30,14 @@ export function setMessageHandler(handler) {
     messageHandler = handler;
 }
 
-export let channelContentsHandler;
-export function setChannelContentsHandler(handler) {
-    channelContentsHandler = handler;
+export let channelInfoHandler;
+export function setChannelInfoHandler(handler) {
+    channelInfoHandler = handler;
+}
+
+export let channelMessagesHandler;
+export function setChannelMessagesHandler(handler) {
+    channelMessagesHandler = handler;
 }
 
 function readString(packet, pos) {
@@ -107,16 +112,25 @@ function processPacket(packet) {
                 let channelID = readID(view, 24);
                 let content = readString(view, 44);
                 let username = readString(view, 48 + content.length);
-                messageHandler({content: content, username: username, channelID: channelID, userID: userID});
+                let index = view.getUint32(52 + content.length + username.length, true);
+                messageHandler({index: index, content: content, username: username, channelID: channelID, userID: userID});
             }
             break;
         case 0x5:
-            if (channelContentsHandler) {
+            if (channelInfoHandler) {
                 let channelID = readID(view, 4);
                 let channelName = readString(view, 24);
                 let messageCount = view.getUint32(28 + channelName.length, true);
+                channelInfoHandler({channelID: channelID, name: channelName, messageCount: messageCount});
+            }
+            break;
+        case 0x6:
+            if (channelMessagesHandler) {
+                let channelID = readID(view, 4);
+                let firstMessage = view.getUint32(24, true);
+                let messageCount = view.getUint32(28, true);
                 let messages = [];
-                let pos = 32 + channelName.length;
+                let pos = 32;
                 for (let i = 0; i < messageCount; i++) {
                     let message = {};
                     message.userID = readID(view, pos);
@@ -127,7 +141,7 @@ function processPacket(packet) {
                     pos += message.username.length + 4;
                     messages.push(message);
                 }
-                channelContentsHandler({channelID: channelID, name: channelName, messages: messages});
+                channelMessagesHandler({channelID: channelID, firstMessage: firstMessage, messages: messages});
             }
             break;
         default:
@@ -214,13 +228,24 @@ export function sendMessage(message, channelID) {
     websocket.send(buffer);
 }
 
-export function requestChannelContents(channelID) {
+export function requestChannelInfo(channelID) {
     let buffer = new ArrayBuffer(24);
     let view = new DataView(buffer);
     view.setUint32(0, 0x6, true);
     for (let i = 0; i < 20; i++) {
         view.setUint8(i + 4, channelID.charCodeAt(i));
     }
+    websocket.send(buffer);
+}
+
+export function requestChannelMessages(channelID, firstMessage) {
+    let buffer = new ArrayBuffer(28);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0x8, true);
+    for (let i = 0; i < 20; i++) {
+        view.setUint8(i + 4, channelID.charCodeAt(i));
+    }
+    view.setUint32(24, firstMessage, true);
     websocket.send(buffer);
 }
 

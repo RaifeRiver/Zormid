@@ -5,14 +5,13 @@
 #include <vector>
 
 #include "user/UserManager.h"
-#include "util/FileStream.h"
 
 namespace zormid::chat {
 	struct Message;
 
 	const std::string CHANNELS_DIR = "../data/channels/";
 	constexpr std::string CHANNEL_FILE_HEADER = "ZORMCHAN";
-	constexpr uint32_t CHANNEL_FILE_VERSION = 0;
+	constexpr uint32_t CHANNEL_FILE_VERSION = 1;
 
 	struct ChannelID {
 		ChannelID();
@@ -33,13 +32,11 @@ namespace zormid::chat {
 	public:
 		explicit Channel(const ChannelID& id);
 
-		void send(const Message& message);
+		uint32_t send(const Message& message);
 
-		[[nodiscard]] std::vector<Message>& getMessages() {
-			return mMessages;
-		}
+		void addUser(const user::manager::UserID& id);
 
-		[[nodiscard]] std::vector<user::manager::UserID>& getUsers() {
+		[[nodiscard]] const std::vector<user::manager::UserID>& getUsers() const {
 			return mUsers;
 		}
 
@@ -47,15 +44,21 @@ namespace zormid::chat {
 			return mName;
 		}
 
-		void setName(const std::string& name);
+		[[nodiscard]] uint32_t getMessageCount() const {
+			return mMessageCount;
+		}
 
-		void save() const;
+		[[nodiscard]] std::vector<Message> getMessages(uint32_t startIndex, uint32_t count) const;
+
+		void setName(const std::string& name);
 
 	private:
 		ChannelID mID;
 		std::string mName;
-		std::vector<Message> mMessages;
 		std::vector<user::manager::UserID> mUsers;
+		uint32_t mMessageCount = 0;
+
+		void createNewSave() const;
 	};
 
 	bool migrateChannelFile(const std::string& file);

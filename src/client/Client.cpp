@@ -68,10 +68,13 @@ namespace zormid::client {
 				processMessagePacket(payload);
 				break;
 			case 0x6:
-				processChannelContentsRequestPacket(payload);
+				processChannelInfoRequestPacket(payload);
 				break;
 			case 0x7:
 				processCreateChannelPacket(payload);
+				break;
+			case 0x8:
+				processChannelMessageRequestPacket(payload);
 				break;
 			default:
 				std::cout << "Unknown packet ID: " << id << std::endl;
@@ -149,9 +152,8 @@ namespace zormid::client {
 		std::string message;
 		payload >> message;
 		chat::Channel channel(channelID);
-		channel.getMessages().push_back({.content = message, .from = mUser->getUsername(), .fromID = mUser->getID(), .channelID = channelID});
-		channel.save();
-		for (user::manager::UserID& userID : channel.getUsers()) {
+		const uint32_t index = channel.send({.content = message, .from = mUser->getUsername(), .fromID = mUser->getID(), .channelID = channelID});
+		for (const user::manager::UserID& userID : channel.getUsers()) {
 			if (!user::manager::isActive(userID)) {
 				continue;
 			}
@@ -162,25 +164,38 @@ namespace zormid::client {
 			messagePayload << channelID;
 			messagePayload << message;
 			messagePayload << mUser->getUsername();
+			messagePayload << index;
 			user.pushPayload(messagePayload.buildAllocatedPayload());
 			user::manager::unloadUser(userID);
 		}
 	}
 
-	void Client::processChannelContentsRequestPacket(net::http::PayloadReader& payload) const {
+	void Client::processChannelInfoRequestPacket(net::http::PayloadReader& payload) const {
 		const chat::ChannelID channelID = payload.readChannelID();
 		chat::Channel channel(channelID);
 		net::http::PayloadWriter response;
 		response << 0x5;
 		response << channelID;
 		response << channel.getName();
-		const std::vector<chat::Message>& messages = channel.getMessages();
-		const uint32_t messageCount = messages.size();
+		response << channel.getMessageCount();
+		mSocket->write(response.buildPayload());
+	}
+
+	void Client::processChannelMessageRequestPacket(net::http::PayloadReader& payload) const {
+		const chat::ChannelID channelID = payload.readChannelID();
+		const chat::Channel channel(channelID);
+		uint32_t firstMessage;
+		payload >> firstMessage;
+		net::http::PayloadWriter response;
+		response << 0x6;
+		response << channelID;
+		response << firstMessage;
+		const uint32_t messageCount = std::min(channel.getMessageCount() - firstMessage, 50u);
 		response << messageCount;
-		for (uint32_t i = 0; i < messageCount; i++) {
-			response << messages[i].fromID;
-			response << messages[i].content;
-			response << messages[i].from;
+		for (const chat::Message& message : channel.getMessages(firstMessage, messageCount)) {
+			response << message.fromID;
+			response << message.content;
+			response << message.from;
 		}
 		mSocket->write(response.buildPayload());
 	}
@@ -195,11 +210,10 @@ namespace zormid::client {
 		payload >> userCount;
 		for (uint32_t i = 0; i < userCount; i++) {
 			user::manager::UserID userID = payload.readUserID();
-			channel.getUsers().push_back(userID);
+			channel.addUser(userID);
 			user::User& user = user::manager::loadUser(userID);
 			user.getChannels().push_back(channelID);
 			user::manager::unloadUser(userID);
 		}
-		channel.save();
 	}
 }

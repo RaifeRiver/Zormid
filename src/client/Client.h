@@ -47,7 +47,9 @@ namespace zormid::client {
 
 		void processMessagePacket(net::http::PayloadReader& payload) const;
 
-		void processChannelContentsRequestPacket(net::http::PayloadReader& payload) const;
+		void processChannelInfoRequestPacket(net::http::PayloadReader& payload) const;
+
+		void processChannelMessageRequestPacket(net::http::PayloadReader& payload) const;
 
 		static void processCreateChannelPacket(net::http::PayloadReader& payload);
 	};
