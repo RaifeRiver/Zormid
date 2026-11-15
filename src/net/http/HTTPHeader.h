@@ -23,6 +23,6 @@ namespace zormid::net::http {
 		uint16_t statusCode;
 		std::string statusMessage;
 
-		void write(Socket& socket) const;
+		void write(Socket& socket);
 	};
 }
