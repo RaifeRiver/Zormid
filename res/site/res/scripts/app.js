@@ -232,6 +232,28 @@ function sendMessage() {
     messageContainer.scrollTop = messageContainer.scrollHeight;
 }
 
+function tryDeprecatedFriendURLCopy() {
+    if (document.queryCommandSupported("copy")) {
+        let textArea = document.createElement("textarea");
+        textArea.value = addFriendURL.innerText.substring(0, addFriendURL.innerText.length - 4);
+        textArea.style.position = "fixed";
+        textArea.style.left = "-10000px";
+        addFriendMenu.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        if (document.execCommand("copy")) {
+            addFriendMenu.removeChild(textArea);
+            return;
+        }
+        addFriendMenu.removeChild(textArea);
+    }
+    addFriendCopyError.textContent = "Failed to copy URL to clipboard";
+    addFriendCopyError.style.display = "inline";
+    setTimeout(() => {
+        addFriendCopyError.style.display = "none";
+    }, 2000);
+}
+
 function openAddFriendMenu() {
     addFriendURL.innerHTML = window.location.origin + "/friend/" +btoa(userID).replaceAll('+', '-').replaceAll('/', '_') + "<button id=\"copy-url-button\" class=\"copy-button\">Copy</button>";
     addFriendMenu.showModal();
@@ -239,26 +261,11 @@ function openAddFriendMenu() {
     addFriendCopyURL.addEventListener("click", () => {
         if (navigator.clipboard) {
             navigator.clipboard.writeText(addFriendURL.innerText.substring(0, addFriendURL.innerText.length - 4)).catch(() => {
-                console.error("Failed to copy URL to clipboard");
+                tryDeprecatedFriendURLCopy();
             });
         }
-        else if (document.queryCommandSupported("copy")) {
-            let textArea = document.createElement("textarea");
-            textArea.value = addFriendURL.innerText.substring(0, addFriendURL.innerText.length - 4);
-            textArea.style.position = "fixed";
-            textArea.style.left = "-10000px";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            document.execCommand("copy");
-            document.body.removeChild(textArea);
-        }
         else {
-            addFriendCopyError.textContent = "Failed to copy URL to clipboard";
-            addFriendCopyError.style.display = "inline";
-            setTimeout(() => {
-                addFriendCopyError.style.display = "none";
-            }, 2000);
+            tryDeprecatedFriendURLCopy();
         }
     });
 }
