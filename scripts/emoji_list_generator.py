@@ -1,6 +1,6 @@
 import json
 import urllib.request
-file, headers = urllib.request.urlretrieve("https://www.unicode.org/Public/18.0.0/emoji/emoji-test.txt", "emojis.txt")
+file, headers = urllib.request.urlretrieve("https://www.unicode.org/Public/17.0.0/emoji/emoji-test.txt", "emojis.txt")
 with open(file, "r", encoding="utf-8") as file:
     contents = file.read()
 

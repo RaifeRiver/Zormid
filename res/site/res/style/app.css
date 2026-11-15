@@ -400,3 +400,45 @@ p {
 .user-list-user {
     color: var(--theme-text-color);
 }
+
+#emoji-list {
+    background-color: var(--theme-secondary-background-color);
+    border: var(--theme-border-color) 2px solid;
+    color: var(--theme-text-color);
+    margin-right: 0.5vw;
+    aspect-ratio: 1/1;
+    align-content: center;
+    justify-content: center;
+    position: relative;
+}
+
+#emoji-list:hover {
+    background-color: var(--theme-background-color);
+}
+
+#emoji-list summary {
+    list-style: none;
+    text-align: center;
+}
+
+#emoji-list ul {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    list-style: none;
+    background-color: var(--theme-secondary-background-color);
+    border: var(--theme-border-color) 2px solid;
+    padding: 1vh 1vw;
+    display: grid;
+    width: 40vw;
+    grid-template-columns: repeat(auto-fit, minmax(3vw, 1fr));
+    overflow-y: auto;
+    max-height: 60vh;
+}
+
+#emoji-list button {
+    background-color: inherit;
+    border: none;
+    font-family: var(--theme-font-family), sans-serif;
+    font-size: 24px;
+}

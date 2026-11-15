@@ -1,10 +1,20 @@
-let emojis = {};
-let reverseEmojis = {};
+export let emojis = {};
+export let reverseEmojis = {};
 
-fetch("/res/data/emoji_list.json").then(response => response.text()).then(text => {
-    emojis = JSON.parse(text);
-    reverseEmojis = Object.fromEntries(Object.entries(emojis).map(([key, value]) => [value, key]));
-});
+export let loadHandler;
+export function setLoadHandler(handler) {
+    loadHandler = handler;
+}
+
+export function loadEmojis() {
+    fetch("/res/data/emoji_list.json").then(response => response.text()).then(text => {
+        emojis = JSON.parse(text);
+        reverseEmojis = Object.fromEntries(Object.entries(emojis).map(([key, value]) => [value, key]));
+        if (loadHandler) {
+            loadHandler();
+        }
+    });
+}
 
 export function toEmojis(text) {
     let result = "";

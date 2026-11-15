@@ -54,6 +54,8 @@ let channelUserListButton = document.getElementById("channel-user-list-button");
 let userListContainer = document.getElementById("user-list-container");
 let userListUserTemplate = document.getElementById("user-list-user-template");
 
+let emojiListList = document.getElementById("emoji-list-list");
+
 let userID;
 let currentChannelID;
 let channelMessageCount;
@@ -184,6 +186,21 @@ api.setTimeoutHandler(() => {
 
 connectionAttempts++;
 api.connect();
+
+emojis.setLoadHandler(() => {
+    let emojiList = Object.entries(emojis.emojis);
+    let emojiHTML = "";
+    for (let i = 0; i < emojiList.length; i++) {
+        emojiHTML += `<li id="emoji-list-${i}"><button>${emojiList[i][1]}</button></li>`;
+    }
+    emojiListList.innerHTML = emojiHTML;
+    for (let i = 0; i < emojiList.length; i++) {
+        document.getElementById("emoji-list-" + i).addEventListener("click", () => {
+            messageInput.value += emojiList[i][1];
+        });
+    }
+});
+emojis.loadEmojis();
 
 function sendMessage() {
     if (messageInput.value.length === 0) {
