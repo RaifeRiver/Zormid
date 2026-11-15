@@ -201,8 +201,8 @@ namespace zormid::user::manager {
 		uint32_t friendCount;
 		*fileStream >> friendCount;
 		for (uint32_t i = 0; i < friendCount; i++) {
-			char friendID[20];
-			fileStream->read(friendID, sizeof(friendID));
+			char friendID[USER_ID_SIZE];
+			fileStream->read(friendID, USER_ID_SIZE);
 			user.getFriends().emplace_back(friendID);
 		}
 		uint32_t channelCount;
