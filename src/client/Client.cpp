@@ -76,6 +76,9 @@ namespace zormid::client {
 			case 0x8:
 				processChannelMessageRequestPacket(payload);
 				break;
+			case 0x9:
+				processChangeUsernamePacket(payload);
+				break;
 			default:
 				std::cout << "Unknown packet ID: " << id << std::endl;
 				break;
@@ -209,6 +212,12 @@ namespace zormid::client {
 			response << message.from;
 		}
 		mSocket->write(response.buildPayload());
+	}
+
+	void Client::processChangeUsernamePacket(net::http::PayloadReader& payload) const {
+		std::string username;
+		payload >> username;
+		user::manager::changeUsername(mUser->getID(), username);
 	}
 
 	void Client::processCreateChannelPacket(net::http::PayloadReader& payload) {

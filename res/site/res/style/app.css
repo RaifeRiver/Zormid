@@ -479,3 +479,53 @@ p {
 #user-settings-button:hover {
     background-color: var(--theme-background-color);
 }
+
+#user-settings-container {
+    margin-top: 1vh;
+    display: flex;
+    flex-direction: row;
+    height: 60vh;
+    gap: 1vw;
+}
+
+#user-settings-tabs {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5vh 0.5vw;
+    background-color: var(--theme-background-color);
+}
+
+.user-settings-tab {
+    color: var(--theme-text-color);
+    font-family: var(--theme-font-family), sans-serif;
+    background-color: var(--theme-background-color);
+    border: none;
+    font-size: 16px;
+    padding: 0;
+    width: 100%;
+    text-align: left;
+    margin-top: 0.2vh;
+    margin-bottom: 0.2vh;
+}
+
+.user-settings-tab:hover {
+    background-color: var(--theme-secondary-background-color);
+}
+
+.user-settings-content label {
+    display: block;
+    color: var(--theme-text-color);
+    font-family: var(--theme-font-family), sans-serif;
+    margin-top: 0.5vh;
+}
+
+.user-settings-content input {
+    color: var(--theme-text-color);
+    background-color: var(--theme-secondary-background-color);
+    border: var(--theme-border-color) 2px solid;
+    font-family: var(--theme-font-family), sans-serif;
+}
+
+.user-settings-content input:focus {
+    outline: none;
+}

@@ -52,6 +52,8 @@ namespace zormid::user::manager {
 	bool migrateUserFile(const std::string& file);
 
 	uint32_t migrateAllUsers();
+
+	void changeUsername(const UserID& id, const std::string& username);
 }
 
 template <> struct std::hash<zormid::user::manager::UserID> {

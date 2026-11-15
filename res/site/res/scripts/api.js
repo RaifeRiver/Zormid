@@ -304,3 +304,14 @@ export function createChannel(name, users) {
     }
     websocket.send(buffer);
 }
+
+export function changeUsername(name) {
+    let buffer = new ArrayBuffer(8 + name.length);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0x9, true);
+    view.setUint32(4, name.length, true);
+    for (let i = 0; i < name.length; i++) {
+        view.setUint8(i + 8, name.charCodeAt(i));
+    }
+    websocket.send(buffer);
+}

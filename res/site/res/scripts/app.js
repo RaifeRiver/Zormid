@@ -60,6 +60,12 @@ let emojiListList = document.getElementById("emoji-list-list");
 let emojiListInput = document.getElementById("emoji-list-input");
 
 let userSettingsMenu = document.getElementById("user-settings-menu");
+let userSettingsProfileTab = document.getElementById("user-settings-profile-tab");
+let userSettingsProfile = document.getElementById("user-settings-profile");
+let userSettingsProfileUsername = document.getElementById("user-settings-profile-username");
+let userSettingsAppearanceTab = document.getElementById("user-settings-appearance-tab");
+let userSettingsAppearance = document.getElementById("user-settings-appearance");
+let userSettingsClose = document.getElementById("user-settings-close");
 
 let userID;
 let currentChannelID;
@@ -68,6 +74,7 @@ let friends = [];
 let waitingForChannelMessages = false;
 let connectionAttempts = 0;
 let emojiEntries = [];
+let currentUserSettingsContent = userSettingsProfile;
 
 let messageScrollObserver;
 
@@ -90,7 +97,7 @@ api.setAuthHandler((username) => {
 
     const addFriendCookie = cookies.getCookie("add-friend");
     if (addFriendCookie) {
-        openAcceptFriendMenu(addFriendCookie);
+        openAcceptFriendMenu(addFriendCookie.replaceAll('-', '+').replaceAll('_', '/'));
     }
     api.requestChannelList(userID);
     api.requestFriendList();
@@ -236,7 +243,7 @@ function closeAddFriendMenu() {
 }
 
 function openAcceptFriendMenu(id) {
-    if (userID === id) {
+    if (userID === atob(id)) {
         cookies.deleteCookie("add-friend");
         return;
     }
@@ -461,6 +468,24 @@ function openUserSettingsMenu() {
     userSettingsMenu.showModal();
 }
 
+function openUserSettingsTab(tab) {
+    currentUserSettingsContent.style.display = "none";
+    currentUserSettingsContent = tab;
+    currentUserSettingsContent.style.display = "flex";
+}
+
+function closeUserSettingsMenu() {
+    userSettingsMenu.close();
+}
+
+function changeUsernameFromSettings() {
+    if (userSettingsProfileUsername.value.length > 0) {
+        api.changeUsername(userSettingsProfileUsername.value);
+        userNameDisplay.textContent = userSettingsProfileUsername.value;
+        userSettingsProfileUsername.value = "";
+    }
+}
+
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -488,3 +513,7 @@ document.addEventListener("click", documentClickHandler);
 emojiListInput.addEventListener("input", searchEmojiList)
 
 userSettingsButton.addEventListener("click", openUserSettingsMenu);
+userSettingsProfileTab.addEventListener("click", () => openUserSettingsTab(userSettingsProfile));
+userSettingsProfileUsername.addEventListener("change", changeUsernameFromSettings);
+userSettingsAppearanceTab.addEventListener("click", () => openUserSettingsTab(userSettingsAppearance));
+userSettingsClose.addEventListener("click", closeUserSettingsMenu);

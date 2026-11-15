@@ -310,6 +310,36 @@ namespace zormid::user::manager {
 		}
 		return count;
 	}
+
+	void changeUsername(const UserID& id, const std::string& username) {
+		std::string oldUsername;
+		if (const auto it = users.find(id); it != users.end()) {
+			oldUsername = it->second.getUsername();
+			it->second.setUsername(username);
+		}
+		else {
+			oldUsername = loadUser(id).getUsername();
+			unloadUser(id);
+		}
+		if (username == oldUsername) {
+			return;
+		}
+		sha1::SHA1 sha;
+		sha.processBlock(oldUsername.c_str(), oldUsername.c_str() + oldUsername.length());
+		uint8_t oldDigest[20];
+		sha.getDigestBytes(oldDigest);
+		const std::string oldHash = util::base64::encodeURL(oldDigest, 20);
+		sha.reset();
+		sha.processBlock(username.c_str(), username.c_str() + username.length());
+		uint8_t usernameDigest[20];
+		sha.getDigestBytes(usernameDigest);
+		const std::string usernameHash = util::base64::encodeURL(usernameDigest, 20);
+		const std::string dir = USERS_DIR + usernameHash.substr(0, 2);
+		if (!std::filesystem::exists(dir)) {
+			std::filesystem::create_directories(dir);
+		}
+		std::filesystem::rename(USERS_DIR + oldHash.substr(0, 2) + "/" + oldHash.substr(2) + ".dat", dir + "/" + usernameHash.substr(2) + ".dat");
+	}
 }
 
 std::size_t std::hash<zormid::user::manager::UserID>::operator()(const zormid::user::manager::UserID& id) const noexcept {
