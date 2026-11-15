@@ -115,7 +115,7 @@ h3 {
     margin: 0;
     display: flex;
     flex-direction: row;
-    width: 50vw;
+    width: 49vw;
 }
 
 .copyable-url-label {
@@ -541,4 +541,10 @@ p {
     background-color: var(--theme-secondary-background-color);
     border: var(--theme-border-color) 2px solid;
     font-family: var(--theme-font-family), sans-serif;
+}
+
+#add-friend-copy-error {
+    color: var(--theme-error-color);
+    font-family: var(--theme-font-family), sans-serif;
+    display: none;
 }

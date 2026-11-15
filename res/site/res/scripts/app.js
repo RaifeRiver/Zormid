@@ -16,6 +16,7 @@ let sendButton = document.getElementById("send-button");
 let addFriendMenu = document.getElementById("add-friend-menu");
 let addFriendURL = document.getElementById("add-friend-url");
 let addFriendClose = document.getElementById("add-friend-close");
+let addFriendCopyError = document.getElementById("add-friend-copy-error");
 let addFriendCopyURL;
 
 let acceptFriendMenu = document.getElementById("accept-friend-menu");
@@ -236,9 +237,29 @@ function openAddFriendMenu() {
     addFriendMenu.showModal();
     addFriendCopyURL = document.getElementById("copy-url-button");
     addFriendCopyURL.addEventListener("click", () => {
-        navigator.clipboard.writeText(addFriendURL.innerText.substring(0, addFriendURL.innerText.length - 4)).catch(() => {
-            console.error("Failed to copy URL to clipboard");
-        });
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(addFriendURL.innerText.substring(0, addFriendURL.innerText.length - 4)).catch(() => {
+                console.error("Failed to copy URL to clipboard");
+            });
+        }
+        else if (document.queryCommandSupported("copy")) {
+            let textArea = document.createElement("textarea");
+            textArea.value = addFriendURL.innerText.substring(0, addFriendURL.innerText.length - 4);
+            textArea.style.position = "fixed";
+            textArea.style.left = "-10000px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+        }
+        else {
+            addFriendCopyError.textContent = "Failed to copy URL to clipboard";
+            addFriendCopyError.style.display = "inline";
+            setTimeout(() => {
+                addFriendCopyError.style.display = "none";
+            }, 2000);
+        }
     });
 }
 
