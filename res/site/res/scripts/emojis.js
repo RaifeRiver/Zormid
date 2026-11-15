@@ -22,11 +22,24 @@ export function toEmojis(text) {
     for (let i = 0; i < text.length; i++) {
         if (emoji !== null) {
             if (text[i] === ':') {
-                result += emojis[emoji];
+                if (emojis[emoji]) {
+                    result += emojis[emoji];
+                }
+                else {
+                    result += ':';
+                    result += emoji;
+                    result += ':';
+                }
                 emoji = null;
             }
-            else {
+            else if (text[i] !== ' ' && text[i] !== '\n') {
                 emoji += text[i];
+            }
+            else {
+                result += ':';
+                result += emoji;
+                result += text[i];
+                emoji = null;
             }
         }
         else if (text[i] === ':') {
