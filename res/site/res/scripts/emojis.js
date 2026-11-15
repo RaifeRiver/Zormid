@@ -4,7 +4,7 @@ let reverseEmojis = {};
 fetch("/res/data/emoji_list.json").then(response => response.text()).then(text => {
     emojis = JSON.parse(text);
     reverseEmojis = Object.fromEntries(Object.entries(emojis).map(([key, value]) => [value, key]));
-})
+});
 
 export function toEmojis(text) {
     let result = "";
