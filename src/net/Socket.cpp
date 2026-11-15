@@ -24,10 +24,9 @@ namespace zormid::net {
 	}
 
 	void Socket::writeString(const std::string& str) {
-		ssize_t result = 0;
 		size_t sent = 0;
-		while ((result = send(mFD, str.c_str() + sent, str.length() - sent, MSG_NOSIGNAL)) < str.length()) {
-			if (result == -1) {
+		while (sent < str.length()) {
+			if (const ssize_t result = send(mFD, str.c_str() + sent, str.length() - sent, MSG_NOSIGNAL); result == -1) {
 				if (errno == EPIPE || errno == ECONNRESET || errno == EBADF) {
 					close();
 					return;
