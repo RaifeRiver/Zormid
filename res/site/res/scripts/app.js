@@ -65,6 +65,7 @@ let userSettingsProfile = document.getElementById("user-settings-profile");
 let userSettingsProfileUsername = document.getElementById("user-settings-profile-username");
 let userSettingsAppearanceTab = document.getElementById("user-settings-appearance-tab");
 let userSettingsAppearance = document.getElementById("user-settings-appearance");
+let userSettingsAppearanceTheme = document.getElementById("user-settings-appearance-theme");
 let userSettingsClose = document.getElementById("user-settings-close");
 
 let userID;
@@ -78,7 +79,9 @@ let currentUserSettingsContent = userSettingsProfile;
 
 let messageScrollObserver;
 
-document.documentElement.setAttribute("data-theme", "sync");
+let currentTheme = localStorage.getItem("theme") || "sync";
+document.documentElement.setAttribute("data-theme", currentTheme);
+userSettingsAppearanceTheme.value = currentTheme;
 
 api.setConnectHandler(() => {
     const userCookie = cookies.getCookie("user");
@@ -486,6 +489,12 @@ function changeUsernameFromSettings() {
     }
 }
 
+function changeThemeFromSettings() {
+    let theme = userSettingsAppearanceTheme.value;
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+}
+
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -516,4 +525,5 @@ userSettingsButton.addEventListener("click", openUserSettingsMenu);
 userSettingsProfileTab.addEventListener("click", () => openUserSettingsTab(userSettingsProfile));
 userSettingsProfileUsername.addEventListener("change", changeUsernameFromSettings);
 userSettingsAppearanceTab.addEventListener("click", () => openUserSettingsTab(userSettingsAppearance));
+userSettingsAppearanceTheme.addEventListener("change", changeThemeFromSettings);
 userSettingsClose.addEventListener("click", closeUserSettingsMenu);
