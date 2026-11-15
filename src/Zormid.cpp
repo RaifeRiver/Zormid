@@ -121,8 +121,8 @@ namespace zormid {
 			else if (request.path.ends_with(".css")) {
 				mimeType = "text/css";
 			}
-			else if (request.path.ends_with(".json")) {
-				mimeType = "application/json";
+			else if (request.path.ends_with(".jsonText")) {
+				mimeType = "application/jsonText";
 			}
 			response.headers["Content-Type"] = mimeType;
 			response.write(*client);
