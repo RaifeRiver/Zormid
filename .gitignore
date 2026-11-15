@@ -1,3 +1,5 @@
-.idea/
-cmake-build-*/
-data/
+/.idea/
+/cmake-build-*/
+/data/
+/scripts/*.json
+/scripts/*.txt

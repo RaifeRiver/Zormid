@@ -1,5 +1,6 @@
 import * as api from "./api.js";
 import * as cookies from "./cookies.js";
+import * as emojis from "./emojis.js";
 
 let appContainer = document.getElementById("app-container");
 let loadingScreen = document.getElementById("loading-screen");
@@ -128,7 +129,7 @@ api.setMessageHandler((message) => {
     if (message.channelID !== currentChannelID && message.userID !== atob(userID)) {
         return;
     }
-    insertMessage(message.index, message.username, btoa(message.userID), message.content);
+    insertMessage(message.index, message.username, btoa(message.userID), emojis.toEmojis(message.content));
 });
 api.setChannelInfoHandler((info) => {
     if (info.channelID !== currentChannelID) {
@@ -154,7 +155,7 @@ api.setChannelMessagesHandler((messageInfo) => {
         return;
     }
     for (let i = 0; i < messageInfo.messages.length; i++) {
-        insertMessage(messageInfo.firstMessage + i, messageInfo.messages[i].username, btoa(messageInfo.messages[i].userID), messageInfo.messages[i].content);
+        insertMessage(messageInfo.firstMessage + i, messageInfo.messages[i].username, btoa(messageInfo.messages[i].userID), emojis.toEmojis(messageInfo.messages[i].content));
     }
     if (waitingForChannelMessages) {
         messageContainer.scrollTop = messageContainer.scrollHeight;
@@ -189,7 +190,7 @@ function sendMessage() {
         return;
     }
     if (currentChannelID) {
-        api.sendMessage(messageInput.value, currentChannelID);
+        api.sendMessage(emojis.toPlainText(messageInput.value), currentChannelID);
     }
     messageInput.value = "";
     messageContainer.scrollTop = messageContainer.scrollHeight;
