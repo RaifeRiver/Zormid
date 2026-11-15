@@ -56,6 +56,7 @@ let userListUserTemplate = document.getElementById("user-list-user-template");
 
 let emojiList = document.getElementById("emoji-list");
 let emojiListList = document.getElementById("emoji-list-list");
+let emojiListInput = document.getElementById("emoji-list-input");
 
 let userID;
 let currentChannelID;
@@ -63,6 +64,7 @@ let channelMessageCount;
 let friends = [];
 let waitingForChannelMessages = false;
 let connectionAttempts = 0;
+let emojiEntries = [];
 
 let messageScrollObserver;
 
@@ -189,17 +191,18 @@ connectionAttempts++;
 api.connect();
 
 emojis.setLoadHandler(() => {
-    let emojiList = Object.entries(emojis.emojis);
+    emojiEntries = Object.entries(emojis.emojis);
     let emojiHTML = "";
-    for (let i = 0; i < emojiList.length; i++) {
-        emojiHTML += `<li id="emoji-list-${i}"><button>${emojiList[i][1]}</button></li>`;
+    for (let i = 0; i < emojiEntries.length; i++) {
+        emojiHTML += `<li id="emoji-list-${i}"><button>${emojiEntries[i][1]}</button></li>`;
     }
     emojiListList.innerHTML = emojiHTML;
-    for (let i = 0; i < emojiList.length; i++) {
+    for (let i = 0; i < emojiEntries.length; i++) {
         document.getElementById("emoji-list-" + i).addEventListener("click", () => {
-            messageInput.value += emojiList[i][1];
+            messageInput.value += emojiEntries[i][1];
         });
     }
+    searchEmojiList();
 });
 emojis.loadEmojis();
 
@@ -430,6 +433,27 @@ function documentClickHandler(event) {
     }
 }
 
+function searchEmojiList() {
+    let search = emojiListInput.value.toLowerCase().split(" ");
+    if (search.length === 0) {
+        for (let emoji of emojiListList.children) {
+            emoji.style.display = "inline-block";
+        }
+        return;
+    }
+    for (let emoji of emojiListList.children) {
+        let name = emojiEntries[parseInt(emoji.id.substring(11))][0];
+        let contains = true;
+        for (let word of search) {
+            if (!name.includes(word)) {
+                contains = false;
+                break;
+            }
+        }
+        emoji.style.display = contains ? "inline-block" : "none";
+    }
+}
+
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -453,3 +477,5 @@ openFriendsListButton.addEventListener("click", openFriendsList);
 channelUserListButton.addEventListener("click", toggleUserList);
 
 document.addEventListener("click", documentClickHandler);
+
+emojiListInput.addEventListener("input", searchEmojiList)
