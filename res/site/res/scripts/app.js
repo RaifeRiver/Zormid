@@ -97,6 +97,7 @@ api.setConnectHandler(() => {
 });
 api.setAuthHandler((username) => {
     userNameDisplay.textContent = username;
+    userSettingsProfileUsername.value = username;
 
     const addFriendCookie = cookies.getCookie("add-friend");
     if (addFriendCookie) {
