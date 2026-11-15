@@ -85,6 +85,10 @@ namespace zormid::client {
 	void Client::processAuthPacket(net::http::PayloadReader& payload) {
 		const user::manager::UserID userID = payload.readUserID();
 		const user::Session sessionID = payload.readSession();
+		if (!user::manager::exists(userID)) {
+			close();
+			return;
+		}
 		for (user::User& user = user::manager::loadUser(userID); user::Session session : user.getSessions()) {
 			if (memcmp(static_cast<const char*>(sessionID), static_cast<const char*>(session), 16) == 0) {
 				mUser = &user;

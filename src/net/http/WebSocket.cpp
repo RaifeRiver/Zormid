@@ -35,7 +35,7 @@ namespace zormid::net::http {
 	}
 
 	PayloadWriter& PayloadWriter::operator<<(const user::manager::UserID& data) {
-		write(static_cast<const char*>(data), 20);
+		write(static_cast<const char*>(data), user::manager::USER_ID_SIZE);
 		return *this;
 	}
 
@@ -106,12 +106,12 @@ namespace zormid::net::http {
 	}
 
 	user::manager::UserID PayloadReader::readUserID() {
-		if (mIndex + 20 > mData.size) {
+		if (mIndex + user::manager::USER_ID_SIZE > mData.size) {
 			throw std::out_of_range("Payload read out of bounds");
 		}
-		char buffer[20];
-		memcpy(buffer, mData.data + mIndex, 20);
-		mIndex += 20;
+		char buffer[user::manager::USER_ID_SIZE];
+		memcpy(buffer, mData.data + mIndex, user::manager::USER_ID_SIZE);
+		mIndex += user::manager::USER_ID_SIZE;
 		return user::manager::UserID(buffer);
 	}
 
@@ -141,7 +141,7 @@ namespace zormid::net::http {
 		}
 		uint8_t firstByte;
 		mSocket->readBlocking(&firstByte, 1);
-		//bool lastMessage = firstByte >> 7 == 1; TODO: implement split packets
+		// bool lastMessage = firstByte >> 7 == 1; TODO: implement split packets
 		const uint8_t opcode = firstByte & 0xF;
 		const PayloadType type = opcode == 1 ? PayloadType::TEXT : PayloadType::BINARY;
 		uint8_t payloadLength;

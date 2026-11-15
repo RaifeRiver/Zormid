@@ -11,6 +11,8 @@ namespace zormid::util {
 	public:
 		explicit IFileStream(const std::string& path);
 
+		[[nodiscard]] bool isOpen();
+
 		void seek(uint32_t pos);
 
 		uint32_t read(void* buffer, uint32_t size);

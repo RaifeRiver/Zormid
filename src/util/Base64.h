@@ -6,5 +6,9 @@
 namespace zormid::util::base64 {
 	std::string encode(const void* input, size_t size);
 
+	std::string encodeURL(const void* input, size_t size);
+
 	std::vector<char> decode(const std::string& input);
+
+	std::vector<char> decodeURL(const std::string& input);
 }

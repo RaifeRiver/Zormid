@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -11,7 +12,11 @@ namespace zormid::user {
 namespace zormid::user::manager {
 	constexpr std::string USERS_DIR = "../data/users/";
 
+	constexpr size_t USER_ID_SIZE = 12;
+
 	struct UserID {
+		UserID();
+
 		explicit UserID(const char* id);
 
 		explicit operator const char*() const {
@@ -21,12 +26,12 @@ namespace zormid::user::manager {
 		bool operator==(const UserID& other) const = default;
 
 	private:
-		char mID[20] = {};
+		char mID[USER_ID_SIZE] = {};
 	};
 
 	void init();
 
-	UserID getUserID(const std::string& username);
+	std::optional<UserID> getUserID(const std::string& username);
 
 	bool exists(const UserID& id);
 

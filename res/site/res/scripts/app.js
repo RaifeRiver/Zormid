@@ -82,8 +82,8 @@ api.setConnectHandler(() => {
     if (!sessionCookie) {
         return;
     }
-    userID = userCookie;
-    api.authenticate(atob(userID), atob(sessionCookie));
+    userID = atob(userCookie);
+    api.authenticate(userID, atob(sessionCookie));
 });
 api.setAuthHandler((username) => {
     userNameDisplay.textContent = username;
@@ -92,7 +92,7 @@ api.setAuthHandler((username) => {
     if (addFriendCookie) {
         openAcceptFriendMenu(addFriendCookie);
     }
-    api.requestChannelList(atob(userID));
+    api.requestChannelList(userID);
     api.requestFriendList();
 
     loadingScreen.style.display = "none";
@@ -118,7 +118,7 @@ api.setUsernameRequestHandler((username, userID) => {
     }
 });
 api.setChannelListRequestHandler((channels, id) => {
-    if (btoa(id) !== userID) {
+    if (id !== userID) {
         return;
     }
     channelList.replaceChildren();
@@ -134,7 +134,7 @@ api.setChannelListRequestHandler((channels, id) => {
     }
 });
 api.setMessageHandler((message) => {
-    if (message.channelID !== currentChannelID && message.userID !== atob(userID)) {
+    if (message.channelID !== currentChannelID && message.userID !== userID) {
         return;
     }
     insertMessage(message.index, message.username, btoa(message.userID), emojis.toEmojis(message.content));
@@ -221,7 +221,7 @@ function sendMessage() {
 }
 
 function openAddFriendMenu() {
-    addFriendURL.innerHTML = window.location.origin + "/friend/" + userID + "<button id=\"copy-url-button\" class=\"copy-button\">Copy</button>";
+    addFriendURL.innerHTML = window.location.origin + "/friend/" +btoa(userID).replaceAll('+', '-').replaceAll('/', '_') + "<button id=\"copy-url-button\" class=\"copy-button\">Copy</button>";
     addFriendMenu.showModal();
     addFriendCopyURL = document.getElementById("copy-url-button");
     addFriendCopyURL.addEventListener("click", () => {
@@ -297,7 +297,7 @@ function addChannelFromMenu() {
         return;
     }
     let selectedFriends = [];
-    selectedFriends.push(atob(userID));
+    selectedFriends.push(userID);
     for (let friend of addChannelFriends.children) {
         let selected = friend.querySelector(".add-channel-friend-button").textContent === "Remove";
         if (selected) {

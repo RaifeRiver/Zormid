@@ -44,16 +44,16 @@ namespace zormid::site {
 					pos++;
 				}
 				if (cookie == "user") {
-					userCookie = cookieHeader.substr(pos + 5, end - pos - 6);
+					userCookie = cookieHeader.substr(pos + 5, end - pos - 5);
 				}
 				else if (cookie == "sessionID") {
-					sessionCookie = cookieHeader.substr(pos + 10, end - pos - 11);
+					sessionCookie = cookieHeader.substr(pos + 10, end - pos - 10);
 				}
 				pos = end + 1;
 			}
 			if (!userCookie.empty() && !sessionCookie.empty()) {
 				const std::vector<char> userChars = util::base64::decode(userCookie);
-				if (userChars.size() != 21) {
+				if (userChars.size() != user::manager::USER_ID_SIZE) {
 					return false;
 				}
 				const std::vector<char> sessionChars = util::base64::decode(sessionCookie);
@@ -129,31 +129,32 @@ namespace zormid::site {
 				response.body = getPage(signup ? "Sign Up" : "Login", "Invalid form data");
 				return;
 			}
-			const user::manager::UserID userID = user::manager::getUserID(*username);
+			std::optional<user::manager::UserID> userID = user::manager::getUserID(*username);
 			user::User* user;
 			if (signup) {
-				if (user::manager::exists(userID)) {
+				if (userID && user::manager::exists(*userID)) {
 					response.statusCode = 409;
 					response.statusMessage = "Conflict";
 					response.body = getPage("Sign Up", "User already exists");
 					return;
 				}
 				user = &user::manager::create(*username, *password);
+				userID = user->getID();
 			}
 			else {
-				if (!user::manager::exists(userID)) {
+				if (!userID || !user::manager::exists(*userID)) {
 					response.statusCode = 404;
 					response.statusMessage = "Not Found";
 					response.body = getPage("Login", "User not found");
 					return;
 				}
-				if (!user::manager::verify(userID, *password)) {
+				if (!user::manager::verify(*userID, *password)) {
 					response.statusCode = 401;
 					response.statusMessage = "Unauthorized";
 					response.body = getPage("Login", "Incorrect password");
 					return;
 				}
-				user = &user::manager::loadUser(userID);
+				user = &user::manager::loadUser(*userID);
 			}
 			response.statusCode = 303;
 			response.statusMessage = "See Other";
@@ -163,12 +164,12 @@ namespace zormid::site {
 			if (remember) {
 				std::chrono::system_clock::time_point expiryTime = std::chrono::system_clock::now() + std::chrono::days(30);
 				const std::string expiryStr = std::format("{:%A, %d %B %Y  %T}", expiryTime);
-				response.headers["Set-Cookie"] = "user=" + util::base64::encode(static_cast<const char*>(userID), 20) + "; Expires=" + expiryStr + "\nSet-Cookie: sessionID=" + sessionStr + "; Expires=" + expiryStr;
+				response.headers["Set-Cookie"] = "user=" + util::base64::encode(static_cast<const char*>(*userID), user::manager::USER_ID_SIZE) + "; Expires=" + expiryStr + "\nSet-Cookie: sessionID=" + sessionStr + "; Expires=" + expiryStr;
 			}
 			else {
-				response.headers["Set-Cookie"] = "user=" + util::base64::encode(static_cast<const char*>(userID), 20) + "\nSet-Cookie: sessionID=" + sessionStr;
+				response.headers["Set-Cookie"] = "user=" + util::base64::encode(static_cast<const char*>(*userID), user::manager::USER_ID_SIZE) + "\nSet-Cookie: sessionID=" + sessionStr;
 			}
-			user::manager::unloadUser(userID);
+			user::manager::unloadUser(*userID);
 		}
 	}
 }

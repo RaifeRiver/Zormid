@@ -1,6 +1,8 @@
 let websocket;
 let connected = false;
 
+export const USER_ID_SIZE = 12;
+
 export let connectHandler;
 export function setConnectHandler(handler) {
     connectHandler = handler;
@@ -60,9 +62,9 @@ function readString(packet, pos) {
     return str;
 }
 
-function readID(packet, pos) {
+function readID(packet, pos, size) {
     let id = "";
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < size; i++) {
         id += String.fromCharCode(packet.getUint8(pos + i));
     }
     return id;
@@ -85,9 +87,9 @@ function processPacket(packet) {
                 let pos = 8;
                 for (let i = 0; i < friendCount; i++) {
                     let friend = {};
-                    friend.userID = readID(view, pos);
-                    friend.username = readString(view, pos + 20);
-                    pos += 24 + friend.username.length;
+                    friend.userID = readID(view, pos, USER_ID_SIZE);
+                    friend.username = readString(view, pos + USER_ID_SIZE);
+                    pos += 4 + USER_ID_SIZE + friend.username.length;
                     friends.push(friend);
                 }
                 friendListRequestHandler(friends);
@@ -95,20 +97,20 @@ function processPacket(packet) {
             break;
         case 0x2:
             if (usernameRequestHandler) {
-                let userID = readID(view, 4);
-                let username = readString(view, 24);
+                let userID = readID(view, 4, USER_ID_SIZE);
+                let username = readString(view, 4 + USER_ID_SIZE);
                 usernameRequestHandler(username, userID);
             }
             break;
         case 0x3:
             if (channelListRequestHandler) {
-                let userID = readID(view, 4);
-                let channelCount = view.getUint32(24, true);
+                let userID = readID(view, 4, USER_ID_SIZE);
+                let channelCount = view.getUint32(4 + USER_ID_SIZE, true);
                 let channels = [];
-                let pos = 28;
+                let pos = 8 + USER_ID_SIZE;
                 for (let i = 0; i < channelCount; i++) {
                     let channel = {};
-                    channel.channelID = readID(view, pos);
+                    channel.channelID = readID(view, pos, 20);
                     pos += 20;
                     channel.channelName = readString(view, pos);
                     pos += channel.channelName.length + 4;
@@ -119,42 +121,42 @@ function processPacket(packet) {
             break;
         case 0x4:
             if (messageHandler) {
-                let userID = readID(view, 4);
-                let channelID = readID(view, 24);
-                let content = readString(view, 44);
-                let username = readString(view, 48 + content.length);
-                let index = view.getUint32(52 + content.length + username.length, true);
+                let userID = readID(view, 4, USER_ID_SIZE);
+                let channelID = readID(view, 4 + USER_ID_SIZE, 20);
+                let content = readString(view, 24 + USER_ID_SIZE);
+                let username = readString(view, 28 + USER_ID_SIZE + content.length);
+                let index = view.getUint32(32 + USER_ID_SIZE + content.length + username.length, true);
                 messageHandler({index: index, content: content, username: username, channelID: channelID, userID: userID});
             }
             break;
         case 0x5:
             if (channelInfoHandler) {
-                let channelID = readID(view, 4);
+                let channelID = readID(view, 4, 20);
                 let channelName = readString(view, 24);
                 let messageCount = view.getUint32(28 + channelName.length, true);
                 let userCount = view.getUint32(32 + channelName.length, true);
                 let users = [];
                 let pos = 36 + channelName.length;
                 for (let i = 0; i < userCount; i++) {
-                    let userID = readID(view, pos);
-                    let username = readString(view, pos + 20);
+                    let userID = readID(view, pos, USER_ID_SIZE);
+                    let username = readString(view, pos + USER_ID_SIZE);
                     users.push({userID: userID, username: username});
-                    pos += 24 + username.length;
+                    pos += USER_ID_SIZE + 4 + username.length;
                 }
                 channelInfoHandler({channelID: channelID, name: channelName, messageCount: messageCount, users: users});
             }
             break;
         case 0x6:
             if (channelMessagesHandler) {
-                let channelID = readID(view, 4);
+                let channelID = readID(view, 4, 20);
                 let firstMessage = view.getUint32(24, true);
                 let messageCount = view.getUint32(28, true);
                 let messages = [];
                 let pos = 32;
                 for (let i = 0; i < messageCount; i++) {
                     let message = {};
-                    message.userID = readID(view, pos);
-                    pos += 20;
+                    message.userID = readID(view, pos, USER_ID_SIZE);
+                    pos += USER_ID_SIZE;
                     message.content = readString(view, pos);
                     pos += message.content.length + 4;
                     message.username = readString(view, pos);
@@ -201,14 +203,14 @@ export function connect() {
 }
 
 export function authenticate(userID, sessionID) {
-    let buffer = new ArrayBuffer(40);
+    let buffer = new ArrayBuffer(20 + USER_ID_SIZE);
     let view = new DataView(buffer);
     view.setUint32(0, 0x0, true);
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < USER_ID_SIZE; i++) {
         view.setUint8(i + 4, userID.charCodeAt(i));
     }
     for (let i = 0; i < 16; i++) {
-        view.setUint8(i + 24, sessionID.charCodeAt(i));
+        view.setUint8(i + 4 + USER_ID_SIZE, sessionID.charCodeAt(i));
     }
     websocket.send(buffer);
 }
@@ -221,31 +223,31 @@ export function requestFriendList() {
 }
 
 export function requestUsername(id) {
-    let buffer = new ArrayBuffer(24);
+    let buffer = new ArrayBuffer(4 + USER_ID_SIZE);
     let view = new DataView(buffer);
     let rawID = atob(id);
     view.setUint32(0, 0x2, true);
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < USER_ID_SIZE; i++) {
         view.setUint8(i + 4, rawID.charCodeAt(i));
     }
     websocket.send(buffer);
 }
 
 export function acceptFriendRequest(userID) {
-    let buffer = new ArrayBuffer(24);
+    let buffer = new ArrayBuffer(4 + USER_ID_SIZE);
     let view = new DataView(buffer);
     view.setUint32(0, 0x3, true);
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < USER_ID_SIZE; i++) {
         view.setUint8(i + 4, userID.charCodeAt(i));
     }
     websocket.send(buffer);
 }
 
 export function requestChannelList(userID) {
-    let buffer = new ArrayBuffer(24);
+    let buffer = new ArrayBuffer(4 + USER_ID_SIZE);
     let view = new DataView(buffer);
     view.setUint32(0, 0x4, true);
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < USER_ID_SIZE; i++) {
         view.setUint8(i + 4, userID.charCodeAt(i));
     }
     websocket.send(buffer);
@@ -287,7 +289,7 @@ export function requestChannelMessages(channelID, firstMessage) {
 }
 
 export function createChannel(name, users) {
-    let buffer = new ArrayBuffer(12 + name.length + users.length * 20);
+    let buffer = new ArrayBuffer(12 + name.length + users.length * USER_ID_SIZE);
     let view = new DataView(buffer);
     view.setUint32(0, 0x7, true);
     view.setUint32(4, name.length, true);
@@ -296,8 +298,8 @@ export function createChannel(name, users) {
     }
     view.setUint32(8 + name.length, users.length, true);
     for (let i = 0; i < users.length; i++) {
-        for (let j = 0; j < 20; j++) {
-            view.setUint8(i * 20 + j + 12 + name.length, users[i].charCodeAt(j));
+        for (let j = 0; j < USER_ID_SIZE; j++) {
+            view.setUint8(i * USER_ID_SIZE + j + 12 + name.length, users[i].charCodeAt(j));
         }
     }
     websocket.send(buffer);

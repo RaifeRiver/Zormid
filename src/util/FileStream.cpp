@@ -3,6 +3,10 @@
 namespace zormid::util {
 	IFileStream::IFileStream(const std::string& path) : mFileStream(path, std::ios::binary) {}
 
+	bool IFileStream::isOpen() {
+		return mFileStream.is_open();
+	}
+
 	void IFileStream::seek(const uint32_t pos) {
 		mFileStream.seekg(pos);
 	}
@@ -24,8 +28,8 @@ namespace zormid::util {
 	}
 
 	user::manager::UserID IFileStream::readUserID() {
-		char buffer[20];
-		read(buffer, 20);
+		char buffer[user::manager::USER_ID_SIZE];
+		read(buffer, user::manager::USER_ID_SIZE);
 		return user::manager::UserID(buffer);
 	}
 
@@ -64,7 +68,7 @@ namespace zormid::util {
 	}
 
 	void OFileStream::operator<<(const user::manager::UserID& value) {
-		write(static_cast<const char*>(value), 20);
+		write(static_cast<const char*>(value), user::manager::USER_ID_SIZE);
 	}
 
 	OFileStream::~OFileStream() {

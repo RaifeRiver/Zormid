@@ -76,8 +76,8 @@ namespace zormid::chat {
 		userFileStream >> userCount;
 		mUsers.reserve(userCount);
 		for (uint32_t i = 0; i < userCount; i++) {
-			char userIDChars[20];
-			userFileStream.read(userIDChars, 20);
+			char userIDChars[user::manager::USER_ID_SIZE];
+			userFileStream.read(userIDChars, user::manager::USER_ID_SIZE);
 			mUsers.emplace_back(userIDChars);
 		}
 		util::IFileStream messageInfoFileStream(file + ".message_info.dat");
@@ -113,7 +113,7 @@ namespace zormid::chat {
 		const std::string file = CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2);
 		util::IFileStream messageInfoFileStream(file + ".message_info.dat");
 		util::IFileStream messageFileStream(file + ".messages.dat");
-		messageInfoFileStream.seek(startIndex * 24 + 4);
+		messageInfoFileStream.seek(startIndex * (4 + user::manager::USER_ID_SIZE) + 4);
 		std::vector<Message> messages;
 		messages.reserve(count);
 		for (uint32_t i = 0; i < count; i++) {

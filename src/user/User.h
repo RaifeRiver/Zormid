@@ -9,7 +9,7 @@
 
 namespace zormid::user {
 	constexpr std::string USER_FILE_HEADER = "ZORMUSER";
-	constexpr uint32_t USER_FILE_VERSION = 0;
+	constexpr uint32_t USER_FILE_VERSION = 1;
 
 	struct Session {
 		explicit Session(const char* id);
