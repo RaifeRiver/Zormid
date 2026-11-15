@@ -453,9 +453,29 @@ p {
     background-color: var(--theme-background-color);
     border: var(--theme-border-color) 2px solid;
     color: var(--theme-text-color);
+    font-family: var(--theme-font-family), sans-serif;
     margin-bottom: 1vh;
 }
 
 #emoji-list-input:focus {
     outline: none;
+}
+
+#user-settings-button {
+    background-color: var(--theme-secondary-background-color);
+    border: var(--theme-border-color) 2px solid;
+    color: var(--theme-text-color);
+    font-family: var(--theme-font-family), sans-serif;
+    margin-left: auto;
+    margin-right: 1vw;
+    font-size: 22px;
+    height: 3vh;
+    aspect-ratio: 1/1;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+}
+
+#user-settings-button:hover {
+    background-color: var(--theme-background-color);
 }

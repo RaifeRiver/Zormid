@@ -47,6 +47,7 @@ let addChannelName = document.getElementById("add-channel-name");
 let openFriendsListButton = document.getElementById("open-friends-list");
 
 let userNameDisplay = document.getElementById("user-name");
+let userSettingsButton = document.getElementById("user-settings-button");
 
 let channelSettingsContainer = document.getElementById("channel-settings-container");
 let channelUserListButton = document.getElementById("channel-user-list-button");
@@ -57,6 +58,8 @@ let userListUserTemplate = document.getElementById("user-list-user-template");
 let emojiList = document.getElementById("emoji-list");
 let emojiListList = document.getElementById("emoji-list-list");
 let emojiListInput = document.getElementById("emoji-list-input");
+
+let userSettingsMenu = document.getElementById("user-settings-menu");
 
 let userID;
 let currentChannelID;
@@ -454,6 +457,10 @@ function searchEmojiList() {
     }
 }
 
+function openUserSettingsMenu() {
+    userSettingsMenu.showModal();
+}
+
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -479,3 +486,5 @@ channelUserListButton.addEventListener("click", toggleUserList);
 document.addEventListener("click", documentClickHandler);
 
 emojiListInput.addEventListener("input", searchEmojiList)
+
+userSettingsButton.addEventListener("click", openUserSettingsMenu);
