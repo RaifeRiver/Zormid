@@ -87,6 +87,7 @@ namespace zormid::site {
 		if (request.type == "GET") {
 			response.statusCode = 200;
 			response.statusMessage = "OK";
+			response.headers["Content-Type"] = "text/html";
 			response.body = getPage(signup ? "Sign Up" : "Login");
 		}
 		else if (request.type == "POST") {
@@ -102,6 +103,7 @@ namespace zormid::site {
 				if (pair.size() < 2) {
 					response.statusCode = 400;
 					response.statusMessage = "Bad Request";
+					response.headers["Content-Type"] = "text/html";
 					response.body = getPage(signup ? "Sign Up" : "Login", "Invalid form data");
 					return;
 				}
@@ -119,6 +121,7 @@ namespace zormid::site {
 				else {
 					response.statusCode = 400;
 					response.statusMessage = "Bad Request";
+					response.headers["Content-Type"] = "text/html";
 					response.body = getPage(signup ? "Sign Up" : "Login", "Invalid form data");
 					return;
 				}
@@ -126,6 +129,7 @@ namespace zormid::site {
 			if (!username.has_value() || !password.has_value()) {
 				response.statusCode = 400;
 				response.statusMessage = "Bad Request";
+				response.headers["Content-Type"] = "text/html";
 				response.body = getPage(signup ? "Sign Up" : "Login", "Invalid form data");
 				return;
 			}
@@ -135,6 +139,7 @@ namespace zormid::site {
 				if (userID && user::manager::exists(*userID)) {
 					response.statusCode = 409;
 					response.statusMessage = "Conflict";
+					response.headers["Content-Type"] = "text/html";
 					response.body = getPage("Sign Up", "User already exists");
 					return;
 				}
@@ -145,6 +150,7 @@ namespace zormid::site {
 				if (!userID || !user::manager::exists(*userID)) {
 					response.statusCode = 404;
 					response.statusMessage = "Not Found";
+					response.headers["Content-Type"] = "text/html";
 					response.body = getPage("Login", "User not found");
 					return;
 				}

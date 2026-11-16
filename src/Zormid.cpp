@@ -50,6 +50,7 @@ namespace zormid {
 		net::http::HTTPResponseHeader response;
 		response.statusCode = 404;
 		response.statusMessage = "Not Found";
+		response.headers["Content-Type"] = "text/html";
 		if (data.has_value()) {
 			response.body = *data;
 		}
