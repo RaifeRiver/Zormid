@@ -315,3 +315,19 @@ export function changeUsername(name) {
     }
     websocket.send(buffer);
 }
+
+export function changeChannelUsers(channel, users) {
+    let buffer = new ArrayBuffer(28 + users.length * USER_ID_SIZE);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0xA, true);
+    for (let i = 0; i < 20; i++) {
+        view.setUint8(i + 4, channel.charCodeAt(i));
+    }
+    view.setUint32(24, users.length, true);
+    for (let i = 0; i < users.length; i++) {
+        for (let j = 0; j < USER_ID_SIZE; j++) {
+            view.setUint8(i * USER_ID_SIZE + j + 28, users[i].charCodeAt(j));
+        }
+    }
+    websocket.send(buffer);
+}

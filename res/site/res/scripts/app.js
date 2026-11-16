@@ -55,6 +55,12 @@ let channelUserListButton = document.getElementById("channel-user-list-button");
 
 let userListContainer = document.getElementById("user-list-container");
 let userListUserTemplate = document.getElementById("user-list-user-template");
+let userListManageTemplate = document.getElementById("user-list-manage-template");
+
+let userListManageUsersMenu = document.getElementById("user-list-manage-users-menu");
+let userListManageUsersClose = document.getElementById("user-list-manage-users-close");
+let userListManageUsersUsers = document.getElementById("user-list-manage-users-users");
+let userListManageUsersConfirm = document.getElementById("user-list-manage-users-confirm");
 
 let emojiList = document.getElementById("emoji-list");
 let emojiListList = document.getElementById("emoji-list-list");
@@ -164,10 +170,37 @@ api.setChannelInfoHandler((info) => {
         waitingForChannelMessages = true;
     }
     userListContainer.replaceChildren();
+    let manageUsersElement = userListManageTemplate.content.cloneNode(true);
+    manageUsersElement.querySelector("#user-list-manage-users").addEventListener("click", manageChannelUsers);
+    userListContainer.appendChild(manageUsersElement);
+    userListManageUsersUsers.replaceChildren();
     for (let user of info.users) {
         let userElement = userListUserTemplate.content.cloneNode(true);
         userElement.querySelector(".user-list-username").textContent = user.username;
         userListContainer.appendChild(userElement);
+        let manageElement = addChannelFriendTemplate.content.cloneNode(true);
+        manageElement.querySelector(".add-channel-friend-name").textContent = user.username;
+        let manageButton = manageElement.querySelector(".add-channel-friend-button");
+        manageButton.textContent = "Remove";
+        manageButton.addEventListener("click", (e) => {
+            e.target.textContent = e.target.textContent === "Add" ? "Remove" : "Add";
+        });
+        manageElement.firstElementChild.dataset.id = btoa(user.userID);
+        userListManageUsersUsers.appendChild(manageElement);
+    }
+    for (let user of friends) {
+        if (info.users.map(user => user.userID).includes(user.userID)) {
+            continue;
+        }
+        let manageElement = addChannelFriendTemplate.content.cloneNode(true);
+        manageElement.querySelector(".add-channel-friend-name").textContent = user.username;
+        let manageButton = manageElement.querySelector(".add-channel-friend-button");
+        manageButton.textContent = "Add";
+        manageButton.addEventListener("click", (e) => {
+            e.target.textContent = e.target.textContent === "Add" ? "Remove" : "Add";
+        });
+        manageElement.firstElementChild.dataset.id = btoa(user.userID);
+        userListManageUsersUsers.appendChild(manageElement);
     }
 });
 api.setChannelMessagesHandler((messageInfo) => {
@@ -319,7 +352,7 @@ function openAddChannelMenu() {
         friendElement.querySelector(".add-channel-friend-name").textContent = friend.username;
         friendElement.querySelector(".add-channel-friend-button").addEventListener("click", (e) => {
             e.target.textContent = e.target.textContent === "Add" ? "Remove" : "Add";
-        })
+        });
         addChannelFriends.appendChild(friendElement);
     }
     addChannelMenu.showModal();
@@ -524,6 +557,25 @@ function changeThemeFromSettings() {
     localStorage.setItem("theme", theme);
 }
 
+function manageChannelUsers() {
+    userListManageUsersMenu.showModal();
+}
+
+function closeManageChannelUsersMenu() {
+    userListManageUsersMenu.close();
+}
+
+function changeChannelUsers() {
+    let users = []
+    for (let user of userListManageUsersUsers.children) {
+        if (user.querySelector(".add-channel-friend-button").textContent === "Remove") {
+            users.push(atob(user.dataset.id));
+        }
+    }
+    api.changeChannelUsers(currentChannelID, users);
+    userListManageUsersMenu.close();
+}
+
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -556,3 +608,6 @@ userSettingsProfileUsername.addEventListener("change", changeUsernameFromSetting
 userSettingsAppearanceTab.addEventListener("click", () => openUserSettingsTab(userSettingsAppearance));
 userSettingsAppearanceTheme.addEventListener("change", changeThemeFromSettings);
 userSettingsClose.addEventListener("click", closeUserSettingsMenu);
+
+userListManageUsersClose.addEventListener("click", closeManageChannelUsersMenu);
+userListManageUsersConfirm.addEventListener("click", changeChannelUsers);

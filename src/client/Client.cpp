@@ -79,6 +79,9 @@ namespace zormid::client {
 			case 0x9:
 				processChangeUsernamePacket(payload);
 				break;
+			case 0xA:
+				processChangeChannelUsersPacket(payload);
+				break;
 			default:
 				std::cout << "Unknown packet ID: " << id << std::endl;
 				break;
@@ -218,6 +221,32 @@ namespace zormid::client {
 		std::string username;
 		payload >> username;
 		user::manager::changeUsername(mUser->getID(), username);
+	}
+
+	void Client::processChangeChannelUsersPacket(net::http::PayloadReader& payload) {
+		const chat::ChannelID channelID = payload.readChannelID();
+		chat::Channel channel(channelID);
+		uint32_t userCount;
+		payload >> userCount;
+		std::vector<user::manager::UserID> oldUsers = channel.getUsers();
+		for (uint32_t i = 0; i < userCount; i++) {
+			user::manager::UserID userID = payload.readUserID();
+			if (auto it = std::ranges::find(oldUsers, userID); it == oldUsers.end()) {
+				channel.addUser(userID);
+				user::User& user = user::manager::loadUser(userID);
+				user.getChannels().push_back(channelID);
+				user::manager::unloadUser(userID);
+			}
+			else {
+				oldUsers.erase(it);
+			}
+		}
+		for (const user::manager::UserID& userID : oldUsers) {
+			channel.removeUser(userID);
+			user::User& user = user::manager::loadUser(userID);
+			user.getChannels().erase(std::ranges::find(user.getChannels(), channelID));
+			user::manager::unloadUser(userID);
+		}
 	}
 
 	void Client::processCreateChannelPacket(net::http::PayloadReader& payload) {

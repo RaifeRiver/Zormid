@@ -157,14 +157,14 @@ h3 {
 
 .accept-friend-button {
     color: var(--theme-text-color);
-    background-color: inherit;
+    background-color: var(--theme-secondary-background-color);
     border: var(--theme-border-color) 2px solid;
     font-family: var(--theme-font-family), sans-serif;
     margin: 0;
 }
 
 .accept-friend-button:hover {
-    background-color: var(--theme-secondary-background-color);
+    background-color: var(--theme-background-color);
 }
 
 p {
@@ -270,7 +270,7 @@ p {
     background-color: var(--theme-background-color);
 }
 
-#add-channel-add {
+.dialog-confirm-button {
     background-color: var(--theme-secondary-background-color);
     color: var(--theme-text-color);
     font-family: var(--theme-font-family), sans-serif;
@@ -279,7 +279,7 @@ p {
     margin-bottom: 0;
 }
 
-#add-channel-add:hover {
+.dialog-confirm-button:hover {
     background-color: var(--theme-background-color);
 }
 
@@ -389,6 +389,7 @@ p {
     flex-direction: column;
     min-width: 20vw;
     height: 100vh;
+    box-sizing: border-box;
     border-left: var(--theme-border-color) 2px solid;
     overflow-y: auto;
     padding-left: 1vw;
@@ -547,4 +548,25 @@ p {
     color: var(--theme-error-color);
     font-family: var(--theme-font-family), sans-serif;
     display: none;
+}
+
+#user-list-manage-users {
+    color: var(--theme-text-color);
+    background-color: var(--theme-secondary-background-color);
+    border: var(--theme-border-color) 2px solid;
+    font-family: var(--theme-font-family), sans-serif;
+    width: 100%;
+}
+
+#user-list-manage-users:hover {
+    background-color: var(--theme-background-color);
+}
+
+#user-list-manage-users-users {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5vh;
+    height: 20vh;
+    overflow-y: auto;
+    width: inherit;
 }

@@ -36,6 +36,8 @@ namespace zormid::chat {
 
 		void addUser(const user::manager::UserID& id);
 
+		void removeUser(const user::manager::UserID& id);
+
 		[[nodiscard]] const std::vector<user::manager::UserID>& getUsers() const {
 			return mUsers;
 		}

@@ -152,6 +152,12 @@
                     <p class="user-list-username"></p>
                 </div>
             </template>
+
+            <template id="user-list-manage-template">
+                <div class="user-list-user">
+                    <button id="user-list-manage-users">Manage Users</button>
+                </div>
+            </template>
         </div>
 
         <div id="loading-screen">
@@ -192,7 +198,7 @@
             <p>Friends:</p>
             <div id="add-channel-friends"></div>
 
-            <button id="add-channel-add" class="add-channel-button">Add</button>
+            <button id="add-channel-add" class="dialog-confirm-button">Add</button>
             <button id="add-channel-close" class="close-button">X</button>
         </dialog>
 
@@ -232,6 +238,16 @@
             </div>
 
             <button id="user-settings-close" class="close-button">X</button>
+        </dialog>
+
+        <dialog id="user-list-manage-users-menu" class="popup-menu">
+            <h3>Manage Users</h3>
+
+            <p>Users:</p>
+            <div id="user-list-manage-users-users"></div>
+
+            <button id="user-list-manage-users-confirm" class="dialog-confirm-button">Confirm</button>
+            <button id="user-list-manage-users-close" class="close-button">X</button>
         </dialog>
 
         <script type="module" src="/res/scripts/app.js"></script>
