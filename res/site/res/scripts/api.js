@@ -174,7 +174,8 @@ function processPacket(packet) {
 
 export function connect() {
     connected = false;
-    websocket = new WebSocket("ws://" + window.location.host);
+    let protocol = window.location.protocol === "https" ? "wss" : "ws";
+    websocket = new WebSocket(protocol + "://" + window.location.host);
     websocket.binaryType = "arraybuffer";
     websocket.addEventListener("message", (event) => {
         processPacket(event.data);
