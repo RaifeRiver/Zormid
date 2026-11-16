@@ -110,14 +110,15 @@ namespace zormid::chat {
 
 	void Channel::removeUser(const user::manager::UserID& id) {
 		const size_t index = std::ranges::find(mUsers.begin(), mUsers.end(), id) - mUsers.begin();
-		if (index != mUsers.size() - 1) {
+		const bool last = index == mUsers.size() - 1;
+		if (!last) {
 			mUsers[index] = mUsers.back();
 		}
 		mUsers.pop_back();
 		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
 		util::OFileStream userFileStream(CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".users.dat", true);
 		userFileStream << static_cast<uint32_t>(mUsers.size());
-		if (index != mUsers.size()) {
+		if (!last) {
 			userFileStream.seek(index * user::manager::USER_ID_SIZE + 4);
 			userFileStream << mUsers[index];
 		}
