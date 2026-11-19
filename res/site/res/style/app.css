@@ -511,9 +511,17 @@ p {
 .user-settings-content {
     display: flex;
     flex-direction: column;
+    gap: 0.5vh;
 }
 
 .user-settings-content select {
+    color: var(--theme-text-color);
+    background-color: var(--theme-secondary-background-color);
+    border: var(--theme-border-color) 2px solid;
+    font-family: var(--theme-font-family), sans-serif;
+}
+
+.user-settings-content button {
     color: var(--theme-text-color);
     background-color: var(--theme-secondary-background-color);
     border: var(--theme-border-color) 2px solid;

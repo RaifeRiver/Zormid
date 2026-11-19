@@ -71,6 +71,7 @@ let userSettingsMenu = document.getElementById("user-settings-menu");
 let userSettingsProfileTab = document.getElementById("user-settings-profile-tab");
 let userSettingsProfile = document.getElementById("user-settings-profile");
 let userSettingsProfileUsername = document.getElementById("user-settings-profile-username");
+let userSettingsProfileLogout = document.getElementById("user-settings-profile-logout");
 let userSettingsAppearanceTab = document.getElementById("user-settings-appearance-tab");
 let userSettingsAppearance = document.getElementById("user-settings-appearance");
 let userSettingsAppearanceTheme = document.getElementById("user-settings-appearance-theme");
@@ -559,6 +560,12 @@ function changeChannelUsers() {
     userListManageUsersMenu.close();
 }
 
+function logout() {
+    cookies.deleteCookie("user");
+    cookies.deleteCookie("sessionID");
+    window.location.href = "/auth";
+}
+
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -588,6 +595,7 @@ emojiListInput.addEventListener("input", searchEmojiList)
 userSettingsButton.addEventListener("click", openUserSettingsMenu);
 userSettingsProfileTab.addEventListener("click", () => openUserSettingsTab(userSettingsProfile));
 userSettingsProfileUsername.addEventListener("change", changeUsernameFromSettings);
+userSettingsProfileLogout.addEventListener("click", logout);
 userSettingsAppearanceTab.addEventListener("click", () => openUserSettingsTab(userSettingsAppearance));
 userSettingsAppearanceTheme.addEventListener("change", changeThemeFromSettings);
 userSettingsClose.addEventListener("click", closeUserSettingsMenu);
