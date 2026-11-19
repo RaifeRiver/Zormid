@@ -342,30 +342,6 @@ p {
     margin-left: 1vw;
 }
 
-.message-link {
-    color: var(--theme-link-color);
-    font-family: var(--theme-font-family), sans-serif;
-}
-
-.message-code {
-    background-color: var(--theme-secondary-background-color);
-    border: var(--theme-border-color) 1px solid;
-    padding-left: 2px;
-    padding-right: 2px;
-}
-
-.message-heading {
-    color: var(--theme-secondary-text-color);
-    font-family: var(--theme-font-family), sans-serif;
-    margin: 0;
-    display: inline;
-}
-
-.message-mini-text {
-    color: var(--theme-tertiary-text-color);
-    font-size: 12px;
-}
-
 #channel-settings-container {
     display: none;
     margin-left: auto;
@@ -569,4 +545,25 @@ p {
     height: 20vh;
     overflow-y: auto;
     width: inherit;
+}
+
+blockquote {
+    margin-left: 0;
+    padding-left: 1vh;
+    position: relative;
+}
+
+blockquote::before {
+    content: "";
+    background: var(--theme-border-color);
+    border-radius: 5px;
+    width: 3px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+}
+
+a {
+    color: var(--theme-link-color);
 }

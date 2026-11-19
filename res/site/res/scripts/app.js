@@ -1,6 +1,7 @@
 import * as api from "./api.js";
 import * as cookies from "./cookies.js";
 import * as emojis from "./emojis.js";
+import * as markdown from "./markdown.js";
 
 let appContainer = document.getElementById("app-container");
 let loadingScreen = document.getElementById("loading-screen");
@@ -397,25 +398,7 @@ function openFriendsList() {
 }
 
 function processMessageContents(message) {
-    message = message.replaceAll("&", "&amp;");
-    message = message.replaceAll("<", "&lt;");
-    message = message.replaceAll(">", "&gt;");
-    message = message.replace(/`(.*)`/g, "<code class=\"message-code\">$1</code>");
-    message = message.replace(/\*\*(.*)\*\*/g, "<strong>$1</strong>");
-    message = message.replace(/__(.*)__/g, "<strong>$1</strong>");
-    message = message.replace(/\*(.*)\*/g, "<em>$1</em>");
-    message = message.replace(/_(.*)_/g, "<em>$1</em>");
-    message = message.replace(/~~(.*)~~/g, "<s>$1</s>");
-    message = message.replace(/(?<!\()(https?:\/\/.*)/g, "<a class=\"message-link\" href=\"$1\">$1</a>");
-    message = message.replace(/\[(.*)]\((.*)\)/g, "<a class=\"message-link\" href=\"$2\">$1</a>");
-    message = message.replace(/^###### (.*)/gm, "<h6 class=\"message-heading\">$1</h6>");
-    message = message.replace(/^##### (.*)/gm, "<h5 class=\"message-heading\">$1</h5>");
-    message = message.replace(/^#### (.*)/gm, "<h4 class=\"message-heading\">$1</h4>");
-    message = message.replace(/^### (.*)/gm, "<h3 class=\"message-heading\">$1</h3>");
-    message = message.replace(/^## (.*)/gm, "<h2 class=\"message-heading\">$1</h2>");
-    message = message.replace(/^# (.*)/gm, "<h1 class=\"message-heading\">$1</h1>");
-    message = message.replace(/^-# (.*)/gm, "<span class=\"message-mini-text\">$1</span>");
-    return message;
+    return markdown.convertToHTML(message);
 }
 
 function insertMessage(index, from, fromID, content) {
