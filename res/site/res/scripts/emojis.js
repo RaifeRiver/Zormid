@@ -6,6 +6,8 @@ export function setLoadHandler(handler) {
     loadHandler = handler;
 }
 
+const segmenter = new Intl.Segmenter("en", {granularity: "grapheme"});
+
 export function loadEmojis() {
     fetch("/res/data/emoji_list.json").then(response => response.text()).then(text => {
         emojis = JSON.parse(text);
@@ -58,14 +60,12 @@ export function toEmojis(text) {
 
 export function toPlainText(text) {
     let result = "";
-    for (let c of text) {
-        if (reverseEmojis[c]) {
-            result += ':';
-            result += reverseEmojis[c];
-            result += ':';
+    for (let {segment} of segmenter.segment(text)) {
+        if (reverseEmojis[segment]) {
+            result += `:${reverseEmojis[segment]}:`;
         }
         else {
-            result += c;
+            result += segment;
         }
     }
     return result;
