@@ -1,5 +1,7 @@
 let websocket;
 let connected = false;
+let encoder = new TextEncoder();
+let decoder = new TextDecoder();
 
 export const USER_ID_SIZE = 12;
 
@@ -54,12 +56,9 @@ export function setTimeoutHandler(handler) {
 }
 
 function readString(packet, pos) {
-    let str = "";
     let size = packet.getUint32(pos, true);
-    for (let i = 0; i < size; i++) {
-        str += String.fromCharCode(packet.getUint8(pos + 4 + i));
-    }
-    return str;
+    let bytes = new Uint8Array(packet.buffer, pos + 4, size);
+    return {text: decoder.decode(bytes), bytes: size};
 }
 
 function readID(packet, pos, size) {
@@ -76,7 +75,7 @@ function processPacket(packet) {
     switch (id) {
         case 0x0:
             if (authHandler) {
-                let username = readString(view, 4);
+                let username = readString(view, 4).text;
                 authHandler(username);
             }
             break;
@@ -86,11 +85,10 @@ function processPacket(packet) {
                 let friends = [];
                 let pos = 8;
                 for (let i = 0; i < friendCount; i++) {
-                    let friend = {};
-                    friend.userID = readID(view, pos, USER_ID_SIZE);
-                    friend.username = readString(view, pos + USER_ID_SIZE);
-                    pos += 4 + USER_ID_SIZE + friend.username.length;
-                    friends.push(friend);
+                    let id = readID(view, pos, USER_ID_SIZE);
+                    let {text: username, bytes: usernameSize} = readString(view, pos + USER_ID_SIZE);
+                    pos += 4 + USER_ID_SIZE + usernameSize;
+                    friends.push({userID: id, username: username});
                 }
                 friendListRequestHandler(friends);
             }
@@ -98,7 +96,7 @@ function processPacket(packet) {
         case 0x2:
             if (usernameRequestHandler) {
                 let userID = readID(view, 4, USER_ID_SIZE);
-                let username = readString(view, 4 + USER_ID_SIZE);
+                let username = readString(view, 4 + USER_ID_SIZE).text;
                 usernameRequestHandler(username, userID);
             }
             break;
@@ -109,12 +107,11 @@ function processPacket(packet) {
                 let channels = [];
                 let pos = 8 + USER_ID_SIZE;
                 for (let i = 0; i < channelCount; i++) {
-                    let channel = {};
-                    channel.channelID = readID(view, pos, 20);
+                    let channelID = readID(view, pos, 20);
                     pos += 20;
-                    channel.channelName = readString(view, pos);
-                    pos += channel.channelName.length + 4;
-                    channels.push(channel);
+                    let {text: channelName, bytes: channelSize} = readString(view, pos);
+                    pos += channelSize + 4;
+                    channels.push({channelID: channelID, channelName: channelName});
                 }
                 channelListRequestHandler(channels, userID);
             }
@@ -123,25 +120,25 @@ function processPacket(packet) {
             if (messageHandler) {
                 let userID = readID(view, 4, USER_ID_SIZE);
                 let channelID = readID(view, 4 + USER_ID_SIZE, 20);
-                let content = readString(view, 24 + USER_ID_SIZE);
-                let username = readString(view, 28 + USER_ID_SIZE + content.length);
-                let index = view.getUint32(32 + USER_ID_SIZE + content.length + username.length, true);
+                let {text: content, bytes: contentSize} = readString(view, 24 + USER_ID_SIZE);
+                let {text: username, bytes: usernameSize} = readString(view, 28 + USER_ID_SIZE + contentSize);
+                let index = view.getUint32(32 + USER_ID_SIZE + contentSize + usernameSize, true);
                 messageHandler({index: index, content: content, username: username, channelID: channelID, userID: userID});
             }
             break;
         case 0x5:
             if (channelInfoHandler) {
                 let channelID = readID(view, 4, 20);
-                let channelName = readString(view, 24);
-                let messageCount = view.getUint32(28 + channelName.length, true);
-                let userCount = view.getUint32(32 + channelName.length, true);
+                let {text: channelName, channelNameSize} = readString(view, 24);
+                let messageCount = view.getUint32(28 + channelNameSize, true);
+                let userCount = view.getUint32(32 + channelNameSize, true);
                 let users = [];
-                let pos = 36 + channelName.length;
+                let pos = 36 + channelNameSize;
                 for (let i = 0; i < userCount; i++) {
                     let userID = readID(view, pos, USER_ID_SIZE);
-                    let username = readString(view, pos + USER_ID_SIZE);
+                    let {text: username, size: usernameSize} = readString(view, pos + USER_ID_SIZE);
                     users.push({userID: userID, username: username});
-                    pos += USER_ID_SIZE + 4 + username.length;
+                    pos += USER_ID_SIZE + 4 + usernameSize;
                 }
                 channelInfoHandler({channelID: channelID, name: channelName, messageCount: messageCount, users: users});
             }
@@ -154,14 +151,13 @@ function processPacket(packet) {
                 let messages = [];
                 let pos = 32;
                 for (let i = 0; i < messageCount; i++) {
-                    let message = {};
-                    message.userID = readID(view, pos, USER_ID_SIZE);
+                    let userID = readID(view, pos, USER_ID_SIZE);
                     pos += USER_ID_SIZE;
-                    message.content = readString(view, pos);
-                    pos += message.content.length + 4;
-                    message.username = readString(view, pos);
-                    pos += message.username.length + 4;
-                    messages.push(message);
+                    let {text: content, bytes: contentSize} = readString(view, pos);
+                    pos += contentSize + 4;
+                    let {text: username, bytes: usernameSize} = readString(view, pos);
+                    pos += usernameSize + 4;
+                    messages.push({userID: userID, content: content, username: username});
                 }
                 channelMessagesHandler({channelID: channelID, firstMessage: firstMessage, messages: messages});
             }
@@ -255,15 +251,16 @@ export function requestChannelList(userID) {
 }
 
 export function sendMessage(message, channelID) {
-    let buffer = new ArrayBuffer(message.length + 28);
+    let bytes = encoder.encode(message);
+    let buffer = new ArrayBuffer(bytes.length + 28);
     let view = new DataView(buffer);
     view.setUint32(0, 0x5, true);
     for (let i = 0; i < 20; i++) {
         view.setUint8(i + 4, channelID.charCodeAt(i));
     }
-    view.setUint32(24, message.length, true);
-    for (let i = 0; i < message.length; i++) {
-        view.setUint8(i + 28, message.charCodeAt(i));
+    view.setUint32(24, bytes.length, true);
+    for (let i = 0; i < bytes.length; i++) {
+        view.setUint8(i + 28, bytes[i]);
     }
     websocket.send(buffer);
 }
@@ -290,29 +287,31 @@ export function requestChannelMessages(channelID, firstMessage) {
 }
 
 export function createChannel(name, users) {
-    let buffer = new ArrayBuffer(12 + name.length + users.length * USER_ID_SIZE);
+    let bytes = encoder.encode(name);
+    let buffer = new ArrayBuffer(12 + bytes.length + users.length * USER_ID_SIZE);
     let view = new DataView(buffer);
     view.setUint32(0, 0x7, true);
-    view.setUint32(4, name.length, true);
-    for (let i = 0; i < name.length; i++) {
-        view.setUint8(i + 8, name.charCodeAt(i));
+    view.setUint32(4, bytes.length, true);
+    for (let i = 0; i < bytes.length; i++) {
+        view.setUint8(i + 8, bytes[i]);
     }
-    view.setUint32(8 + name.length, users.length, true);
+    view.setUint32(8 + bytes.length, users.length, true);
     for (let i = 0; i < users.length; i++) {
         for (let j = 0; j < USER_ID_SIZE; j++) {
-            view.setUint8(i * USER_ID_SIZE + j + 12 + name.length, users[i].charCodeAt(j));
+            view.setUint8(i * USER_ID_SIZE + j + 12 + bytes.length, users[i].charCodeAt(j));
         }
     }
     websocket.send(buffer);
 }
 
 export function changeUsername(name) {
-    let buffer = new ArrayBuffer(8 + name.length);
+    let bytes = encoder.encode(name);
+    let buffer = new ArrayBuffer(8 + bytes.length);
     let view = new DataView(buffer);
     view.setUint32(0, 0x9, true);
-    view.setUint32(4, name.length, true);
-    for (let i = 0; i < name.length; i++) {
-        view.setUint8(i + 8, name.charCodeAt(i));
+    view.setUint32(4, bytes.length, true);
+    for (let i = 0; i < bytes.length; i++) {
+        view.setUint8(i + 8, bytes[i]);
     }
     websocket.send(buffer);
 }
