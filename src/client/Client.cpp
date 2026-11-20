@@ -1,9 +1,12 @@
 #include "Client.h"
 
 #include <cstring>
+#include <filesystem>
 #include <iostream>
 
 #include "Zormid.h"
+#include "util/Base64.h"
+#include "util/FileStream.h"
 
 namespace zormid::client {
 	Client::Client(std::unique_ptr<net::http::WebSocket> socket) : mSocket(std::move(socket)) {}
@@ -81,6 +84,9 @@ namespace zormid::client {
 				break;
 			case 0xA:
 				processChangeChannelUsersPacket(payload);
+				break;
+			case 0xB:
+				processFileUploadPacket(payload);
 				break;
 			default:
 				std::cout << "Unknown packet ID: " << id << std::endl;
@@ -221,6 +227,31 @@ namespace zormid::client {
 		std::string username;
 		payload >> username;
 		user::manager::changeUsername(mUser->getID(), username);
+	}
+
+	void Client::processFileUploadPacket(net::http::PayloadReader& payload) const {
+		char id[20];
+		payload.read(id, 20);
+		std::string name;
+		payload >> name;
+		uint32_t size;
+		payload >> size;
+		const std::string encodedID = util::base64::encodeURL(id, 20);
+		const std::string dir = "../data/uploads/" + encodedID.substr(0, 2);
+		if (!std::filesystem::exists(dir)) {
+			std::filesystem::create_directories(dir);
+		}
+		std::string file = dir + "/" + encodedID.substr(2);
+		util::OFileStream fileStream(file);
+		fileStream << name;
+		fileStream << size;
+		char contents[size];
+		payload.read(contents, size);
+		fileStream.write(contents, size);
+		net::http::PayloadWriter response;
+		response << 0x7;
+		response.write(id, 20);
+		mSocket->write(response.buildPayload());
 	}
 
 	void Client::processChangeChannelUsersPacket(net::http::PayloadReader& payload) {

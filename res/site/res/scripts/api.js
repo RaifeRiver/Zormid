@@ -1,3 +1,5 @@
+import * as base64 from "./base64.js";
+
 let websocket;
 let connected = false;
 let encoder = new TextEncoder();
@@ -330,4 +332,30 @@ export function changeChannelUsers(channel, users) {
         }
     }
     websocket.send(buffer);
+}
+
+export async function uploadFile(file) {
+    let fileBuffer = await file.arrayBuffer();
+    let array = new Uint8Array(fileBuffer);
+    let nameBytes = encoder.encode(file.name);
+    let buffer = new ArrayBuffer(32 + nameBytes.length + array.length);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0xB, true);
+    let rawID = "";
+    for (let i = 0; i < 20; i++) {
+        let value = Math.floor(Math.random() * 256);
+        view.setUint8(i + 4, value);
+        rawID += String.fromCharCode(value);
+    }
+    let id = base64.encodeURL(rawID);
+    view.setUint32(24, nameBytes.length, true);
+    for (let i = 0; i < nameBytes.length; i++) {
+        view.setUint8(i + 28, nameBytes[i]);
+    }
+    view.setUint32(28 + nameBytes.length, array.length, true);
+    for (let i = 0; i < array.length; i++) {
+        view.setUint8(i + 32 + nameBytes.length, array[i]);
+    }
+    websocket.send(buffer);
+    return id;
 }

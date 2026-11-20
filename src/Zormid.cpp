@@ -1,5 +1,6 @@
 #include "Zormid.h"
 
+#include <filesystem>
 #include <iostream>
 #include <ranges>
 #include <unistd.h>
@@ -13,6 +14,9 @@
 #include "site/Auth.h"
 #include "user/UserManager.h"
 #include "util/FileHelper.h"
+#include "util/FileStream.h"
+#include "util/MimeType.h"
+#include "util/StringHelper.h"
 
 namespace zormid {
 	void Zormid::run() {
@@ -93,6 +97,31 @@ namespace zormid {
 				client->close();
 				return;
 			}
+			if (request.path.starts_with("/upload/")) {
+				std::string dir = "../data/uploads/" + request.path.substr(8, 2);
+				if (!std::filesystem::is_directory(dir)) {
+					write404Message(client);
+					return;
+				}
+				std::string file = dir + "/" + request.path.substr(10);
+				if (!std::filesystem::exists(file)) {
+					write404Message(client);
+					return;
+				}
+				util::IFileStream fileStream(file);
+				std::string fileName;
+				fileStream >> fileName;
+				uint32_t size;
+				fileStream >> size;
+				char buffer[size];
+				fileStream.read(buffer, size);
+				response.statusCode = 200;
+				response.statusMessage = "OK";
+				response.body = std::string(buffer, size);
+				response.write(*client);
+				client->close();
+				return;
+			}
 			if (request.path == "/") {
 				const std::optional<std::string> data = util::file::readFile("../res/site/home.html");
 				if (!data.has_value()) {
@@ -115,17 +144,12 @@ namespace zormid {
 			response.statusCode = 200;
 			response.statusMessage = "OK";
 			response.body = data.value();
-			std::string mimeType = "text/plain";
-			if (request.path.ends_with(".js")) {
-				mimeType = "text/javascript";
+			if (std::vector<std::string> splitPath = util::string::split(request.path, ".", 1); splitPath.size() > 1) {
+				response.headers["Content-Type"] = util::getMimeType(splitPath[1]);
 			}
-			else if (request.path.ends_with(".css")) {
-				mimeType = "text/css";
+			else {
+				response.headers["Content-Type"] = "text/plain";
 			}
-			else if (request.path.ends_with(".json")) {
-				mimeType = "application/json";
-			}
-			response.headers["Content-Type"] = mimeType;
 			response.write(*client);
 			client->close();
 		});

@@ -587,12 +587,20 @@ function setState(state) {
     }
 }
 
+async function uploadMessageFiles(files) {
+    for (let file of files) {
+        let id = await api.uploadFile(file);
+        messageInput.value += `![${file.name}](${window.location.origin}/upload/${id})`;
+    }
+}
+
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
         sendMessage();
     }
 });
+messageInput.addEventListener("drop", async (event) => uploadMessageFiles(event.dataTransfer.files));
 
 sendButton.addEventListener("click", sendMessage);
 
@@ -623,3 +631,6 @@ userSettingsClose.addEventListener("click", closeUserSettingsMenu);
 
 userListManageUsersClose.addEventListener("click", closeManageChannelUsersMenu);
 userListManageUsersConfirm.addEventListener("click", changeChannelUsers);
+
+window.addEventListener("drop", (event) => event.preventDefault());
+window.addEventListener("dragover", (event) => event.preventDefault());
