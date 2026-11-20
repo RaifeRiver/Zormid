@@ -42,7 +42,7 @@ function processInline(markdown) {
         let text = markdown.substring(startIndex + 1, endIndex);
         let formatting = markdown.substring(endIndex + 2, formattingEndIndex);
         let style = "";
-        for (let format of formatting.split(",")) {
+        for (let format of formatting.split(";")) {
             let parts = format.split("=", 2);
             if (parts.length < 2) {
                 continue;
