@@ -119,6 +119,8 @@ api.setAuthHandler((username) => {
     loadingScreen.style.display = "none";
     appContainer.style.display = "flex";
 
+    document.title = "Zormid - Friends";
+
     window.addEventListener("popstate", (event) => setState(event.state));
     if (history.state) {
         setState(history.state);
@@ -169,6 +171,7 @@ api.setChannelInfoHandler((info) => {
     if (info.channelID !== currentChannelID) {
         return;
     }
+    document.title = `Zormid - ${info.name}`;
     channelName.textContent = info.name;
     channelMessageCount = info.messageCount;
     channelSettingsContainer.style.display = "flex";
@@ -399,6 +402,7 @@ function openFriendsList() {
         return;
     }
     history.pushState({}, "", "/app/");
+    document.title = "Zormid - Friends";
     currentChannelID = undefined;
     channelContainer.style.display = "none";
     channelName.textContent = "Friends";
