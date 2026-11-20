@@ -1,4 +1,5 @@
 import * as api from "./api.js";
+import * as base64 from "./base64.js";
 import * as cookies from "./cookies.js";
 import * as emojis from "./emojis.js";
 import * as markdown from "./markdown.js";
@@ -117,6 +118,11 @@ api.setAuthHandler((username) => {
 
     loadingScreen.style.display = "none";
     appContainer.style.display = "flex";
+
+    window.addEventListener("popstate", (event) => setState(event.state));
+    if (history.state) {
+        setState(history.state);
+    }
 });
 api.setFriendListRequestHandler((f) => {
     friends = f;
@@ -338,6 +344,7 @@ function changeChannel(channelID) {
     if (channelID === currentChannelID) {
         return;
     }
+    history.pushState({channel: channelID}, "", "/app/channel/" + base64.encodeURL(channelID));
     if (!currentChannelID) {
         friendListContainer.style.display = "none";
         channelContainer.style.display = "flex";
@@ -391,6 +398,7 @@ function openFriendsList() {
     if (!currentChannelID) {
         return;
     }
+    history.pushState({}, "", "/app/");
     currentChannelID = undefined;
     channelContainer.style.display = "none";
     channelName.textContent = "Friends";
@@ -564,6 +572,15 @@ function logout() {
     cookies.deleteCookie("user");
     cookies.deleteCookie("sessionID");
     window.location.href = "/auth";
+}
+
+function setState(state) {
+    if (state.channel) {
+        changeChannel(state.channel);
+    }
+    else {
+        openFriendsList();
+    }
 }
 
 messageInput.addEventListener("keydown", (event) => {
