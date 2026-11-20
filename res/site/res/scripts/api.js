@@ -129,7 +129,7 @@ function processPacket(packet) {
         case 0x5:
             if (channelInfoHandler) {
                 let channelID = readID(view, 4, 20);
-                let {text: channelName, channelNameSize} = readString(view, 24);
+                let {text: channelName, bytes: channelNameSize} = readString(view, 24);
                 let messageCount = view.getUint32(28 + channelNameSize, true);
                 let userCount = view.getUint32(32 + channelNameSize, true);
                 let users = [];
