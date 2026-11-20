@@ -56,7 +56,6 @@ function processInline(markdown) {
         }
         markdown = markdown.slice(0, startIndex) + `<span style="${style}">${text}</span>` + markdown.slice(formattingEndIndex + 1);
     }
-    markdown = markdown.replace(/\[(.*)]{colou?r=(.*)}/g, "<span style=\"color: $2\">$1</span>");
     return markdown;
 }
 
