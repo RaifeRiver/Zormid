@@ -22,7 +22,7 @@ function processInline(markdown) {
     markdown = markdown.replaceAll("\\-", "&#45;");
     markdown = markdown.replaceAll("\\.", "&period;");
     markdown = markdown.replaceAll("\\!", "&excl;");
-    markdown = markdown.replace("\\|", "&mid;");
+    markdown = markdown.replaceAll("\\|", "&mid;");
     markdown = markdown.replace(/`(.*)`/g, "<code>$1</code>");
     markdown = markdown.replace(/\*\*(.*)\*\*/g, "<strong>$1</strong>");
     markdown = markdown.replace(/__(.*)__/g, "<strong>$1</strong>");
@@ -34,6 +34,9 @@ function processInline(markdown) {
     markdown = markdown.replace(/&lt;(.+)&gt;/g, "<a href=\"$1\">$1</a>");
     for (let i = 0; i < markdown.length; i++) {
         let startIndex = markdown.indexOf("[", i);
+        if (startIndex === -1) {
+            break;
+        }
         let endIndex = markdown.indexOf("]", startIndex);
         if (endIndex === -1 || markdown.charAt(endIndex + 1) !== "{") {
             continue;
