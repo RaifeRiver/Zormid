@@ -136,7 +136,7 @@ function processPacket(packet) {
                 let pos = 36 + channelNameSize;
                 for (let i = 0; i < userCount; i++) {
                     let userID = readID(view, pos, USER_ID_SIZE);
-                    let {text: username, size: usernameSize} = readString(view, pos + USER_ID_SIZE);
+                    let {text: username, bytes: usernameSize} = readString(view, pos + USER_ID_SIZE);
                     users.push({userID: userID, username: username});
                     pos += USER_ID_SIZE + 4 + usernameSize;
                 }
