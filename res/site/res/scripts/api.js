@@ -336,6 +336,8 @@ export function changeChannelUsers(channel, users) {
 
 export async function uploadFile(file) {
     let fileBuffer = await file.arrayBuffer();
+    let hashBuffer = await crypto.subtle.digest("SHA-1", fileBuffer);
+    let hash = new Uint8Array(hashBuffer);
     let array = new Uint8Array(fileBuffer);
     let nameBytes = encoder.encode(file.name);
     let buffer = new ArrayBuffer(32 + nameBytes.length + array.length);
@@ -343,9 +345,8 @@ export async function uploadFile(file) {
     view.setUint32(0, 0xB, true);
     let rawID = "";
     for (let i = 0; i < 20; i++) {
-        let value = Math.floor(Math.random() * 256);
-        view.setUint8(i + 4, value);
-        rawID += String.fromCharCode(value);
+        rawID += String.fromCharCode(hash[i]);
+        view.setUint8(i + 4, hash[i]);
     }
     let id = base64.encodeURL(rawID);
     view.setUint32(24, nameBytes.length, true);

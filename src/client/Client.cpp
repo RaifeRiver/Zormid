@@ -248,10 +248,6 @@ namespace zormid::client {
 		char contents[size];
 		payload.read(contents, size);
 		fileStream.write(contents, size);
-		net::http::PayloadWriter response;
-		response << 0x7;
-		response.write(id, 20);
-		mSocket->write(response.buildPayload());
 	}
 
 	void Client::processChangeChannelUsersPacket(net::http::PayloadReader& payload) {
