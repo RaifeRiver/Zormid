@@ -597,7 +597,7 @@ function setState(state) {
 async function uploadMessageFiles(files) {
     for (let file of files) {
         let id = await api.uploadFile(file);
-        messageInput.value += `![${file.name}](${window.location.origin}/upload/${id})`;
+        messageInput.setRangeText(`![${file.name}](${window.location.origin}/upload/${id})`, messageInput.selectionStart, messageInput.selectionEnd, "end");
     }
 }
 
