@@ -1,5 +1,3 @@
-import * as base64 from "./base64.js";
-
 const LIST_BULLET = 0;
 const LIST_NUMBERED = 1;
 
