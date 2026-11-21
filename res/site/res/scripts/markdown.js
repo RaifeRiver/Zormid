@@ -25,11 +25,12 @@ function processInline(markdown) {
     markdown = markdown.replaceAll("\\|", "&mid;");
     markdown = markdown.replace(/`(.*)`/g, "<code>$1</code>");
     markdown = markdown.replace(/\*\*(.*)\*\*/g, "<strong>$1</strong>");
-    markdown = markdown.replace(/__(.*)__/g, "<strong>$1</strong>");
+    markdown = markdown.replace(/(https?:\/\/[^)]*)|__(.*?)__/g, (_, link, text) => link || `<strong>${text}</strong>`);
     markdown = markdown.replace(/\*(.*)\*/g, "<em>$1</em>");
-    markdown = markdown.replace(/_(.*)_/g, "<em>$1</em>");
+    markdown = markdown.replace(/(https?:\/\/[^)]*)|_(.*?)_/g, (_, link, text) => link || `<em>${text}</em>`);
     markdown = markdown.replace(/~~(.*)~~/g, "<s>$1</s>");
-    markdown = markdown.replace(/(?<!\()(https?:\/\/.*)/g, "<a href=\"$1\">$1</a>");
+    markdown = markdown.replace(/!\[(.*)]\((.*)\)/g, "<img src=\"$2\" alt=\"$1\"></img>");
+    markdown = markdown.replace(/(?<![("])(https?:\/\/.*)/g, "<a href=\"$1\">$1</a>");
     markdown = markdown.replace(/\[(.*)]\((.*)\)/g, "<a href=\"$2\">$1</a>");
     markdown = markdown.replace(/&lt;(.+)&gt;/g, "<a href=\"$1\">$1</a>");
     for (let i = 0; i < markdown.length; i++) {

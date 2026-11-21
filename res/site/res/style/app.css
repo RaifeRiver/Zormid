@@ -575,3 +575,7 @@ blockquote::before {
 a {
     color: var(--theme-link-color);
 }
+
+.message-content img {
+    width: 40vw;
+}
