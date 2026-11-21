@@ -177,7 +177,6 @@ async function processPacket(packet) {
                 break;
             }
             let upload = view.getUint8(24);
-            console.info("Should upload", upload);
             if (upload) {
                 let file = pendingUploads[fileID];
                 let nameBytes = encoder.encode(file.name);
