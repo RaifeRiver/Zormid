@@ -25,12 +25,25 @@ namespace zormid {
 					mPort = port;
 				}
 			}
+			if (splitLine[0] == "max_upload_size") {
+				try {
+					mMaxUploadSize = std::stoll(splitLine[1]);
+				}
+				catch (std::exception&) {}
+				if (mMaxUploadSize < -1) {
+					mMaxUploadSize = -1;
+				}
+			}
 		}
 		save();
 	}
 
 	void Config::setPort(const uint16_t port) {
 		mPort = port;
+	}
+
+	void Config::setMaxUploadSize(const int64_t maxUploadSize) {
+		mMaxUploadSize = maxUploadSize / 1024 / 1024;
 	}
 
 	void Config::save() const {
@@ -40,5 +53,9 @@ namespace zormid {
 		}
 		file << "# The port of the web server used to connect to Zormid" << std::endl;
 		file << "port=" << mPort << std::endl;
+		file << std::endl;
+		file << "# The maximum file size in megabytes to allow uploading" << std::endl;
+		file << "# Set to -1 to disable limit and 0 to disable uploading" << std::endl;
+		file << "max_upload_size=" << mMaxUploadSize << std::endl;
 	}
 }

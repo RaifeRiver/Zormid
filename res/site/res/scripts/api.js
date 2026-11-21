@@ -58,6 +58,11 @@ export function setTimeoutHandler(handler) {
     timeoutHandler = handler;
 }
 
+export let uploadFailedHandler;
+export function setUploadFailedHandler(handler) {
+    uploadFailedHandler = handler;
+}
+
 function readString(packet, pos) {
     let size = packet.getUint32(pos, true);
     let bytes = new Uint8Array(packet.buffer, pos + 4, size);
@@ -176,8 +181,8 @@ async function processPacket(packet) {
             if (!pendingUploads[fileID]) {
                 break;
             }
-            let upload = view.getUint8(24);
-            if (upload) {
+            let status = view.getUint8(24);
+            if (status === 0) {
                 let file = pendingUploads[fileID];
                 let nameBytes = encoder.encode(file.name);
                 let fileBuffer = await file.arrayBuffer();
@@ -197,6 +202,11 @@ async function processPacket(packet) {
                     responseView.setUint8(i + 32 + nameBytes.length, array[i]);
                 }
                 websocket.send(buffer);
+            }
+            else if (status === 1) {
+                if (uploadFailedHandler) {
+                    uploadFailedHandler(base64.encodeURL(fileID), "File too large");
+                }
             }
             delete pendingUploads[fileID];
             break;
@@ -372,7 +382,7 @@ export async function uploadFile(file) {
     let fileBuffer = await file.arrayBuffer();
     let hashBuffer = await crypto.subtle.digest("SHA-1", fileBuffer);
     let hash = new Uint8Array(hashBuffer);
-    let buffer = new ArrayBuffer(24);
+    let buffer = new ArrayBuffer(28);
     let view = new DataView(buffer);
     view.setUint32(0, 0xB, true);
     let rawID = "";
@@ -380,6 +390,7 @@ export async function uploadFile(file) {
         rawID += String.fromCharCode(hash[i]);
         view.setUint8(i + 4, hash[i]);
     }
+    view.setUint32(24, file.size, true);
     let id = base64.encodeURL(rawID);
     pendingUploads[rawID] = file;
     websocket.send(buffer);

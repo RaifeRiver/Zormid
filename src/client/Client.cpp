@@ -235,11 +235,21 @@ namespace zormid::client {
 	void Client::processFileUploadRequestPacket(net::http::PayloadReader& payload) const {
 		char id[20];
 		payload.read(id, 20);
+		uint32_t size;
+		payload >> size;
 		const std::string encodedID = util::base64::encodeURL(id, 20);
 		net::http::PayloadWriter response;
 		response << 0x7u;
 		response.write(id, 20);
-		response << !std::filesystem::exists("../data/uploads/" + encodedID.substr(0, 2) + "/" + encodedID.substr(2));
+		if (const int64_t maxUploadSize = Zormid::getInstance().getConfig().getMaxUploadSize(); maxUploadSize != -1 && size > maxUploadSize) {
+			response << 1u;
+		}
+		else if (std::filesystem::exists("../data/uploads/" + encodedID.substr(0, 2) + "/" + encodedID.substr(2))) {
+			response << 2u;
+		}
+		else {
+			response << 0u;
+		}
 		mSocket->write(response.buildPayload());
 	}
 
@@ -250,6 +260,9 @@ namespace zormid::client {
 		payload >> name;
 		uint32_t size;
 		payload >> size;
+		if (int64_t maxUploadSize = Zormid::getInstance().getConfig().getMaxUploadSize(); maxUploadSize != -1 && size > maxUploadSize) {
+			return;
+		}
 		const std::string encodedID = util::base64::encodeURL(id, 20);
 		const std::string dir = "../data/uploads/" + encodedID.substr(0, 2);
 		if (!std::filesystem::exists(dir)) {

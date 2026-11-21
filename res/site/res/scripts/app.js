@@ -3,6 +3,7 @@ import * as base64 from "./base64.js";
 import * as cookies from "./cookies.js";
 import * as emojis from "./emojis.js";
 import * as markdown from "./markdown.js";
+import {setUploadFailedHandler} from "./api.js";
 
 let appContainer = document.getElementById("app-container");
 let loadingScreen = document.getElementById("loading-screen");
@@ -250,6 +251,11 @@ api.setTimeoutHandler(() => {
         connectionAttempts++;
         api.connect();
     }, 5000);
+});
+
+api.setUploadFailedHandler((id, message) => {
+    messageInput.value = messageInput.value.replace(new RegExp(`!\\[.*?]\\(${window.location.origin}/upload/${id}\\)`, "g"), "");
+    window.requestAnimationFrame(() => alert(`Upload failed: ${message}`));
 });
 
 connectionAttempts++;
