@@ -43,7 +43,7 @@ namespace zormid {
 	}
 
 	void Config::setMaxUploadSize(const int64_t maxUploadSize) {
-		mMaxUploadSize = maxUploadSize / 1024 / 1024;
+		mMaxUploadSize = maxUploadSize == -1 ? -1 : maxUploadSize / 1024 / 1024;
 	}
 
 	void Config::save() const {

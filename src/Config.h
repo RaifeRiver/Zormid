@@ -14,7 +14,7 @@ namespace zormid {
 		void setPort(uint16_t port);
 
 		[[nodiscard]] int64_t getMaxUploadSize() const {
-			return mMaxUploadSize * 1024 * 1024;
+			return mMaxUploadSize == -1 ? -1 : mMaxUploadSize * 1024 * 1024;
 		}
 
 		void setMaxUploadSize(int64_t maxUploadSize);
