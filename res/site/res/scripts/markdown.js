@@ -19,7 +19,7 @@ function fetchFile(file) {
         else {
             let fileNode = fileTemplate.content.cloneNode(true);
             fileNode.firstElementChild.dataset.download = id;
-            let name = atob(response.headers.get("Zormid-File-Name")) || file;
+            let name = atob(response.headers.get("Zormid-File-Name")) || file.substring(file.lastIndexOf("/") + 1);
             fileNode.firstElementChild.dataset.name = btoa(name);
             fileNode.querySelector(".file-name").textContent = name;
             loadingFile.replaceWith(fileNode);
