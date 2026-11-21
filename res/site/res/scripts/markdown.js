@@ -32,7 +32,6 @@ function processInline(markdown) {
     markdown = markdown.replace(/!\[(.*)]\((.*)\)/g, "<img src=\"$2\" alt=\"$1\"></img>");
     markdown = markdown.replace(/(?<![("])(https?:\/\/.*)/g, "<a href=\"$1\">$1</a>");
     markdown = markdown.replace(/\[(.*)]\((.*)\)/g, "<a href=\"$2\">$1</a>");
-    markdown = markdown.replace(/&lt;(.+)&gt;/g, "<a href=\"$1\">$1</a>");
     for (let i = 0; i < markdown.length; i++) {
         let startIndex = markdown.indexOf("[", i);
         if (startIndex === -1) {
