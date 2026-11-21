@@ -13,6 +13,7 @@
 #include "site/App.h"
 #include "site/Auth.h"
 #include "user/UserManager.h"
+#include "util/Base64.h"
 #include "util/FileHelper.h"
 #include "util/FileStream.h"
 #include "util/MimeType.h"
@@ -113,10 +114,11 @@ namespace zormid {
 				fileStream >> fileName;
 				uint32_t size;
 				fileStream >> size;
-				char buffer[size];
+				auto buffer = static_cast<char*>(malloc(size));
 				fileStream.read(buffer, size);
 				response.statusCode = 200;
 				response.statusMessage = "OK";
+				response.headers["Zormid-File-Name"] = util::base64::encode(fileName.c_str(), fileName.length());
 				if (std::vector<std::string> splitName = util::string::split(fileName, ".", 1); splitName.size() > 1) {
 					response.headers["Content-Type"] = util::getMimeType(splitName[1]);
 				}
@@ -125,6 +127,7 @@ namespace zormid {
 				}
 				response.body = std::string(buffer, size);
 				response.write(*client);
+				free(buffer);
 				client->close();
 				return;
 			}

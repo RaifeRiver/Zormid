@@ -68,6 +68,8 @@ let insertInput = document.getElementById("insert-input");
 let uploadFileButton = document.getElementById("upload-file-button");
 let uploadFileInput = document.getElementById("file-upload-input");
 
+let fileDownloadLink = document.getElementById("file-download-link");
+
 let emojiList = document.getElementById("emoji-list");
 let emojiListList = document.getElementById("emoji-list-list");
 let emojiListInput = document.getElementById("emoji-list-input");
@@ -508,6 +510,11 @@ function documentClickHandler(event) {
     }
     if (!insertInput.contains(event.target)) {
         insertInput.open = false;
+    }
+    if (event.target.matches(".file-download")) {
+        fileDownloadLink.href = atob(event.target.parentElement.dataset.download);
+        fileDownloadLink.download = atob(event.target.parentElement.dataset.name);
+        fileDownloadLink.click();
     }
 }
 

@@ -3,14 +3,15 @@ import * as base64 from "./base64.js";
 const LIST_BULLET = 0;
 const LIST_NUMBERED = 1;
 
+let fileTemplate = document.getElementById("file-template");
+
 function fetchFile(file) {
-    console.info(file);
-    let id = base64.encodeURL(file);
+    let id = btoa(file);
     fetch(file).then(async (response) => {
-        let loadingFile = document.querySelector(`div.loading-file[data-src="${id}"]`);
+        let loadingFile = document.querySelector(`div.file[data-src="${id}"]`);
+        delete loadingFile.dataset.src;
         if (response.status !== 200) {
             loadingFile.innerHTML = "Failed to load file";
-            delete loadingFile.dataset.src;
             return;
         }
         let mimeType = response.headers.get("Content-Type") || "unknown";
@@ -18,11 +19,16 @@ function fetchFile(file) {
             loadingFile.outerHTML = `<img src="${URL.createObjectURL(await response.blob())}"/>`;
         }
         else {
-            loadingFile.innerHTML = `Unsupported file type: ${mimeType}`;
+            let fileNode = fileTemplate.content.cloneNode(true);
+            fileNode.firstElementChild.dataset.download = id;
+            let name = atob(response.headers.get("Zormid-File-Name")) || file;
+            fileNode.firstElementChild.dataset.name = btoa(name);
+            fileNode.querySelector(".file-name").textContent = name;
+            loadingFile.replaceWith(fileNode);
             delete loadingFile.dataset.src;
         }
     });
-    return `<div class="loading-file" data-src="${id}"><div class="loading-icon"></div></div>`;
+    return `<div class="file" data-src="${id}"><div class="loading-icon"></div></div>`;
 }
 
 function processInline(markdown) {
