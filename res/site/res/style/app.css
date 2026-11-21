@@ -625,3 +625,29 @@ a {
 #file-upload-input {
     display: none;
 }
+
+.loading-icon {
+    width: 4vh;
+    height: 4vh;
+    border: transparent 2px solid;
+    border-radius: 50%;
+    background: linear-gradient(var(--theme-background-color)) padding-box, linear-gradient(to right, var(--theme-border-color), var(--theme-secondary-background-color)) border-box;
+    animation: loading 1s linear infinite;
+}
+
+@keyframes loading {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-file {
+    border: var(--theme-border-color) 2px solid;
+    width: 30vh;
+    height: 6vh;
+    padding-left: 1vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
+}

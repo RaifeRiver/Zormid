@@ -1,6 +1,20 @@
 const LIST_BULLET = 0;
 const LIST_NUMBERED = 1;
 
+function fetchFile(file) {
+    console.info(file);
+    fetch(file).then(async (response) => {
+        let loadingFile = document.querySelector(`div.loading-file[data-src="${file}"]`);
+        if (response.status !== 200) {
+            loadingFile.innerHTML = "Failed to load file";
+            delete loadingFile.dataset.src;
+            return;
+        }
+        loadingFile.outerHTML = `<img src="${URL.createObjectURL(await response.blob())}"/>`;
+    });
+    return `<div class="loading-file" data-src="${file}"><div class="loading-icon"></div></div>`;
+}
+
 function processInline(markdown) {
     markdown = markdown.replaceAll("&", "&amp;");
     markdown = markdown.replaceAll("<", "&lt;");
@@ -29,7 +43,7 @@ function processInline(markdown) {
     markdown = markdown.replace(/\*(.*)\*/g, "<em>$1</em>");
     markdown = markdown.replace(/(https?:\/\/[^)]*)|_(.*?)_/g, (_, link, text) => link || `<em>${text}</em>`);
     markdown = markdown.replace(/~~(.*)~~/g, "<s>$1</s>");
-    markdown = markdown.replace(/!\[(.*)]\((.*)\)/g, "<img src=\"$2\" alt=\"$1\"></img>");
+    markdown = markdown.replace(/!\[(.*)]\((.*)\)/g, (_, name, src) => fetchFile(src));
     markdown = markdown.replace(/(?<![("])(https?:\/\/.*)/g, "<a href=\"$1\">$1</a>");
     markdown = markdown.replace(/\[(.*)]\((.*)\)/g, "<a href=\"$2\">$1</a>");
     for (let i = 0; i < markdown.length; i++) {
