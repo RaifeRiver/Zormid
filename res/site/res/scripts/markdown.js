@@ -1,18 +1,28 @@
+import * as base64 from "./base64.js";
+
 const LIST_BULLET = 0;
 const LIST_NUMBERED = 1;
 
 function fetchFile(file) {
     console.info(file);
+    let id = base64.encodeURL(file);
     fetch(file).then(async (response) => {
-        let loadingFile = document.querySelector(`div.loading-file[data-src="${file}"]`);
+        let loadingFile = document.querySelector(`div.loading-file[data-src="${id}"]`);
         if (response.status !== 200) {
             loadingFile.innerHTML = "Failed to load file";
             delete loadingFile.dataset.src;
             return;
         }
-        loadingFile.outerHTML = `<img src="${URL.createObjectURL(await response.blob())}"/>`;
+        let mimeType = response.headers.get("Content-Type") || "unknown";
+        if (mimeType.startsWith("image/")) {
+            loadingFile.outerHTML = `<img src="${URL.createObjectURL(await response.blob())}"/>`;
+        }
+        else {
+            loadingFile.innerHTML = `Unsupported file type: ${mimeType}`;
+            delete loadingFile.dataset.src;
+        }
     });
-    return `<div class="loading-file" data-src="${file}"><div class="loading-icon"></div></div>`;
+    return `<div class="loading-file" data-src="${id}"><div class="loading-icon"></div></div>`;
 }
 
 function processInline(markdown) {

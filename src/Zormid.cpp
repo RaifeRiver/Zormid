@@ -117,6 +117,12 @@ namespace zormid {
 				fileStream.read(buffer, size);
 				response.statusCode = 200;
 				response.statusMessage = "OK";
+				if (std::vector<std::string> splitName = util::string::split(fileName, ".", 1); splitName.size() > 1) {
+					response.headers["Content-Type"] = util::getMimeType(splitName[1]);
+				}
+				else {
+					response.headers["Content-Type"] = "text/plain";
+				}
 				response.body = std::string(buffer, size);
 				response.write(*client);
 				client->close();
