@@ -259,9 +259,10 @@ namespace zormid::client {
 		util::OFileStream fileStream(file);
 		fileStream << name;
 		fileStream << size;
-		char contents[size];
+		auto contents = static_cast<char*>(malloc(size));
 		payload.read(contents, size);
 		fileStream.write(contents, size);
+		free(contents);
 	}
 
 	void Client::processChangeChannelUsersPacket(net::http::PayloadReader& payload) {
