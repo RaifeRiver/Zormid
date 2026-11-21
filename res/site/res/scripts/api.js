@@ -4,6 +4,7 @@ let websocket;
 let connected = false;
 let encoder = new TextEncoder();
 let decoder = new TextDecoder();
+let pendingUploads = {};
 
 export const USER_ID_SIZE = 12;
 
@@ -71,7 +72,7 @@ function readID(packet, pos, size) {
     return id;
 }
 
-function processPacket(packet) {
+async function processPacket(packet) {
     let view = new DataView(packet);
     let id = view.getUint32(0, true);
     switch (id) {
@@ -125,7 +126,13 @@ function processPacket(packet) {
                 let {text: content, bytes: contentSize} = readString(view, 24 + USER_ID_SIZE);
                 let {text: username, bytes: usernameSize} = readString(view, 28 + USER_ID_SIZE + contentSize);
                 let index = view.getUint32(32 + USER_ID_SIZE + contentSize + usernameSize, true);
-                messageHandler({index: index, content: content, username: username, channelID: channelID, userID: userID});
+                messageHandler({
+                    index: index,
+                    content: content,
+                    username: username,
+                    channelID: channelID,
+                    userID: userID
+                });
             }
             break;
         case 0x5:
@@ -164,6 +171,36 @@ function processPacket(packet) {
                 channelMessagesHandler({channelID: channelID, firstMessage: firstMessage, messages: messages});
             }
             break;
+        case 0x7:
+            let fileID = readID(view, 4, 20);
+            if (!pendingUploads[fileID]) {
+                break;
+            }
+            let upload = view.getUint8(24);
+            console.info("Should upload", upload);
+            if (upload) {
+                let file = pendingUploads[fileID];
+                let nameBytes = encoder.encode(file.name);
+                let fileBuffer = await file.arrayBuffer();
+                let array = new Uint8Array(fileBuffer);
+                let buffer = new ArrayBuffer(32 + nameBytes.length + array.length);
+                let responseView = new DataView(buffer);
+                responseView.setUint32(0, 0xC, true);
+                for (let i = 0; i < 20; i++) {
+                    responseView.setUint8(i + 4, fileID.charCodeAt(i));
+                }
+                responseView.setUint32(24, nameBytes.length, true);
+                for (let i = 0; i < nameBytes.length; i++) {
+                    responseView.setUint8(i + 28, nameBytes[i]);
+                }
+                responseView.setUint32(28 + nameBytes.length, array.length, true);
+                for (let i = 0; i < array.length; i++) {
+                    responseView.setUint8(i + 32 + nameBytes.length, array[i]);
+                }
+                websocket.send(buffer);
+            }
+            delete pendingUploads[fileID];
+            break;
         default:
             console.warn("Unknown packet ID: " + id);
             break;
@@ -175,9 +212,7 @@ export function connect() {
     let protocol = window.location.protocol === "https:" ? "wss" : "ws";
     websocket = new WebSocket(protocol + "://" + window.location.host);
     websocket.binaryType = "arraybuffer";
-    websocket.addEventListener("message", (event) => {
-        processPacket(event.data);
-    });
+    websocket.addEventListener("message", (event) => processPacket(event.data));
     websocket.addEventListener("open", () => {
         connected = true;
         if (connectHandler) {
@@ -338,9 +373,7 @@ export async function uploadFile(file) {
     let fileBuffer = await file.arrayBuffer();
     let hashBuffer = await crypto.subtle.digest("SHA-1", fileBuffer);
     let hash = new Uint8Array(hashBuffer);
-    let array = new Uint8Array(fileBuffer);
-    let nameBytes = encoder.encode(file.name);
-    let buffer = new ArrayBuffer(32 + nameBytes.length + array.length);
+    let buffer = new ArrayBuffer(24);
     let view = new DataView(buffer);
     view.setUint32(0, 0xB, true);
     let rawID = "";
@@ -349,14 +382,7 @@ export async function uploadFile(file) {
         view.setUint8(i + 4, hash[i]);
     }
     let id = base64.encodeURL(rawID);
-    view.setUint32(24, nameBytes.length, true);
-    for (let i = 0; i < nameBytes.length; i++) {
-        view.setUint8(i + 28, nameBytes[i]);
-    }
-    view.setUint32(28 + nameBytes.length, array.length, true);
-    for (let i = 0; i < array.length; i++) {
-        view.setUint8(i + 32 + nameBytes.length, array[i]);
-    }
+    pendingUploads[rawID] = file;
     websocket.send(buffer);
     return id;
 }

@@ -86,6 +86,9 @@ namespace zormid::client {
 				processChangeChannelUsersPacket(payload);
 				break;
 			case 0xB:
+				processFileUploadRequestPacket(payload);
+				break;
+			case 0xC:
 				processFileUploadPacket(payload);
 				break;
 			default:
@@ -105,7 +108,7 @@ namespace zormid::client {
 			if (memcmp(static_cast<const char*>(sessionID), static_cast<const char*>(session), 16) == 0) {
 				mUser = &user;
 				net::http::PayloadWriter response;
-				response << 0x0;
+				response << 0x0u;
 				response << mUser->getUsername();
 				mSocket->write(response.buildPayload());
 				return;
@@ -116,9 +119,9 @@ namespace zormid::client {
 
 	void Client::processFriendListRequestPacket(net::http::PayloadReader&) const {
 		net::http::PayloadWriter response;
-		response << 0x1;
+		response << 0x1u;
 		const std::vector<user::manager::UserID>& friends = mUser->getFriends();
-		response << friends.size();
+		response << static_cast<uint32_t>(friends.size());
 		for (const user::manager::UserID& friendID : friends) {
 			response << friendID;
 			response << user::manager::loadUser(friendID).getUsername();
@@ -132,7 +135,7 @@ namespace zormid::client {
 		user::User& user = user::manager::loadUser(userID);
 		const std::string& username = user.getUsername();
 		net::http::PayloadWriter response;
-		response << 0x2;
+		response << 0x2u;
 		response << userID;
 		response << username;
 		mSocket->write(response.buildPayload());
@@ -152,9 +155,9 @@ namespace zormid::client {
 		user::User& user = user::manager::loadUser(userID);
 		const std::vector<chat::ChannelID>& channels = user.getChannels();
 		net::http::PayloadWriter response;
-		response << 0x3;
+		response << 0x3u;
 		response << userID;
-		response << channels.size();
+		response << static_cast<uint32_t>(channels.size());
 		for (const chat::ChannelID& c: channels) {
 			response << c;
 			response << chat::Channel(c).getName();
@@ -175,7 +178,7 @@ namespace zormid::client {
 			}
 			user::User& user = user::manager::loadUser(userID);
 			net::http::PayloadWriter messagePayload;
-			messagePayload << 0x4;
+			messagePayload << 0x4u;
 			messagePayload << mUser->getID();
 			messagePayload << channelID;
 			messagePayload << message;
@@ -190,12 +193,12 @@ namespace zormid::client {
 		const chat::ChannelID channelID = payload.readChannelID();
 		chat::Channel channel(channelID);
 		net::http::PayloadWriter response;
-		response << 0x5;
+		response << 0x5u;
 		response << channelID;
 		response << channel.getName();
 		response << channel.getMessageCount();
 		const std::vector<user::manager::UserID>& users = channel.getUsers();
-		response << users.size();
+		response << static_cast<uint32_t>(users.size());
 		for (const user::manager::UserID& userID : users) {
 			response << userID;
 			response << user::manager::loadUser(userID).getUsername();
@@ -210,7 +213,7 @@ namespace zormid::client {
 		uint32_t firstMessage;
 		payload >> firstMessage;
 		net::http::PayloadWriter response;
-		response << 0x6;
+		response << 0x6u;
 		response << channelID;
 		response << firstMessage;
 		const uint32_t messageCount = std::min(channel.getMessageCount() - firstMessage, 50u);
@@ -229,7 +232,18 @@ namespace zormid::client {
 		user::manager::changeUsername(mUser->getID(), username);
 	}
 
-	void Client::processFileUploadPacket(net::http::PayloadReader& payload) const {
+	void Client::processFileUploadRequestPacket(net::http::PayloadReader& payload) const {
+		char id[20];
+		payload.read(id, 20);
+		const std::string encodedID = util::base64::encodeURL(id, 20);
+		net::http::PayloadWriter response;
+		response << 0x7u;
+		response.write(id, 20);
+		response << !std::filesystem::exists("../data/uploads/" + encodedID.substr(0, 2) + "/" + encodedID.substr(2));
+		mSocket->write(response.buildPayload());
+	}
+
+	void Client::processFileUploadPacket(net::http::PayloadReader& payload) {
 		char id[20];
 		payload.read(id, 20);
 		std::string name;

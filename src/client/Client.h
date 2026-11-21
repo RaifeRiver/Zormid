@@ -53,7 +53,9 @@ namespace zormid::client {
 
 		void processChangeUsernamePacket(net::http::PayloadReader& payload) const;
 
-		void processFileUploadPacket(net::http::PayloadReader& payload) const;
+		void processFileUploadRequestPacket(net::http::PayloadReader& payload) const;
+
+		static void processFileUploadPacket(net::http::PayloadReader& payload) ;
 
 		static void processChangeChannelUsersPacket(net::http::PayloadReader& payload);
 
