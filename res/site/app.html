@@ -126,7 +126,16 @@
                     </template>
 
                     <div id="input-container">
+                        <details id="insert-input">
+                            <summary>+</summary>
+
+                            <div id="insert-input-container">
+                                <button id="upload-file-button">Upload File...</button>
+                            </div>
+                        </details>
+
                         <textarea id="message-input" placeholder="Type message here"></textarea>
+
                         <details id="emoji-list">
                             <summary>😀</summary>
 
@@ -141,6 +150,8 @@
                         <button id="send-button">➤</button>
                     </div>
                 </div>
+
+                <input id="file-upload-input" type="file">
             </div>
 
             <div id="user-list-container" style="display: none;">

@@ -85,7 +85,7 @@ body {
     aspect-ratio: 1/1;
     color: var(--theme-text-color);
     font-size: 25px;
-    align-self: center;
+    align-self: flex-start;
 }
 
 .popup-menu[open] {
@@ -383,6 +383,7 @@ p {
     border: var(--theme-border-color) 2px solid;
     color: var(--theme-text-color);
     margin-right: 0.5vw;
+    max-height: 3vh;
     aspect-ratio: 1/1;
     align-content: center;
     justify-content: center;
@@ -578,4 +579,49 @@ a {
 
 .message-content img {
     width: 40vw;
+}
+
+#insert-input {
+    background-color: var(--theme-secondary-background-color);
+    border: var(--theme-border-color) 2px solid;
+    color: var(--theme-text-color);
+    margin-right: 0.5vw;
+    max-height: 3vh;
+    aspect-ratio: 1/1;
+    align-content: center;
+    justify-content: center;
+    position: relative;
+}
+
+#insert-input:hover {
+    background-color: var(--theme-background-color);
+}
+
+#insert-input summary {
+    list-style: none;
+    text-align: center;
+}
+
+#insert-input-container {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background-color: var(--theme-secondary-background-color);
+    border: var(--theme-border-color) 2px solid;
+    width: 10vw;
+}
+
+#insert-input-container button {
+    color: var(--theme-text-color);
+    background-color: var(--theme-secondary-background-color);
+    border: none;
+    width: 100%;
+}
+
+#insert-input-container button:hover {
+    background-color: var(--theme-background-color);
+}
+
+#file-upload-input {
+    display: none;
 }

@@ -64,6 +64,10 @@ let userListManageUsersClose = document.getElementById("user-list-manage-users-c
 let userListManageUsersUsers = document.getElementById("user-list-manage-users-users");
 let userListManageUsersConfirm = document.getElementById("user-list-manage-users-confirm");
 
+let insertInput = document.getElementById("insert-input");
+let uploadFileButton = document.getElementById("upload-file-button");
+let uploadFileInput = document.getElementById("file-upload-input");
+
 let emojiList = document.getElementById("emoji-list");
 let emojiListList = document.getElementById("emoji-list-list");
 let emojiListInput = document.getElementById("emoji-list-input");
@@ -502,6 +506,9 @@ function documentClickHandler(event) {
     if (!emojiList.contains(event.target)) {
         emojiList.open = false;
     }
+    if (!insertInput.contains(event.target)) {
+        insertInput.open = false;
+    }
 }
 
 function searchEmojiList() {
@@ -594,6 +601,10 @@ async function uploadMessageFiles(files) {
     }
 }
 
+function openUploadDialog() {
+    uploadFileInput.click();
+}
+
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -618,6 +629,9 @@ openFriendsListButton.addEventListener("click", openFriendsList);
 channelUserListButton.addEventListener("click", toggleUserList);
 
 document.addEventListener("click", documentClickHandler);
+
+uploadFileButton.addEventListener("click", openUploadDialog);
+uploadFileInput.addEventListener("change", async (event) => uploadMessageFiles(event.target.files));
 
 emojiListInput.addEventListener("input", searchEmojiList)
 
