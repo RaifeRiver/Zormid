@@ -4,12 +4,13 @@ body {
     background-color: #101015;
     background-image: radial-gradient(50vw at bottom right, #30303F, #101015);
     background-repeat: no-repeat;
-    min-height: 100dvh;
+    height: 100dvh;
     width: 80vw;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
+    overflow: auto;
 }
 
 h1 {
