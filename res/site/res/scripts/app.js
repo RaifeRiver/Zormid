@@ -267,7 +267,11 @@ api.setSessionsRequestHandler((sessions) => {
         let session = userSettingsSessionsSessionTemplate.content.cloneNode(true);
         session.querySelector(".user-settings-sessions-session-user-agent").innerHTML = sessions[i];
         session.querySelector(".user-settings-sessions-session-logout").addEventListener("click", () => {
-            api.logoutSession(sessions[i]);
+            let userAgent = sessions[i];
+            api.logoutSession(userAgent);
+            if (userAgent === navigator.userAgent) {
+                window.location.href = "/auth";
+            }
         });
         userSettingsSessionsList.appendChild(session);
     }
