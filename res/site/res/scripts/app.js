@@ -132,7 +132,7 @@ api.setAuthHandler((info) => {
 
     const addFriendCookie = cookies.getCookie("add-friend");
     if (addFriendCookie) {
-        openAcceptFriendMenu(addFriendCookie.replaceAll('-', '+').replaceAll('_', '/'));
+        openAcceptFriendMenu(base64.decodeURL(addFriendCookie));
     }
     api.requestChannelList(userID);
     api.requestFriendList();
@@ -161,7 +161,7 @@ api.setFriendListRequestHandler((f) => {
     }
 });
 api.setUsernameRequestHandler((username, userID) => {
-    if (openingAcceptFriendMenu && btoa(userID) === acceptFriendUserID) {
+    if (openingAcceptFriendMenu && userID === acceptFriendUserID) {
         acceptFriendText.innerHTML = "Accept friend request from " + username + "?";
         acceptFriendMenu.showModal();
     }
@@ -362,13 +362,13 @@ function closeAddFriendMenu() {
 }
 
 function openAcceptFriendMenu(id) {
-    if (userID === atob(id)) {
+    if (userID === id) {
         cookies.deleteCookie("add-friend");
         return;
     }
     openingAcceptFriendMenu = true;
     acceptFriendUserID = id;
-    api.requestUsername(id);
+    api.requestUsername(btoa(id));
 }
 
 function closeAcceptFriendMenu() {
@@ -376,7 +376,7 @@ function closeAcceptFriendMenu() {
 }
 
 function acceptFriend() {
-    api.acceptFriendRequest(atob(acceptFriendUserID));
+    api.acceptFriendRequest(acceptFriendUserID);
     closeAcceptFriendMenu();
     cookies.deleteCookie("add-friend");
 }
