@@ -132,7 +132,10 @@ api.setAuthHandler((info) => {
 
     const addFriendCookie = cookies.getCookie("add-friend");
     if (addFriendCookie) {
-        openAcceptFriendMenu(base64.decodeURL(addFriendCookie));
+        try {
+            openAcceptFriendMenu(base64.decodeURL(addFriendCookie));
+        }
+        catch (e) {}
     }
     api.requestChannelList(userID);
     api.requestFriendList();
