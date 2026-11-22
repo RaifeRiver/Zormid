@@ -267,7 +267,7 @@ export function convertToHTML(markdown) {
             }
             endBlockquote();
         }
-        else if (line.startsWith("> ")) {
+        else if (line.startsWith("> ") && !codeblock) {
             if (!blockquote) {
                 html += `<blockquote>${processInline(line.substring(2))}`;
                 blockquote = true;
@@ -278,10 +278,11 @@ export function convertToHTML(markdown) {
         }
         else if (line.startsWith("```")) {
             if (!codeblock) {
-                html += `<code>`;
+                html += `<code class="markdown-codeblock">`;
                 codeblock = true;
             }
             else {
+                html.slice(0, -1);
                 html += `</code>${processInline(line.substring(3))}`;
                 codeblock = false;
             }
@@ -291,6 +292,10 @@ export function convertToHTML(markdown) {
                 endList();
             }
             endBlockquote();
+            if (codeblock) {
+                html += `${line}\n`;
+                continue;
+            }
             if (line.startsWith("###### ")) {
                 html += `<h6>${processInline(line.substring(7))}</h6>`;
             }
@@ -309,13 +314,11 @@ export function convertToHTML(markdown) {
             else if (line.startsWith("# ")) {
                 html += `<h1>${processInline(line.substring(2))}</h1>`;
             }
-            else if (line.trim().length > 1) {
-                if (codeblock) {
-                    html += `\n${line}`;
-                }
-                else {
-                    html += `<p>${processInline(line)}</p>`;
-                }
+            else if (line.trim().length > 0) {
+                html += `<p>${processInline(line)}</p>`;
+            }
+            else {
+                html += "<br>";
             }
         }
     }

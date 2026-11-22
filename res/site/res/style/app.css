@@ -881,6 +881,18 @@ summary {
     margin-left: 2vw;
 }
 
+.markdown-codeblock {
+    background-color: var(--theme-secondary-background-color);
+    color: var(--theme-secondary-text-color);
+    border: var(--theme-border-color) 2px solid;
+    padding: 0.5vh;
+    display: block;
+    margin-top: 0.5vh;
+    margin-bottom: 0.5vh;
+    width: 80%;
+    font-family: monospace;
+}
+
 @media (orientation: portrait) {
     #main-area {
         display: none;
