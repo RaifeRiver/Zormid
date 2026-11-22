@@ -374,6 +374,7 @@ p {
     border: var(--theme-border-color) 2px solid;
     color: var(--theme-text-color);
     height: 3vh;
+    width: fit-content;
 }
 
 .channel-settings-button:hover {
