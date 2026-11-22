@@ -37,7 +37,7 @@ namespace zormid::client {
 
 		void processAuthPacket(net::http::PayloadReader& payload);
 
-		void processFriendListRequestPacket(net::http::PayloadReader& payload) const;
+		void processFriendListRequestPacket() const;
 
 		void processUsernameRequestPacket(net::http::PayloadReader& payload) const;
 
@@ -54,6 +54,10 @@ namespace zormid::client {
 		void processChangeUsernamePacket(net::http::PayloadReader& payload) const;
 
 		void processFileUploadRequestPacket(net::http::PayloadReader& payload) const;
+
+		void processSessionsRequestPacket() const;
+
+		void processLogoutSessionPacket(net::http::PayloadReader& payload) const;
 
 		static void processFileUploadPacket(net::http::PayloadReader& payload) ;
 

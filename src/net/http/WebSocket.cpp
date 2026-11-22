@@ -107,7 +107,7 @@ namespace zormid::net::http {
 		char buffer[16];
 		memcpy(buffer, mData.data + mIndex, 16);
 		mIndex += 16;
-		return user::Session(buffer);
+		return user::Session(buffer, "Unknown");
 	}
 
 	user::manager::UserID PayloadReader::readUserID() {

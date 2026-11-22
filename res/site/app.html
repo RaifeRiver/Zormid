@@ -233,6 +233,7 @@
             <div id="user-settings-container">
                 <div id="user-settings-tabs">
                     <button id="user-settings-profile-tab" class="user-settings-tab">Profile</button>
+                    <button id="user-settings-sessions-tab" class="user-settings-tab">Sessions</button>
                     <button id="user-settings-appearance-tab" class="user-settings-tab">Appearance</button>
                 </div>
 
@@ -243,6 +244,20 @@
                     <input type="text" id="user-settings-profile-username" placeholder="Username...">
 
                     <button id="user-settings-profile-logout">Logout</button>
+                </div>
+
+                <div id="user-settings-sessions" class="user-settings-content" style="display: none;">
+                    <h3>Sessions</h3>
+
+                    <div id="user-settings-sessions-list"></div>
+
+                    <template id="user-settings-sessions-session-template">
+                        <div class="user-settings-sessions-session">
+                            <p class="user-settings-sessions-session-user-agent"></p>
+
+                            <button class="user-settings-sessions-session-logout">Logout</button>
+                        </div>
+                    </template>
                 </div>
 
                 <div id="user-settings-appearance" class="user-settings-content" style="display: none;">

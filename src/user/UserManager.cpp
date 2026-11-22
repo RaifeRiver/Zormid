@@ -186,19 +186,20 @@ namespace zormid::user::manager {
 				throw std::runtime_error("Failed to migrate user file");
 			}
 			fileStream = std::make_unique<util::IFileStream>(file);
-			fileStream->read(nullptr, USER_FILE_HEADER.size() + 4);
+			fileStream->seek(USER_FILE_HEADER.size());
+			*fileStream >> version;
 		}
 		fileStream->read(user.getPasswordSalt(), 16);
 		fileStream->read(user.getPasswordDigest(), 20);
 		uint32_t sessionCount;
 		*fileStream >> sessionCount;
 		if (version == 1) {
-			fileStream->read(nullptr, sessionCount * 16);
+			fileStream->seek(USER_FILE_HEADER.size() + 40 + sessionCount * 16);
 		}
 		else {
 			for (uint32_t i = 0; i < sessionCount; i++) {
 				char sessionID[16];
-				fileStream->read(sessionID, sizeof(sessionID));
+				fileStream->read(sessionID, 16);
 				std::string userAgent;
 				*fileStream >> userAgent;
 				user.getSessions().emplace_back(sessionID, userAgent);

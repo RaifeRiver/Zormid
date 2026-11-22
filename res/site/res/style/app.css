@@ -667,3 +667,24 @@ a {
 #file-download-link {
     display: none;
 }
+
+#user-settings-sessions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5vh;
+}
+
+.user-settings-sessions-session {
+    display: flex;
+    flex-direction: row;
+    border: var(--theme-border-color) 2px solid;
+}
+
+.user-settings-sessions-session-logout {
+    border: none !important;
+    border-left: var(--theme-border-color) 2px solid !important;
+}
+
+.user-settings-sessions-session-logout:hover {
+    background-color: var(--theme-background-color);
+}

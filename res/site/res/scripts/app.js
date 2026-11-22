@@ -3,7 +3,6 @@ import * as base64 from "./base64.js";
 import * as cookies from "./cookies.js";
 import * as emojis from "./emojis.js";
 import * as markdown from "./markdown.js";
-import {setUploadFailedHandler} from "./api.js";
 
 let appContainer = document.getElementById("app-container");
 let loadingScreen = document.getElementById("loading-screen");
@@ -80,6 +79,10 @@ let userSettingsProfileTab = document.getElementById("user-settings-profile-tab"
 let userSettingsProfile = document.getElementById("user-settings-profile");
 let userSettingsProfileUsername = document.getElementById("user-settings-profile-username");
 let userSettingsProfileLogout = document.getElementById("user-settings-profile-logout");
+let userSettingsSessionsTab = document.getElementById("user-settings-sessions-tab");
+let userSettingsSessions = document.getElementById("user-settings-sessions");
+let userSettingsSessionsList = document.getElementById("user-settings-sessions-list");
+let userSettingsSessionsSessionTemplate = document.getElementById("user-settings-sessions-session-template");
 let userSettingsAppearanceTab = document.getElementById("user-settings-appearance-tab");
 let userSettingsAppearance = document.getElementById("user-settings-appearance");
 let userSettingsAppearanceTheme = document.getElementById("user-settings-appearance-theme");
@@ -256,6 +259,18 @@ api.setTimeoutHandler(() => {
 api.setUploadFailedHandler((id, message) => {
     messageInput.value = messageInput.value.replace(new RegExp(`!\\[.*?]\\(${window.location.origin}/upload/${id}\\)`, "g"), "");
     window.requestAnimationFrame(() => alert(`Upload failed: ${message}`));
+});
+
+api.setSessionsRequestHandler((sessions) => {
+    userSettingsSessionsList.replaceChildren();
+    for (let i = 0; i < sessions.length; i++) {
+        let session = userSettingsSessionsSessionTemplate.content.cloneNode(true);
+        session.querySelector(".user-settings-sessions-session-user-agent").innerHTML = sessions[i];
+        session.querySelector(".user-settings-sessions-session-logout").addEventListener("click", () => {
+            api.logoutSession(sessions[i]);
+        });
+        userSettingsSessionsList.appendChild(session);
+    }
 });
 
 connectionAttempts++;
@@ -652,6 +667,10 @@ userSettingsButton.addEventListener("click", openUserSettingsMenu);
 userSettingsProfileTab.addEventListener("click", () => openUserSettingsTab(userSettingsProfile));
 userSettingsProfileUsername.addEventListener("change", changeUsernameFromSettings);
 userSettingsProfileLogout.addEventListener("click", logout);
+userSettingsSessionsTab.addEventListener("click", () => {
+    openUserSettingsTab(userSettingsSessions);
+    api.requestSessions();
+});
 userSettingsAppearanceTab.addEventListener("click", () => openUserSettingsTab(userSettingsAppearance));
 userSettingsAppearanceTheme.addEventListener("change", changeThemeFromSettings);
 userSettingsClose.addEventListener("click", closeUserSettingsMenu);

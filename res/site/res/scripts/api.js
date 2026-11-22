@@ -63,6 +63,11 @@ export function setUploadFailedHandler(handler) {
     uploadFailedHandler = handler;
 }
 
+export let sessionsRequestHandler;
+export function setSessionsRequestHandler(handler) {
+    sessionsRequestHandler = handler;
+}
+
 function readString(packet, pos) {
     let size = packet.getUint32(pos, true);
     let bytes = new Uint8Array(packet.buffer, pos + 4, size);
@@ -209,6 +214,19 @@ async function processPacket(packet) {
                 }
             }
             delete pendingUploads[fileID];
+            break;
+        case 0x8:
+            if (sessionsRequestHandler) {
+                let sessionCount = view.getUint32(4, true);
+                let sessions = [];
+                let pos = 8;
+                for (let i = 0; i < sessionCount; i++) {
+                    let {text: userAgent, bytes: length} = readString(view, pos);
+                    pos += 4 + length;
+                    sessions.push(userAgent);
+                }
+                sessionsRequestHandler(sessions);
+            }
             break;
         default:
             console.warn("Unknown packet ID: " + id);
@@ -395,4 +413,22 @@ export async function uploadFile(file) {
     pendingUploads[rawID] = file;
     websocket.send(buffer);
     return id;
+}
+
+export function requestSessions() {
+    let buffer = new ArrayBuffer(4);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0xD, true);
+    websocket.send(buffer);
+}
+
+export function logoutSession(session) {
+    let buffer = new ArrayBuffer(8 + session.length);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0xE, true);
+    view.setUint32(4, session.length, true);
+    for (let i = 0; i < session.length; i++) {
+        view.setUint8(i + 8, session.charCodeAt(i));
+    }
+    websocket.send(buffer);
 }

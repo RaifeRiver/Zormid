@@ -56,7 +56,7 @@ namespace zormid::client {
 		}
 		switch (id) {
 			case 0x1:
-				processFriendListRequestPacket(payload);
+				processFriendListRequestPacket();
 				break;
 			case 0x2:
 				processUsernameRequestPacket(payload);
@@ -91,6 +91,12 @@ namespace zormid::client {
 			case 0xC:
 				processFileUploadPacket(payload);
 				break;
+			case 0xD:
+				processSessionsRequestPacket();
+				break;
+			case 0xE:
+				processLogoutSessionPacket(payload);
+				break;
 			default:
 				std::cout << "Unknown packet ID: " << id << std::endl;
 				break;
@@ -104,7 +110,7 @@ namespace zormid::client {
 			close();
 			return;
 		}
-		for (user::User& user = user::manager::loadUser(userID); user::Session session : user.getSessions()) {
+		for (user::User& user = user::manager::loadUser(userID); const user::Session& session : user.getSessions()) {
 			if (memcmp(static_cast<const char*>(sessionID), static_cast<const char*>(session), 16) == 0) {
 				mUser = &user;
 				net::http::PayloadWriter response;
@@ -117,7 +123,7 @@ namespace zormid::client {
 		user::manager::unloadUser(userID);
 	}
 
-	void Client::processFriendListRequestPacket(net::http::PayloadReader&) const {
+	void Client::processFriendListRequestPacket() const {
 		net::http::PayloadWriter response;
 		response << 0x1u;
 		const std::vector<user::manager::UserID>& friends = mUser->getFriends();
@@ -251,6 +257,25 @@ namespace zormid::client {
 			response << 0u;
 		}
 		mSocket->write(response.buildPayload());
+	}
+
+	void Client::processSessionsRequestPacket() const {
+		const std::vector<user::Session>& sessions = mUser->getSessions();
+		net::http::PayloadWriter response;
+		response << 0x8u;
+		response << static_cast<uint32_t>(sessions.size());
+		for (const user::Session& session : sessions) {
+			response << session.getUserAgent();
+		}
+		mSocket->write(response.buildPayload());
+	}
+
+	void Client::processLogoutSessionPacket(net::http::PayloadReader& payload) const {
+		std::string userAgent;
+		payload >> userAgent;
+		std::erase_if(mUser->getSessions(), [&userAgent](const user::Session& session) {
+			return session.getUserAgent() == userAgent;
+		});
 	}
 
 	void Client::processFileUploadPacket(net::http::PayloadReader& payload) {
