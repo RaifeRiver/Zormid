@@ -101,6 +101,7 @@ let emojiEntries = [];
 let currentUserSettingsContent = userSettingsProfile;
 let uploadType;
 let users = {};
+let connected = false;
 
 let messageScrollObserver;
 
@@ -109,6 +110,11 @@ document.documentElement.setAttribute("data-theme", currentTheme);
 userSettingsAppearanceTheme.value = currentTheme;
 
 api.setConnectHandler(() => {
+    if (connected) {
+        window.location.reload();
+        return;
+    }
+    connected = true;
     const userCookie = cookies.getCookie("user");
     if (!userCookie) {
         return;
