@@ -188,10 +188,7 @@ api.setChannelListRequestHandler((channels, id) => {
     channelList.appendChild(addChannelElement);
     document.getElementById("add-channel").addEventListener("click", openAddChannelMenu);
     for (let channel of channels) {
-        let channelElement = document.importNode(channelTemplate.content, true).firstElementChild;
-        channelElement.textContent = channel.channelName;
-        channelElement.addEventListener("click", () => changeChannel(channel.channelID));
-        channelList.appendChild(channelElement);
+        addChannel(channel);
     }
 });
 api.setMessageHandler((message) => {
@@ -305,6 +302,12 @@ api.setSessionsRequestHandler((sessions) => {
 });
 
 api.setUserInfoHandler((info) => setUserInfo(info.userID, info));
+
+api.setChannelAddHandler(addChannel);
+
+api.setChannelRemoveHandler((channelID) => {
+    channelList.querySelector(`[data-id="${base64.encodeURL(channelID)}"]`).remove();
+});
 
 connectionAttempts++;
 api.connect();
@@ -720,6 +723,14 @@ function removeUserElement(id, element) {
         return;
     }
     elements.splice(elements.indexOf(element), 1);
+}
+
+function addChannel(channel) {
+    let channelElement = document.importNode(channelTemplate.content, true).firstElementChild;
+    channelElement.textContent = channel.channelName;
+    channelElement.addEventListener("click", () => changeChannel(channel.channelID));
+    channelElement.dataset.id = base64.encodeURL(channel.channelID);
+    channelList.appendChild(channelElement);
 }
 
 messageInput.addEventListener("keydown", (event) => {

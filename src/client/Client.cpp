@@ -384,6 +384,13 @@ namespace zormid::client {
 			if (auto it = std::ranges::find(oldUsers, userID); it == oldUsers.end()) {
 				channel.addUser(userID);
 				user::User& user = user::manager::loadUser(userID);
+				if (user.getActiveClients() != 0) {
+					net::http::PayloadWriter response;
+					response << 0xAu;
+					response << channelID;
+					response << channel.getName();
+					user.pushPayload(response.buildAllocatedPayload());
+				}
 				user.getChannels().push_back(channelID);
 				user::manager::unloadUser(userID);
 			}
@@ -394,6 +401,12 @@ namespace zormid::client {
 		for (const user::manager::UserID& userID : oldUsers) {
 			channel.removeUser(userID);
 			user::User& user = user::manager::loadUser(userID);
+			if (user.getActiveClients() != 0) {
+				net::http::PayloadWriter response;
+				response << 0xBu;
+				response << channelID;
+				user.pushPayload(response.buildAllocatedPayload());
+			}
 			user.getChannels().erase(std::ranges::find(user.getChannels(), channelID));
 			user::manager::unloadUser(userID);
 		}
@@ -415,6 +428,13 @@ namespace zormid::client {
 			channel.addUser(userID);
 			user::User& user = user::manager::loadUser(userID);
 			user.getChannels().push_back(channelID);
+			if (user.getActiveClients() != 0) {
+				net::http::PayloadWriter response;
+				response << 0xAu;
+				response << channelID;
+				response << channelName;
+				user.pushPayload(response.buildAllocatedPayload());
+			}
 			user::manager::unloadUser(userID);
 		}
 	}

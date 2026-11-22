@@ -73,6 +73,16 @@ export function setUserInfoHandler(handler) {
     userInfoHandler = handler;
 }
 
+export let channelAddHandler;
+export function setChannelAddHandler(handler) {
+    channelAddHandler = handler;
+}
+
+export let channelRemoveHandler;
+export function setChannelRemoveHandler(handler) {
+    channelRemoveHandler = handler;
+}
+
 function readString(packet, pos) {
     let size = packet.getUint32(pos, true);
     let bytes = new Uint8Array(packet.buffer, pos + 4, size);
@@ -244,6 +254,19 @@ async function processPacket(packet) {
                 let {text: avatar, bytes: avatarLength} = readString(view, 8 + USER_ID_SIZE + usernameLength);
                 let status = view.getUint32(12 + USER_ID_SIZE + usernameLength + avatarLength, true);
                 userInfoHandler({userID: userID, username: username, avatar: avatar, status: status});
+            }
+            break;
+        case 0xA:
+            if (channelAddHandler) {
+                let channelID = readID(view, 4, 20);
+                let channelName = readString(view, 24).text;
+                channelAddHandler({channelID: channelID, channelName: channelName});
+            }
+            break;
+        case 0xB:
+            if (channelRemoveHandler) {
+                let channelID = readID(view, 4, 20);
+                channelRemoveHandler(channelID);
             }
             break;
         default:
