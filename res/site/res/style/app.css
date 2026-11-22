@@ -394,7 +394,15 @@ p {
 }
 
 .user-list-user {
+    display: flex;
+    flex-direction: row;
+    gap: 1vw;
+}
+
+.user-list-username {
     color: var(--theme-text-color);
+    font-family: var(--theme-font-family), sans-serif;
+    align-self: center;
 }
 
 #emoji-list {
@@ -759,7 +767,7 @@ a {
     margin-left: 2.5vw;
 }
 
-.friend-avatar {
+.friend-avatar, .user-list-avatar {
     height: 4vh;
     aspect-ratio: 1/1;
     border-radius: 50%;

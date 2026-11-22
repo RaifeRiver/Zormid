@@ -212,6 +212,7 @@ api.setChannelInfoHandler((info) => {
     userListManageUsersUsers.replaceChildren();
     for (let user of info.users) {
         let userElement = userListUserTemplate.content.cloneNode(true);
+        userElement.querySelector(".user-list-avatar").src = user.avatar;
         userElement.querySelector(".user-list-username").textContent = user.username;
         userListContainer.appendChild(userElement);
         let manageElement = addChannelFriendTemplate.content.cloneNode(true);
