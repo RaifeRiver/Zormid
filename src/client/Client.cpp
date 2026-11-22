@@ -56,6 +56,7 @@ namespace zormid::client {
 			}
 			user::User& user = user::manager::loadUser(friendID);
 			if (user.getActiveClients() == 0) {
+				user::manager::unloadUser(friendID);
 				continue;
 			}
 			net::http::PayloadWriter response;
@@ -65,6 +66,7 @@ namespace zormid::client {
 			response << mUser->getAvatar();
 			response << (mUser->getActiveClients() == 0 ? 0u : 1u);
 			user.pushPayload(response.buildAllocatedPayload());
+			user::manager::unloadUser(friendID);
 		}
 		for (const chat::ChannelID channelID : mUser->getChannels()) {
 			for (chat::Channel channel(channelID); const user::manager::UserID& userID : channel.getUsers()) {
@@ -76,6 +78,7 @@ namespace zormid::client {
 				}
 				user::User& user = user::manager::loadUser(userID);
 				if (user.getActiveClients() == 0) {
+					user::manager::unloadUser(userID);
 					continue;
 				}
 				net::http::PayloadWriter response;
@@ -85,6 +88,7 @@ namespace zormid::client {
 				response << mUser->getAvatar();
 				response << (mUser->getActiveClients() == 0 ? 0u : 1u);
 				user.pushPayload(response.buildAllocatedPayload());
+				user::manager::unloadUser(userID);
 			}
 		}
 	}
@@ -238,6 +242,7 @@ namespace zormid::client {
 			}
 			user::User& user = user::manager::loadUser(userID);
 			if (user.getActiveClients() == 0) {
+				user::manager::unloadUser(userID);
 				continue;
 			}
 			net::http::PayloadWriter messagePayload;
@@ -412,6 +417,32 @@ namespace zormid::client {
 		}
 		if (channel.getUsers().empty()) {
 			channel.deleteChannel();
+		}
+		else {
+			for (const user::manager::UserID& userID : channel.getUsers()) {
+				user::User& user = user::manager::loadUser(userID);
+				if (user.getActiveClients() == 0) {
+					user::manager::unloadUser(userID);
+					continue;
+				}
+				net::http::PayloadWriter response;
+				response << 0x5u;
+				response << channelID;
+				response << channel.getName();
+				response << channel.getMessageCount();
+				const std::vector<user::manager::UserID>& users = channel.getUsers();
+				response << static_cast<uint32_t>(users.size());
+				for (const user::manager::UserID& userID2 : users) {
+					response << userID2;
+					user::User& user2 = user::manager::loadUser(userID2);
+					response << user2.getUsername();
+					response << user2.getAvatar();
+					response << (user2.getActiveClients() > 0 ? 1u : 0u);
+					user::manager::unloadUser(userID2);
+				}
+				user.pushPayload(response.buildAllocatedPayload());
+				user::manager::unloadUser(userID);
+			}
 		}
 	}
 

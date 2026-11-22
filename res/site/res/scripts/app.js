@@ -306,6 +306,9 @@ api.setUserInfoHandler((info) => setUserInfo(info.userID, info));
 api.setChannelAddHandler(addChannel);
 
 api.setChannelRemoveHandler((channelID) => {
+    if (channelID === currentChannelID) {
+        openFriendsList();
+    }
     channelList.querySelector(`[data-id="${base64.encodeURL(channelID)}"]`).remove();
 });
 

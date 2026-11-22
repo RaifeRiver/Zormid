@@ -105,7 +105,7 @@ namespace zormid::chat {
 		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
 		util::OFileStream userFileStream(CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".users.dat", true);
 		userFileStream << static_cast<uint32_t>(mUsers.size());
-		userFileStream.seekEnd();
+		userFileStream.seek(4 + (mUsers.size() - 1) * user::manager::USER_ID_SIZE);
 		userFileStream << id;
 	}
 
