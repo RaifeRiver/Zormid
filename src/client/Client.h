@@ -32,7 +32,7 @@ namespace zormid::client {
 	private:
 		std::unique_ptr<net::http::WebSocket> mSocket;
 		user::User* mUser = nullptr;
-		bool mTyping = false;
+		std::optional<chat::ChannelID> mTypingChannel;
 
 		void sendUserInfoToAll() const;
 

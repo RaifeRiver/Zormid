@@ -110,9 +110,9 @@ namespace zormid::client {
 				}
 				net::http::PayloadWriter response;
 				response << 0xCu;
-				response << channelID;
+				response << (mTypingChannel.has_value() ? *mTypingChannel : channelID);
 				response << mUser->getID();
-				response << mTyping;
+				response << mTypingChannel.has_value();
 				user.pushPayload(response.buildAllocatedPayload());
 				user::manager::unloadUser(userID);
 			}
@@ -120,8 +120,8 @@ namespace zormid::client {
 	}
 
 	void Client::close_() {
-		if (mTyping) {
-			mTyping = false;
+		if (mTypingChannel.has_value()) {
+			mTypingChannel = {};
 			if (--mUser->getTypingClients() == 0) {
 				sendTypingToAllInChannels();
 			}
@@ -426,8 +426,9 @@ namespace zormid::client {
 	void Client::processTypingPacket(net::http::PayloadReader& payload) {
 		bool typing;
 		payload >> typing;
-		if (typing != mTyping) {
-			mTyping = typing;
+		chat::ChannelID channelID = payload.readChannelID();
+		if (typing != mTypingChannel.has_value()) {
+			mTypingChannel = typing ? channelID : std::optional<chat::ChannelID>{};
 			if (typing) {
 				if (mUser->getTypingClients()++ == 0) {
 					sendTypingToAllInChannels();

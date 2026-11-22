@@ -463,6 +463,7 @@ function changeChannel(channelID) {
     currentChannelID = channelID;
     channelTypingUsers.length = 0;
     typing = false;
+    api.setTyping(false, currentChannelID);
     messageContainer.replaceChildren();
     api.requestChannelInfo(channelID);
 }
@@ -517,6 +518,8 @@ function openFriendsList() {
     }
     history.pushState({}, "", "/app/");
     document.title = "Zormid - Friends";
+    typing = false;
+    api.setTyping(false, currentChannelID);
     currentChannelID = undefined;
     channelContainer.style.display = "none";
     channelName.textContent = "Friends";
@@ -823,7 +826,7 @@ messageInput.addEventListener("keydown", (event) => {
 messageInput.addEventListener("input", (event) => {
     let t = event.target.value.length !== 0;
     if (t !== typing) {
-        api.setTyping(t);
+        api.setTyping(t, currentChannelID);
         typing = t;
     }
 })

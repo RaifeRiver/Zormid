@@ -53,4 +53,4 @@
 | `0xD`  |                                                              | Requests list of the user agents of the current user's sessions        |
 | `0xE`  | user_agent: `string`                                         | Logs out sessions with the specified user agent                        |
 | `0xF`  | avatar_url: `string`                                         | Sets the current user's avatar URL, upload the file first if necessary |
-| `0x10` | typing: `bool`                                               | Sets whether the client is typing                                      |
+| `0x10` | typing: `bool`<br>channel_id: `channel_id`                   | Sets whether the client is typing                                      |

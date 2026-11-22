@@ -498,10 +498,13 @@ export function setAvatar(url) {
     websocket.send(buffer);
 }
 
-export function setTyping(typing) {
-    let buffer = new ArrayBuffer(5);
+export function setTyping(typing, channelID) {
+    let buffer = new ArrayBuffer(25);
     let view = new DataView(buffer);
     view.setUint32(0, 0x10, true);
     view.setUint8(4, typing ? 1 : 0);
+    for (let i = 0; i < 20; i++) {
+        view.setUint8(i + 5, channelID.charCodeAt(i));
+    }
     websocket.send(buffer);
 }
