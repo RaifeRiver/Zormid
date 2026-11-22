@@ -68,6 +68,11 @@ export function setSessionsRequestHandler(handler) {
     sessionsRequestHandler = handler;
 }
 
+export let userInfoHandler;
+export function setUserInfoHandler(handler) {
+    userInfoHandler = handler;
+}
+
 function readString(packet, pos) {
     let size = packet.getUint32(pos, true);
     let bytes = new Uint8Array(packet.buffer, pos + 4, size);
@@ -103,8 +108,9 @@ async function processPacket(packet) {
                     let {text: username, bytes: usernameSize} = readString(view, pos + USER_ID_SIZE);
                     pos += 4 + USER_ID_SIZE + usernameSize;
                     let {text: avatar, bytes: avatarSize} = readString(view, pos);
-                    pos += 4 + avatarSize;
-                    friends.push({userID: id, username: username, avatar: avatar});
+                    let status = view.getUint32(pos + 4 + avatarSize, true);
+                    pos += 8 + avatarSize;
+                    friends.push({userID: id, username: username, avatar: avatar, status: status});
                 }
                 friendListRequestHandler(friends);
             }
@@ -161,8 +167,9 @@ async function processPacket(packet) {
                     let {text: username, bytes: usernameSize} = readString(view, pos + USER_ID_SIZE);
                     pos += USER_ID_SIZE + 4 + usernameSize;
                     let {text: avatar, bytes: avatarSize} = readString(view, pos);
-                    pos += 4 + avatarSize;
-                    users.push({userID: userID, username: username, avatar: avatar});
+                    let status = view.getUint32(pos + 4 + avatarSize, true);
+                    pos += 8 + avatarSize;
+                    users.push({userID: userID, username: username, avatar: avatar, status: status});
                 }
                 channelInfoHandler({channelID: channelID, name: channelName, messageCount: messageCount, users: users});
             }
@@ -231,6 +238,15 @@ async function processPacket(packet) {
                     sessions.push(userAgent);
                 }
                 sessionsRequestHandler(sessions);
+            }
+            break;
+        case 0x9:
+            if (userInfoHandler) {
+                let userID = readID(view, 4, USER_ID_SIZE);
+                let {text: username, bytes: usernameLength} = readString(view, 4 + USER_ID_SIZE);
+                let {text: avatar, bytes: avatarLength} = readString(view, 8 + USER_ID_SIZE + usernameLength);
+                let status = view.getUint32(12 + USER_ID_SIZE + usernameLength + avatarLength, true);
+                userInfoHandler({userID: userID, username: username, avatar: avatar, status: status});
             }
             break;
         default:

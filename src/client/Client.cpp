@@ -31,6 +31,8 @@ namespace zormid::client {
 	void Client::close() {
 		mSocket->close();
 		if (mUser) {
+			mUser->getActiveClients()--;
+			sendUserInfoToAll();
 			user::manager::unloadUser(mUser->getID());
 			mUser = nullptr;
 		}
@@ -39,10 +41,52 @@ namespace zormid::client {
 	bool Client::isOpen() {
 		const bool open = mSocket->isOpen();
 		if (!open && mUser) {
+			mUser->getActiveClients()--;
+			sendUserInfoToAll();
 			user::manager::unloadUser(mUser->getID());
 			mUser = nullptr;
 		}
 		return open;
+	}
+
+	void Client::sendUserInfoToAll() const {
+		for (const user::manager::UserID& friendID : mUser->getFriends()) {
+			if (!user::manager::isActive(friendID)) {
+				continue;
+			}
+			user::User& user = user::manager::loadUser(friendID);
+			if (user.getActiveClients() == 0) {
+				continue;
+			}
+			net::http::PayloadWriter response;
+			response << 0x9u;
+			response << mUser->getID();
+			response << mUser->getUsername();
+			response << mUser->getAvatar();
+			response << (mUser->getActiveClients() == 0 ? 0u : 1u);
+			user.pushPayload(response.buildAllocatedPayload());
+		}
+		for (const chat::ChannelID channelID : mUser->getChannels()) {
+			for (chat::Channel channel(channelID); const user::manager::UserID& userID : channel.getUsers()) {
+				if (userID == mUser->getID()) {
+					continue;
+				}
+				if (!user::manager::isActive(userID)) {
+					continue;
+				}
+				user::User& user = user::manager::loadUser(userID);
+				if (user.getActiveClients() == 0) {
+					continue;
+				}
+				net::http::PayloadWriter response;
+				response << 0x9u;
+				response << mUser->getID();
+				response << mUser->getUsername();
+				response << mUser->getAvatar();
+				response << (mUser->getActiveClients() == 0 ? 0u : 1u);
+				user.pushPayload(response.buildAllocatedPayload());
+			}
+		}
 	}
 
 	void Client::processPacket(net::http::PayloadReader& payload) {
@@ -116,11 +160,13 @@ namespace zormid::client {
 		for (user::User& user = user::manager::loadUser(userID); const user::Session& session : user.getSessions()) {
 			if (memcmp(static_cast<const char*>(sessionID), static_cast<const char*>(session), 16) == 0) {
 				mUser = &user;
+				mUser->getActiveClients()++;
 				net::http::PayloadWriter response;
 				response << 0x0u;
 				response << mUser->getUsername();
 				response << mUser->getAvatar();
 				mSocket->write(response.buildPayload());
+				sendUserInfoToAll();
 				return;
 			}
 		}
@@ -137,6 +183,7 @@ namespace zormid::client {
 			user::User& user = user::manager::loadUser(friendID);
 			response << user.getUsername();
 			response << user.getAvatar();
+			response << (user.getActiveClients() > 0 ? 1u : 0u);
 			user::manager::unloadUser(friendID);
 		}
 		mSocket->write(response.buildPayload());
@@ -189,6 +236,9 @@ namespace zormid::client {
 				continue;
 			}
 			user::User& user = user::manager::loadUser(userID);
+			if (user.getActiveClients() == 0) {
+				continue;
+			}
 			net::http::PayloadWriter messagePayload;
 			messagePayload << 0x4u;
 			messagePayload << mUser->getID();
@@ -216,6 +266,7 @@ namespace zormid::client {
 			user::User& user = user::manager::loadUser(userID);
 			response << user.getUsername();
 			response << user.getAvatar();
+			response << (user.getActiveClients() > 0 ? 1u : 0u);
 			user::manager::unloadUser(userID);
 		}
 		mSocket->write(response.buildPayload());
@@ -244,6 +295,7 @@ namespace zormid::client {
 		std::string username;
 		payload >> username;
 		user::manager::changeUsername(mUser->getID(), username);
+		sendUserInfoToAll();
 	}
 
 	void Client::processFileUploadRequestPacket(net::http::PayloadReader& payload) const {
@@ -290,6 +342,7 @@ namespace zormid::client {
 		std::string avatar;
 		payload >> avatar;
 		mUser->setAvatar(avatar);
+		sendUserInfoToAll();
 	}
 
 	void Client::processFileUploadPacket(net::http::PayloadReader& payload) {

@@ -7,6 +7,8 @@
     --light-tertiary-text-color: #505050;
     --light-link-color: #3070C0;
     --light-error-color: #FF0000;
+    --light-offline-color: #E00000;
+    --light-online-color: #00E000;
 
     --dark-background-color: #20202A;
     --dark-secondary-background-color: #252530;
@@ -16,6 +18,8 @@
     --dark-tertiary-text-color: #A0A0A0;
     --dark-link-color: #30A0E0;
     --dark-error-color: #E00000;
+    --dark-offline-color: #B00000;
+    --dark-online-color: #00B000;
 }
 
 :root[data-theme="light"] {
@@ -27,6 +31,8 @@
     --theme-tertiary-text-color: var(--light-tertiary-text-color);
     --theme-link-color: var(--light-link-color);
     --theme-error-color: var(--light-error-color);
+    --theme-offline-color: var(--light-offline-color);
+    --theme-online-color: var(--light-online-color);
 }
 
 :root[data-theme="dark"] {
@@ -38,6 +44,8 @@
     --theme-tertiary-text-color: var(--dark-tertiary-text-color);
     --theme-link-color: var(--dark-link-color);
     --theme-error-color: var(--dark-error-color);
+    --theme-offline-color: var(--dark-offline-color);
+    --theme-online-color: var(--dark-online-color);
 }
 
 @media (prefers-color-scheme: light) {
@@ -50,6 +58,8 @@
         --theme-tertiary-text-color: var(--light-tertiary-text-color);
         --theme-link-color: var(--light-link-color);
         --theme-error-color: var(--light-error-color);
+        --theme-offline-color: var(--light-offline-color);
+        --theme-online-color: var(--light-online-color);
     }
 }
 
@@ -63,5 +73,7 @@
         --theme-tertiary-text-color: var(--dark-tertiary-text-color);
         --theme-link-color: var(--dark-link-color);
         --theme-error-color: var(--dark-error-color);
+        --theme-offline-color: var(--dark-offline-color);
+        --theme-online-color: var(--dark-online-color);
     }
 }

@@ -49,6 +49,7 @@ let addChannelName = document.getElementById("add-channel-name");
 
 let openFriendsListButton = document.getElementById("open-friends-list");
 
+let userInfoContainer = document.getElementById("user-info");
 let userAvatar = document.getElementById("user-avatar");
 let userNameDisplay = document.getElementById("user-name");
 let userSettingsButton = document.getElementById("user-settings-button");
@@ -134,7 +135,8 @@ api.setAuthHandler((info) => {
     userAvatar.src = avatar;
     userSettingsProfileAvatar.src = avatar;
 
-    users[userID] = info;
+    setUserInfo(userID, info);
+    addUserElement(userID, userInfoContainer);
 
     const addFriendCookie = cookies.getCookie("add-friend");
     if (addFriendCookie) {
@@ -163,11 +165,12 @@ api.setFriendListRequestHandler((f) => {
     friendContainer.appendChild(addFriendElement);
     document.getElementById("add-friend").addEventListener("click", openAddFriendMenu);
     for (let friend of friends) {
-        let friendElement = document.importNode(friendTemplate.content, true);
+        let friendElement = document.importNode(friendTemplate.content, true).firstElementChild;
         friendElement.querySelector(".friend-avatar").src = friend.avatar;
         friendElement.querySelector(".friend-username").textContent = friend.username;
         friendContainer.appendChild(friendElement);
-        users[friend.userID] = friend;
+        addUserElement(friend.userID, friendElement);
+        setUserInfo(friend.userID, friend);
     }
 });
 api.setUsernameRequestHandler((username, userID) => {
@@ -185,10 +188,9 @@ api.setChannelListRequestHandler((channels, id) => {
     channelList.appendChild(addChannelElement);
     document.getElementById("add-channel").addEventListener("click", openAddChannelMenu);
     for (let channel of channels) {
-        let channelElement = document.importNode(channelTemplate.content, true);
-        let channelButton = channelElement.firstElementChild;
-        channelButton.textContent = channel.channelName;
-        channelButton.addEventListener("click", () => changeChannel(channel.channelID));
+        let channelElement = document.importNode(channelTemplate.content, true).firstElementChild;
+        channelElement.textContent = channel.channelName;
+        channelElement.addEventListener("click", () => changeChannel(channel.channelID));
         channelList.appendChild(channelElement);
     }
 });
@@ -220,6 +222,7 @@ api.setChannelInfoHandler((info) => {
         let userElement = userListUserTemplate.content.cloneNode(true);
         userElement.querySelector(".user-list-avatar").src = user.avatar;
         userElement.querySelector(".user-list-username").textContent = user.username;
+        addUserElement(user.userID, userElement.firstElementChild);
         userListContainer.appendChild(userElement);
         let manageElement = addChannelFriendTemplate.content.cloneNode(true);
         manageElement.querySelector(".add-channel-friend-name").textContent = user.username;
@@ -229,8 +232,9 @@ api.setChannelInfoHandler((info) => {
             e.target.textContent = e.target.textContent === "Add" ? "Remove" : "Add";
         });
         manageElement.firstElementChild.dataset.id = btoa(user.userID);
+        addUserElement(user.userID, manageElement.firstElementChild);
         userListManageUsersUsers.appendChild(manageElement);
-        users[user.userID] = user;
+        setUserInfo(user.userID, user);
     }
     for (let user of friends) {
         if (info.users.map(user => user.userID).includes(user.userID)) {
@@ -299,6 +303,8 @@ api.setSessionsRequestHandler((sessions) => {
         userSettingsSessionsList.appendChild(session);
     }
 });
+
+api.setUserInfoHandler((info) => setUserInfo(info.userID, info));
 
 connectionAttempts++;
 api.connect();
@@ -509,14 +515,17 @@ function insertMessage(index, fromID, content) {
         messageElement.querySelector(".message-content").innerHTML = processMessageContents(content);
         messageElement.firstElementChild.dataset.username = user.username;
         messageElement.firstElementChild.dataset.index = index;
+        let messageChild = messageElement.firstElementChild;
         if (previousIndex !== undefined) {
             messageContainer.insertBefore(messageElement, messageContainer.children[previousIndex + 1]);
         }
         else {
             messageContainer.prepend(messageElement);
         }
+        addUserElement(fromID, messageChild);
     }
     if (nextMessageElement) {
+        removeUserElement(fromID, nextMessageElement);
         let modifiedNextElement = document.importNode(continuationMessageTemplate.content, true);
         let contentElement = modifiedNextElement.querySelector(".message-content");
         contentElement.innerHTML = nextMessageElement.querySelector(".message-content").innerHTML;
@@ -672,6 +681,44 @@ async function uploadAvatarFile(file) {
     api.setAvatar(url);
     userAvatar.src = url;
     userSettingsProfileAvatar.src = url;
+}
+
+function setUserInfo(id, info) {
+    let elements = users[id]?.elements || [];
+    users[id] = info;
+    users[id].elements = elements;
+    for (let element of elements) {
+        let username = element.querySelector(".user-username");
+        if (username) {
+            username.textContent = info.username;
+        }
+        let avatar = element.querySelector(".user-avatar");
+        if (avatar) {
+            avatar.src = info.avatar === "DEFAULT" ? "/res/images/default-avatar.png" : info.avatar;
+        }
+        let status = element.querySelector(".user-status");
+        if (status) {
+            status.style["background-color"] = `var(--theme-${info.status === 0 ? "offline" : "online"}-color)`;
+        }
+    }
+}
+
+function addUserElement(id, element) {
+    let elements = users[id]?.elements;
+    if (!elements) {
+        users[id] = {elements: [element]};
+    }
+    else {
+        elements.push(element);
+    }
+}
+
+function removeUserElement(id, element) {
+    let elements = users[id]?.elements;
+    if (!elements) {
+        return;
+    }
+    elements.splice(elements.indexOf(element), 1);
 }
 
 messageInput.addEventListener("keydown", (event) => {

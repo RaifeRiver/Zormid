@@ -33,6 +33,8 @@ namespace zormid::client {
 		std::unique_ptr<net::http::WebSocket> mSocket;
 		user::User* mUser = nullptr;
 
+		void sendUserInfoToAll() const;
+
 		void processPacket(net::http::PayloadReader& payload);
 
 		void processAuthPacket(net::http::PayloadReader& payload);

@@ -75,6 +75,12 @@ namespace zormid::user {
 			return mChannels;
 		}
 
+		[[nodiscard]] uint32_t& getActiveUses() {
+			return mActiveUses;
+		}
+
+		void setActiveUses(uint32_t uses);
+
 		[[nodiscard]] uint32_t& getActiveClients() {
 			return mActiveClients;
 		}
@@ -98,6 +104,7 @@ namespace zormid::user {
 		std::vector<Session> mSessions = {};
 		std::vector<manager::UserID> mFriends = {};
 		std::vector<chat::ChannelID> mChannels = {};
+		uint32_t mActiveUses = 0;
 		uint32_t mActiveClients = 0;
 		std::vector<net::http::PayloadData> mWriteQueue = {};
 	};

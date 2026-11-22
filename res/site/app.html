@@ -76,9 +76,13 @@
                 <div id="channel-list-break-bottom" class="channel-list-break"></div>
 
                 <div id="user-info">
-                    <img id="user-avatar" alt="Avatar">
+                    <div id="user-avatar-container">
+                        <img id="user-avatar" class="user-avatar" alt="Avatar">
 
-                    <p id="user-name"></p>
+                        <div id="user-status" class="user-status"></div>
+                    </div>
+
+                    <p id="user-name" class="user-username"></p>
 
                     <button id="user-settings-button">⚙︎</button>
                 </div>
@@ -106,9 +110,13 @@
 
                     <template id="friend-template">
                         <div class="friend">
-                            <img class="friend-avatar" alt="Avatar">
+                            <div class="friend-avatar-container">
+                                <div class="friend-status user-status"></div>
 
-                            <p class="friend-username"></p>
+                                <img class="friend-avatar user-avatar" alt="Avatar">
+                            </div>
+
+                            <p class="friend-username user-username"></p>
                         </div>
                     </template>
                 </div>
@@ -120,9 +128,9 @@
 
                     <template id="message-template">
                         <div class="message">
-                            <img class="message-avatar" alt="Avatar">
+                            <img class="message-avatar user-avatar" alt="Avatar">
                             <div class="message-content-container">
-                                <p class="message-username"></p>
+                                <p class="message-username user-username"></p>
                                 <p class="message-content"></p>
                             </div>
                         </div>
@@ -176,8 +184,13 @@
 
             <template id="user-list-user-template">
                 <div class="user-list-user">
-                    <img class="user-list-avatar" alt="Avatar">
-                    <p class="user-list-username"></p>
+                    <div class="user-list-avatar-container">
+                        <div class="user-list-status user-status"></div>
+
+                        <img class="user-list-avatar user-avatar" alt="Avatar">
+                    </div>
+
+                    <p class="user-list-username user-username"></p>
                 </div>
             </template>
 
@@ -232,7 +245,7 @@
 
         <template id="add-channel-friend-template">
             <div class="add-channel-friend">
-                <p class="add-channel-friend-name"></p>
+                <p class="add-channel-friend-name user-username"></p>
                 <button class="add-channel-friend-button">Add</button>
             </div>
         </template>

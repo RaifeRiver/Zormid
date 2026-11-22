@@ -50,7 +50,7 @@ namespace zormid::command {
 				}
 				else if (command[1] == "user") {
 					std::cout << "user\t\t - manages user data and viewing user statistics" << std::endl;
-					std::cout << "\tactive\t - displays a list of active (online) users and how many clients each one has" << std::endl;
+					std::cout << "\tonline\t - displays a list of online users and how many clients each one has" << std::endl;
 					std::cout << "\tmigrate\t - migrates all user files to use the latest file format, this may take some time depending on user count during which the server will be unavailable" << std::endl;
 				}
 				else if (command[1] == "channel") {
@@ -69,14 +69,17 @@ namespace zormid::command {
 					std::cout << "Usage: user <subcommand>" << std::endl;
 					continue;
 				}
-				if (command[1] == "active") {
+				if (command[1] == "online") {
 					std::unordered_map<user::manager::UserID, user::User>& users = user::manager::getLoadedUsers();
 					if (users.empty()) {
-						std::cout << "No active users" << std::endl;
+						std::cout << "No online users" << std::endl;
 						continue;
 					}
-					std::cout << "Active users:" << std::endl;
+					std::cout << "Online users:" << std::endl;
 					for (user::User& user: users | std::views::values) {
+						if (user.getActiveClients() == 0) {
+							continue;
+						}
 						std::cout << "\t" << user.getUsername() << " - " << user.getActiveClients() << std::endl;
 					}
 				}

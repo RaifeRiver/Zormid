@@ -93,7 +93,7 @@ namespace zormid::user::manager {
 		user.setPasswordSalt(salt.data());
 		user.setPasswordDigest(reinterpret_cast<char*>(digest));
 		user.setUsername(username);
-		user.setActiveClients(1);
+		user.setActiveUses(1);
 		users.emplace(id, user);
 		return users.at(id);
 	}
@@ -154,7 +154,7 @@ namespace zormid::user::manager {
 		}
 		if (const auto it = users.find(id); it != users.end()) {
 			User& user = it->second;
-			user.getActiveClients()++;
+			user.getActiveUses()++;
 			return user;
 		}
 		User user(id);
@@ -226,7 +226,7 @@ namespace zormid::user::manager {
 			fileStream->read(channelID, sizeof(channelID));
 			user.getChannels().emplace_back(channelID);
 		}
-		user.setActiveClients(1);
+		user.setActiveUses(1);
 		users.emplace(id, user);
 		return users.at(id);
 	}
@@ -237,7 +237,7 @@ namespace zormid::user::manager {
 			return;
 		}
 		User& user = it->second;
-		if (--user.getActiveClients() > 0) {
+		if (--user.getActiveUses() > 0) {
 			return;
 		}
 		const std::string hash = util::base64::encodeURL(static_cast<const char*>(id), USER_ID_SIZE);
@@ -278,7 +278,7 @@ namespace zormid::user::manager {
 
 	void unloadAllUsers() {
 		while (!users.empty()) {
-			users.begin()->second.setActiveClients(1);
+			users.begin()->second.setActiveUses(1);
 			unloadUser(users.begin()->first);
 		}
 	}
