@@ -1,5 +1,5 @@
 body {
-    --theme-font-family: sans-serif;
+    --theme-font-family: "Noto Sans", "Noto Color Emoji", sans-serif;
 
     background-color: var(--theme-background-color) !important;
     margin: 0;
