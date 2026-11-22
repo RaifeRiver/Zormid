@@ -751,6 +751,7 @@ a {
     flex-direction: row;
     gap: 0.5vw;
     margin-top: 1vh;
+    position: relative;
 }
 
 .continuation-message {
