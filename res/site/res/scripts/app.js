@@ -6,6 +6,8 @@ import * as markdown from "./markdown.js";
 
 let appContainer = document.getElementById("app-container");
 let loadingScreen = document.getElementById("loading-screen");
+let sidePanel = document.getElementById("side-panel");
+let mainArea = document.getElementById("main-area");
 
 let channelContainer = document.getElementById("channel-container");
 let messageInput = document.getElementById("message-input");
@@ -91,6 +93,10 @@ let userSettingsAppearanceTab = document.getElementById("user-settings-appearanc
 let userSettingsAppearance = document.getElementById("user-settings-appearance");
 let userSettingsAppearanceTheme = document.getElementById("user-settings-appearance-theme");
 let userSettingsClose = document.getElementById("user-settings-close");
+
+let backButton = document.getElementById("back-button");
+
+let portraitMedia = window.matchMedia("(orientation: portrait)");
 
 let userID;
 let currentChannelID;
@@ -417,6 +423,10 @@ function changeChannel(channelID) {
     if (!currentChannelID) {
         friendListContainer.style.display = "none";
         channelContainer.style.display = "flex";
+        if (portraitMedia.matches) {
+            sidePanel.style.display = "none";
+            mainArea.style.display = "flex";
+        }
     }
     currentChannelID = channelID;
     messageContainer.replaceChildren();
@@ -465,6 +475,10 @@ function addChannelFromMenu() {
 
 function openFriendsList() {
     if (!currentChannelID) {
+        if (portraitMedia.matches) {
+            sidePanel.style.display = "none";
+            mainArea.style.display = "flex";
+        }
         return;
     }
     history.pushState({}, "", "/app/");
@@ -475,6 +489,10 @@ function openFriendsList() {
     channelSettingsContainer.style.display = "none";
     userListContainer.style.display = "none";
     friendListContainer.style.display = "block";
+    if (portraitMedia.matches) {
+        sidePanel.style.display = "none";
+        mainArea.style.display = "flex";
+    }
 }
 
 function processMessageContents(message) {
@@ -663,7 +681,7 @@ function setState(state) {
     if (state.channel) {
         changeChannel(state.channel);
     }
-    else {
+    else if (!portraitMedia.matches) {
         openFriendsList();
     }
 }
@@ -739,6 +757,29 @@ function addChannel(channel) {
     channelList.appendChild(channelElement);
 }
 
+function changeToPortrait() {
+    if (currentChannelID) {
+        sidePanel.style.display = "none";
+        mainArea.style.display = "flex";
+    }
+    else {
+        sidePanel.style.display = "flex";
+        mainArea.style.display = "none";
+    }
+}
+
+function changeToLandscape() {
+    mainArea.style.display = "flex";
+    sidePanel.style.display = "flex";
+}
+
+function back() {
+    mainArea.style.display = "none";
+    sidePanel.style.display = "flex";
+    history.pushState({}, "", "/app/");
+    currentChannelID = null;
+}
+
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -792,5 +833,19 @@ userSettingsClose.addEventListener("click", closeUserSettingsMenu);
 userListManageUsersClose.addEventListener("click", closeManageChannelUsersMenu);
 userListManageUsersConfirm.addEventListener("click", changeChannelUsers);
 
+backButton.addEventListener("click", back);
+
 window.addEventListener("drop", (event) => event.preventDefault());
 window.addEventListener("dragover", (event) => event.preventDefault());
+
+portraitMedia.addEventListener("change", (event) => {
+    if (event.matches) {
+        changeToPortrait();
+    }
+    else {
+        changeToLandscape();
+    }
+});
+if (portraitMedia.matches) {
+    changeToPortrait();
+}
