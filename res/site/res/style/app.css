@@ -117,6 +117,11 @@ h3 {
     width: 49vw;
 }
 
+.copyable-url span {
+    user-select: all;
+    -webkit-user-select: all;
+}
+
 .copyable-url-label {
     color: var(--theme-secondary-text-color);
     font-family: var(--theme-font-family), sans-serif;
@@ -835,4 +840,9 @@ a {
     color: var(--theme-secondary-text-color);
     font-size: 12px;
     align-self: center;
+}
+
+summary {
+    user-select: none;
+    -webkit-user-select: none;
 }

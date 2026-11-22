@@ -365,7 +365,7 @@ function tryDeprecatedFriendURLCopy() {
 }
 
 function openAddFriendMenu() {
-    addFriendURL.innerHTML = window.location.origin + "/friend/" +btoa(userID).replaceAll('+', '-').replaceAll('/', '_') + "<button id=\"copy-url-button\" class=\"copy-button\">Copy</button>";
+    addFriendURL.innerHTML = `<span>${window.location.origin}/friend/${base64.encodeURL(userID)}</span><button id="copy-url-button" class="copy-button">Copy</button>`;
     addFriendMenu.showModal();
     addFriendCopyURL = document.getElementById("copy-url-button");
     addFriendCopyURL.addEventListener("click", () => {
