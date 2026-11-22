@@ -11,7 +11,7 @@ namespace zormid::chat {
 
 	const std::string CHANNELS_DIR = "../data/channels/";
 	constexpr std::string CHANNEL_FILE_HEADER = "ZORMCHAN";
-	constexpr uint32_t CHANNEL_FILE_VERSION = 1;
+	constexpr uint32_t CHANNEL_FILE_VERSION = 2;
 
 	struct ChannelID {
 		ChannelID();

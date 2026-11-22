@@ -198,7 +198,7 @@ api.setMessageHandler((message) => {
     if (message.channelID !== currentChannelID && message.userID !== userID) {
         return;
     }
-    insertMessage(message.index, message.userID, emojis.toEmojis(message.content));
+    insertMessage(message.index, message.userID, emojis.toEmojis(message.content), message.timestamp);
 });
 api.setChannelInfoHandler((info) => {
     if (info.channelID !== currentChannelID) {
@@ -256,7 +256,7 @@ api.setChannelMessagesHandler((messageInfo) => {
         return;
     }
     for (let i = 0; i < messageInfo.messages.length; i++) {
-        insertMessage(messageInfo.firstMessage + i, messageInfo.messages[i].userID, emojis.toEmojis(messageInfo.messages[i].content));
+        insertMessage(messageInfo.firstMessage + i, messageInfo.messages[i].userID, emojis.toEmojis(messageInfo.messages[i].content), messageInfo.messages[i].timestamp);
     }
     if (waitingForChannelMessages) {
         messageContainer.scrollTop = messageContainer.scrollHeight;
@@ -475,7 +475,7 @@ function processMessageContents(message) {
     return markdown.convertToHTML(message);
 }
 
-function insertMessage(index, fromID, content) {
+function insertMessage(index, fromID, content, timestamp) {
     let user = users[fromID];
     let shouldScroll = messageContainer.scrollTop + messageContainer.clientHeight >= messageContainer.scrollHeight - 2;
     let previousMessageElement;
@@ -512,6 +512,7 @@ function insertMessage(index, fromID, content) {
         let messageElement = document.importNode(messageTemplate.content, true);
         messageElement.querySelector(".message-avatar").src = user.avatar === "DEFAULT" ? "/res/images/default-avatar.png" : user.avatar;
         messageElement.querySelector(".message-username").textContent = user.username;
+        messageElement.querySelector(".message-timestamp").textContent = timestamp.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
         messageElement.querySelector(".message-content").innerHTML = processMessageContents(content);
         messageElement.firstElementChild.dataset.username = user.username;
         messageElement.firstElementChild.dataset.index = index;

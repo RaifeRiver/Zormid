@@ -30,6 +30,8 @@ namespace zormid::net::http {
 
 		PayloadWriter& operator<<(uint32_t data);
 
+		PayloadWriter& operator<<(int64_t data);
+
 		PayloadWriter& operator<<(bool data);
 
 		PayloadWriter& operator<<(const std::string& data);

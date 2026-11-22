@@ -229,8 +229,9 @@ namespace zormid::client {
 		const chat::ChannelID channelID = payload.readChannelID();
 		std::string message;
 		payload >> message;
+		const int64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		chat::Channel channel(channelID);
-		const uint32_t index = channel.send({.content = message, .from = mUser->getUsername(), .fromID = mUser->getID(), .channelID = channelID});
+		const uint32_t index = channel.send({.content = message, .from = mUser->getUsername(), .fromID = mUser->getID(), .channelID = channelID, .timestamp = timestamp});
 		for (const user::manager::UserID& userID : channel.getUsers()) {
 			if (!user::manager::isActive(userID)) {
 				continue;
@@ -246,6 +247,7 @@ namespace zormid::client {
 			messagePayload << message;
 			messagePayload << mUser->getUsername();
 			messagePayload << index;
+			messagePayload << timestamp;
 			user.pushPayload(messagePayload.buildAllocatedPayload());
 			user::manager::unloadUser(userID);
 		}
@@ -287,6 +289,7 @@ namespace zormid::client {
 			response << message.fromID;
 			response << message.content;
 			response << message.from;
+			response << message.timestamp;
 		}
 		mSocket->write(response.buildPayload());
 	}

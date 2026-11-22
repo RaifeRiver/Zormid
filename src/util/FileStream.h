@@ -19,6 +19,8 @@ namespace zormid::util {
 
 		void operator>>(uint32_t& value);
 
+		void operator>>(int64_t& value);
+
 		void operator>>(std::string& value);
 
 		user::manager::UserID readUserID();
@@ -40,6 +42,8 @@ namespace zormid::util {
 		void write(const void* buffer, uint32_t size);
 
 		void operator<<(uint32_t value);
+
+		void operator<<(int64_t value);
 
 		void operator<<(bool value);
 

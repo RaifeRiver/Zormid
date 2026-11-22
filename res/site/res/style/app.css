@@ -820,3 +820,15 @@ a {
     border: var(--theme-background-color) 3px solid;
     z-index: 1;
 }
+
+.message-info-container {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+}
+
+.message-timestamp {
+    color: var(--theme-secondary-text-color);
+    font-size: 12px;
+    align-self: center;
+}

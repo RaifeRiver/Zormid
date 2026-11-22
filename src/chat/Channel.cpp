@@ -95,6 +95,7 @@ namespace zormid::chat {
 		messageFileStream.seekEnd();
 		messageInfoFileStream << message.fromID;
 		messageInfoFileStream << messageFileStream.getPosition();
+		messageInfoFileStream << message.timestamp;
 		messageFileStream << message.content;
 		return index;
 	}
@@ -136,10 +137,12 @@ namespace zormid::chat {
 			user::manager::UserID fromID = messageInfoFileStream.readUserID();
 			uint32_t pos;
 			messageInfoFileStream >> pos;
+			int64_t timestamp;
+			messageInfoFileStream >> timestamp;
 			messageFileStream.seek(pos);
 			std::string content;
 			messageFileStream >> content;
-			messages.push_back({.content = content, .from = user::manager::loadUser(fromID).getUsername(), .fromID = fromID, .channelID = mID});
+			messages.push_back({.content = content, .from = user::manager::loadUser(fromID).getUsername(), .fromID = fromID, .channelID = mID, .timestamp = timestamp});
 			user::manager::unloadUser(fromID);
 		}
 		return messages;
@@ -200,6 +203,7 @@ namespace zormid::chat {
 			std::cerr << "Unsupported channel file " << file << std::endl;
 			return false;
 		}
+		bool migrated = false;
 		if (version == 0) {
 			std::string name;
 			fileStream >> name;
@@ -242,9 +246,28 @@ namespace zormid::chat {
 				messageFileStream << content;
 			}
 			version = 1;
-			return true;
+			migrated = true;
 		}
-		return false;
+		if (version == 1) {
+			uint32_t messageCount = 0;
+			fileStream >> messageCount;
+			util::OFileStream outStream(file + ".dat");
+			outStream.seek(CHANNEL_FILE_HEADER.size());
+			outStream << 2u;
+			util::IFileStream messageInfoFileStream(file + ".message_info.dat");
+			util::OFileStream messageInfoOutputFileStream(file + ".message_info.dat.new");
+			for (uint32_t i = 0; i < messageCount; i++) {
+				user::manager::UserID userID = messageInfoFileStream.readUserID();
+				uint32_t messagePosition;
+				messageInfoFileStream >> messagePosition;
+				messageInfoOutputFileStream << userID;
+				messageInfoOutputFileStream << messagePosition;
+				messageInfoOutputFileStream << 0l;
+			}
+			version = 2;
+			migrated = true;
+		}
+		return migrated;
 	}
 
 	uint32_t migrateAllChannels() {

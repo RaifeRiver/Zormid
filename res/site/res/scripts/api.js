@@ -145,13 +145,8 @@ async function processPacket(packet) {
                 let {text: content, bytes: contentSize} = readString(view, 24 + USER_ID_SIZE);
                 let {text: username, bytes: usernameSize} = readString(view, 28 + USER_ID_SIZE + contentSize);
                 let index = view.getUint32(32 + USER_ID_SIZE + contentSize + usernameSize, true);
-                messageHandler({
-                    index: index,
-                    content: content,
-                    username: username,
-                    channelID: channelID,
-                    userID: userID
-                });
+                let timestamp = new Date(Number(view.getBigInt64(36 + USER_ID_SIZE + contentSize + usernameSize, true)));
+                messageHandler({index: index, content: content, username: username, channelID: channelID, userID: userID, timestamp: timestamp});
             }
             break;
         case 0x5:
@@ -188,7 +183,9 @@ async function processPacket(packet) {
                     pos += contentSize + 4;
                     let {text: username, bytes: usernameSize} = readString(view, pos);
                     pos += usernameSize + 4;
-                    messages.push({userID: userID, content: content, username: username});
+                    let timestamp = new Date(Number(view.getBigInt64(pos, true)));
+                    pos += 8;
+                    messages.push({userID: userID, content: content, username: username, timestamp: timestamp});
                 }
                 channelMessagesHandler({channelID: channelID, firstMessage: firstMessage, messages: messages});
             }

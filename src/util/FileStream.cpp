@@ -20,6 +20,10 @@ namespace zormid::util {
 		read(&value, sizeof(uint32_t));
 	}
 
+	void IFileStream::operator>>(int64_t& value) {
+		read(&value, sizeof(int64_t));
+	}
+
 	void IFileStream::operator>>(std::string& value) {
 		uint32_t length;
 		*this >> length;
@@ -56,6 +60,10 @@ namespace zormid::util {
 
 	void OFileStream::operator<<(const uint32_t value) {
 		write(&value, sizeof(uint32_t));
+	}
+
+	void OFileStream::operator<<(const int64_t value) {
+		write(&value, sizeof(int64_t));
 	}
 
 	void OFileStream::operator<<(const bool value) {

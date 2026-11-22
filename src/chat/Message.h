@@ -11,5 +11,6 @@ namespace zormid::chat {
 		std::string from;
 		user::manager::UserID fromID;
 		ChannelID channelID;
+		int64_t timestamp;
 	};
 }

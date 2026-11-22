@@ -18,6 +18,11 @@ namespace zormid::net::http {
 		return *this;
 	}
 
+	PayloadWriter& PayloadWriter::operator<<(int64_t data) {
+		write(&data, sizeof(int64_t));
+		return *this;
+	}
+
 	PayloadWriter& PayloadWriter::operator<<(const bool data) {
 		write(&data, sizeof(bool));
 		return *this;
