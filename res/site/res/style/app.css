@@ -745,12 +745,16 @@ a {
     width: 8vw;
     aspect-ratio: 1/1;
     border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
 }
 
 #user-avatar {
     height: 5vh;
     aspect-ratio: 1/1;
     border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
 }
 
 .message-content-container {
@@ -765,6 +769,8 @@ a {
     aspect-ratio: 1/1;
     border-radius: 50%;
     position: absolute;
+    object-fit: cover;
+    object-position: center;
 }
 
 .message {
@@ -785,6 +791,8 @@ a {
     border-radius: 50%;
     align-self: center;
     position: relative;
+    object-fit: cover;
+    object-position: center;
 }
 
 #user-avatar-container {
