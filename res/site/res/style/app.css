@@ -743,7 +743,7 @@ a {
     height: 2vw;
     aspect-ratio: 1/1;
     border-radius: 50%;
-    position: fixed;
+    position: absolute;
 }
 
 .message {
