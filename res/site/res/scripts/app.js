@@ -455,6 +455,7 @@ function openFriendsList() {
     channelContainer.style.display = "none";
     channelName.textContent = "Friends";
     channelSettingsContainer.style.display = "none";
+    userListContainer.style.display = "none";
     friendListContainer.style.display = "block";
 }
 
