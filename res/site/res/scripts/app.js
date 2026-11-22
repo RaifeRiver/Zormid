@@ -507,11 +507,12 @@ function insertMessage(index, fromID, content, timestamp) {
         }
         previousIndex = i;
     }
-    if (previousMessageElement) {
+    if (previousMessageElement && timestamp.getTime() - new Date(previousMessageElement.dataset.timestamp).getTime() < 300000) {
         let messageElement = document.importNode(continuationMessageTemplate.content, true);
         messageElement.querySelector(".message-content").innerHTML = processMessageContents(content);
         messageElement.firstElementChild.dataset.username = user.username;
         messageElement.firstElementChild.dataset.index = index;
+        messageElement.firstElementChild.dataset.timestamp = timestamp.toISOString();
         messageContainer.insertBefore(messageElement, messageContainer.children[previousIndex + 1]);
     }
     else {
@@ -522,6 +523,7 @@ function insertMessage(index, fromID, content, timestamp) {
         messageElement.querySelector(".message-content").innerHTML = processMessageContents(content);
         messageElement.firstElementChild.dataset.username = user.username;
         messageElement.firstElementChild.dataset.index = index;
+        messageElement.firstElementChild.dataset.timestamp = timestamp.toISOString();
         let messageChild = messageElement.firstElementChild;
         if (previousIndex !== undefined) {
             messageContainer.insertBefore(messageElement, messageContainer.children[previousIndex + 1]);
@@ -531,13 +533,14 @@ function insertMessage(index, fromID, content, timestamp) {
         }
         addUserElement(fromID, messageChild);
     }
-    if (nextMessageElement) {
+    if (nextMessageElement && new Date(nextMessageElement.dataset.timestamp).getTime() - timestamp.getTime() < 300000) {
         removeUserElement(fromID, nextMessageElement);
         let modifiedNextElement = document.importNode(continuationMessageTemplate.content, true);
         let contentElement = modifiedNextElement.querySelector(".message-content");
         contentElement.innerHTML = nextMessageElement.querySelector(".message-content").innerHTML;
         modifiedNextElement.firstElementChild.dataset.username = nextMessageElement.dataset.username;
         modifiedNextElement.firstElementChild.dataset.index = nextMessageElement.dataset.index;
+        modifiedNextElement.firstElementChild.dataset.timestamp = nextMessageElement.dataset.timestamp;
         messageContainer.replaceChild(modifiedNextElement, nextMessageElement);
     }
     if (shouldScroll) {
