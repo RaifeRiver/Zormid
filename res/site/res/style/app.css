@@ -760,12 +760,12 @@ a {
 .message-content-container {
     display: flex;
     flex-direction: column;
-    padding-left: 2.5vw;
+    padding-left: 5vh;
     min-height: 2vw;
 }
 
 .message-avatar {
-    height: 2vw;
+    height: 4vh;
     aspect-ratio: 1/1;
     border-radius: 50%;
     position: absolute;
@@ -782,7 +782,7 @@ a {
 }
 
 .continuation-message {
-    margin-left: 2.5vw;
+    margin-left: 5vh;
 }
 
 .friend-avatar, .user-list-avatar {
