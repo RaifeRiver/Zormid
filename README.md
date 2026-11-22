@@ -11,11 +11,12 @@ It is designed for chatting to friends in real time over the internet.
  - Free and open source
  - Either self-hosting or use our server
  - Channels with multiple users
+ - File uploads with configurable limits
 
 ## Limitations
  - Requires linux server
  - Only supports web clients
- - No encryption
+ - No builtin encryption (the official server uses a reverse proxy to get HTTPS encryption)
  - No permissions, all users can do everything
 
 **NOTE: Zormid is currently WIP and these limitations will likely be addressed soon.**
