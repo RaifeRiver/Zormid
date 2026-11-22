@@ -154,6 +154,17 @@ namespace zormid::chat {
 		fileStream << mName;
 	}
 
+	void Channel::deleteChannel() {
+		mUsers.clear();
+		mMessageCount = 0;
+		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
+		const std::string file = CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2);
+		std::filesystem::remove(file + ".dat");
+		std::filesystem::remove(file + ".users.dat");
+		std::filesystem::remove(file + ".message_info.dat");
+		std::filesystem::remove(file + ".messages.dat");
+	}
+
 	void Channel::createNewSave() const {
 		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
 		std::filesystem::create_directories(CHANNELS_DIR + hash.substr(0, 2));

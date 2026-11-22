@@ -54,6 +54,8 @@ namespace zormid::chat {
 
 		void setName(const std::string& name);
 
+		void deleteChannel();
+
 	private:
 		ChannelID mID;
 		std::string mName;

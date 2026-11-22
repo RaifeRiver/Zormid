@@ -302,6 +302,9 @@ namespace zormid::client {
 			user.getChannels().erase(std::ranges::find(user.getChannels(), channelID));
 			user::manager::unloadUser(userID);
 		}
+		if (channel.getUsers().empty()) {
+			channel.deleteChannel();
+		}
 	}
 
 	void Client::processCreateChannelPacket(net::http::PayloadReader& payload) {
