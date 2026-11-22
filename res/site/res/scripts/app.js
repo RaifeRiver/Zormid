@@ -144,8 +144,7 @@ api.setFriendListRequestHandler((f) => {
     document.getElementById("add-friend").addEventListener("click", openAddFriendMenu);
     for (let friend of friends) {
         let friendElement = document.importNode(friendTemplate.content, true);
-        let friendButton = friendElement.firstElementChild;
-        friendButton.textContent = friend.username;
+        friendElement.querySelector(".friend-username").textContent = friend.username;
         friendContainer.appendChild(friendElement);
     }
 });

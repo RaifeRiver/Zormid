@@ -220,24 +220,43 @@ p {
 #friend-container {
     display: flex;
     flex-direction: column;
-    gap: 1vh;
-    padding-top: 1vh;
-    margin-left: 1vw;
-    margin-right: 1vw;
     overflow-y: auto;
 }
 
-.friend {
-    background-color: var(--theme-secondary-background-color);
+#add-friend {
+    background-color: var(--theme-background-color);
     color: var(--theme-text-color);
     font-family: var(--theme-font-family), sans-serif;
     border: var(--theme-border-color) 2px solid;
+    margin: 1vh 1vw;
+}
+
+#add-friend-seperator {
+    width: 100%;
+    height: 2px;
+    background-color: var(--theme-border-color);
+}
+
+.friend {
+    background-color: var(--theme-background-color);
+    border: none;
+    border-bottom: var(--theme-border-color) 2px solid;
     text-wrap: nowrap;
     overflow: hidden;
+    height: 5vh;
+    padding-left: 1vw;
+    display: flex;
+    flex-direction: row;
 }
 
 .friend:hover {
-    background-color: var(--theme-background-color);
+    background-color: var(--theme-secondary-background-color);
+}
+
+.friend-username {
+    color: var(--theme-text-color);
+    font-family: var(--theme-font-family), sans-serif;
+    align-self: center;
 }
 
 #add-channel-friends {
