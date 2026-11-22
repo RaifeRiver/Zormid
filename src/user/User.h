@@ -9,24 +9,31 @@
 
 namespace zormid::user {
 	constexpr std::string USER_FILE_HEADER = "ZORMUSER";
-	constexpr uint32_t USER_FILE_VERSION = 1;
+	constexpr uint32_t USER_FILE_VERSION = 2;
 
 	struct Session {
-		explicit Session(const char* id);
+		explicit Session(const char* id, std::string userAgent);
 
 		explicit operator const char*() const {
 			return mID;
 		}
 
+		[[nodiscard]] std::string getUserAgent() const {
+			return mUserAgent;
+		}
+
+		void setUserAgent(const std::string& userAgent);
+
 	private:
 		char mID[16] = {};
+		std::string mUserAgent;
 	};
 
 	class User {
 	public:
 		explicit User(const manager::UserID& id);
 
-		const Session& startSession();
+		const Session& startSession(const std::string& userAgent);
 
 		[[nodiscard]] const manager::UserID& getID() const {
 			return mID;

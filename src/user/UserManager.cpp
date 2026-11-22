@@ -179,7 +179,7 @@ namespace zormid::user::manager {
 			std::cerr << "Unsupported user file version for user " << hash << std::endl;
 			throw std::runtime_error("Unsupported user file version");
 		}
-		if (version != USER_FILE_VERSION) {
+		if (version < 1) {
 			fileStream = nullptr;
 			if (!migrateUserFile(file)) {
 				std::cerr << "Failed to migrate user file for user " << hash << std::endl;
@@ -192,10 +192,17 @@ namespace zormid::user::manager {
 		fileStream->read(user.getPasswordDigest(), 20);
 		uint32_t sessionCount;
 		*fileStream >> sessionCount;
-		for (uint32_t i = 0; i < sessionCount; i++) {
-			char sessionID[16];
-			fileStream->read(sessionID, sizeof(sessionID));
-			user.getSessions().emplace_back(sessionID);
+		if (version == 1) {
+			fileStream->read(nullptr, sessionCount * 16);
+		}
+		else {
+			for (uint32_t i = 0; i < sessionCount; i++) {
+				char sessionID[16];
+				fileStream->read(sessionID, sizeof(sessionID));
+				std::string userAgent;
+				*fileStream >> userAgent;
+				user.getSessions().emplace_back(sessionID, userAgent);
+			}
 		}
 		*fileStream >> user.getUsername();
 		uint32_t friendCount;
@@ -239,6 +246,7 @@ namespace zormid::user::manager {
 		fileStream << static_cast<uint32_t>(user.getSessions().size());
 		for (const Session& session: user.getSessions()) {
 			fileStream.write(static_cast<const char*>(session), 16);
+			fileStream << session.getUserAgent();
 		}
 		fileStream << user.getUsername();
 		fileStream << static_cast<uint32_t>(user.getFriends().size());

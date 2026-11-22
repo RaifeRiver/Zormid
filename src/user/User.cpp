@@ -5,19 +5,23 @@
 #include <utility>
 
 namespace zormid::user {
-	Session::Session(const char* id) {
+	Session::Session(const char* id, std::string userAgent) : mUserAgent(std::move(userAgent)) {
 		memcpy(mID, id, 16);
+	}
+
+	void Session::setUserAgent(const std::string& userAgent) {
+		mUserAgent = userAgent;
 	}
 
 	User::User(const manager::UserID& id) : mID(id) {}
 
-	const Session& User::startSession() {
+	const Session& User::startSession(const std::string& userAgent) {
 		std::random_device randomDevice;
 		char sessionID[16];
 		for (char& c : sessionID) {
 			c = static_cast<char>(randomDevice());
 		}
-		mSessions.emplace_back(sessionID);
+		mSessions.emplace_back(sessionID, userAgent);
 		return mSessions.back();
 	}
 

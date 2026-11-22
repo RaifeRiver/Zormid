@@ -64,8 +64,13 @@ namespace zormid::site {
 				if (!user::manager::exists(userID)) {
 					return false;
 				}
-				for (user::User& user = user::manager::loadUser(userID); user::Session session : user.getSessions()) {
+				std::string userAgent = "Unknown";
+				if (const auto userAgentIt = request.headers.find("User-Agent"); userAgentIt != request.headers.end()) {
+					userAgent = userAgentIt->second;
+				}
+				for (user::User& user = user::manager::loadUser(userID); user::Session& session : user.getSessions()) {
 					if (memcmp(sessionChars.data(), static_cast<const char*>(session), 16) == 0) {
+						session.setUserAgent(userAgent);
 						user::manager::unloadUser(userID);
 						return true;
 					}
@@ -165,7 +170,11 @@ namespace zormid::site {
 			response.statusCode = 303;
 			response.statusMessage = "See Other";
 			response.headers["Location"] = "/app/";
-			const user::Session& session = user->startSession();
+			std::string userAgent = "Unknown";
+			if (auto userAgentIt = request.headers.find("User-Agent"); userAgentIt != request.headers.end()) {
+				userAgent = userAgentIt->second;
+			}
+			const user::Session& session = user->startSession(userAgent);
 			const std::string sessionStr = util::base64::encode(static_cast<const char*>(session), 16);
 			if (remember) {
 				std::chrono::system_clock::time_point expiryTime = std::chrono::system_clock::now() + std::chrono::days(30);
