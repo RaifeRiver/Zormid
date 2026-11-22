@@ -49,6 +49,10 @@ namespace zormid::user {
 		mActiveClients = clients;
 	}
 
+	void User::setTypingClients(const uint32_t clients) {
+		mTypingClients = clients;
+	}
+
 	void User::pushPayload(const net::http::PayloadData& payload) {
 		mWriteQueue.push_back(payload);
 	}

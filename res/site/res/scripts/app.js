@@ -14,6 +14,7 @@ let messageInput = document.getElementById("message-input");
 let messageTemplate = document.getElementById("message-template");
 let continuationMessageTemplate = document.getElementById("continuation-message-template");
 let messageContainer = document.getElementById("message-container");
+let typingIndicator = document.getElementById("typing-indicator");
 
 let sendButton = document.getElementById("send-button");
 
@@ -101,6 +102,7 @@ let portraitMedia = window.matchMedia("(orientation: portrait)");
 let userID;
 let currentChannelID;
 let channelMessageCount;
+let channelTypingUsers = [];
 let friends = [];
 let waitingForChannelMessages = false;
 let connectionAttempts = 0;
@@ -109,6 +111,7 @@ let currentUserSettingsContent = userSettingsProfile;
 let uploadType;
 let users = {};
 let connected = false;
+let typing = false;
 
 let messageScrollObserver;
 
@@ -318,6 +321,34 @@ api.setChannelRemoveHandler((channelID) => {
     channelList.querySelector(`[data-id="${base64.encodeURL(channelID)}"]`).remove();
 });
 
+api.setUserTypingChangeHandler((info) => {
+    if (info.channelID !== currentChannelID) {
+        return;
+    }
+    if (info.typing) {
+        channelTypingUsers.push(info.userID);
+    }
+    else {
+        channelTypingUsers.splice(channelTypingUsers.indexOf(info.userID), 1);
+    }
+    if (channelTypingUsers.length === 0) {
+        typingIndicator.textContent = "";
+        return;
+    }
+    let typingString = "";
+    let lastUsername;
+    for (let userID of channelTypingUsers) {
+        if (lastUsername) {
+            typingString += ", " + lastUsername;
+        }
+        lastUsername = users[userID]?.username || "Unknown";
+    }
+    if (lastUsername) {
+        typingString += typingString.length === 0 ? lastUsername : ` and ${lastUsername}`;
+    }
+    typingIndicator.textContent = `${typingString} ${channelTypingUsers.length === 1 ? "is" : "are"} typing...`;
+});
+
 connectionAttempts++;
 api.connect();
 
@@ -346,6 +377,7 @@ function sendMessage() {
     }
     messageInput.value = "";
     messageContainer.scrollTop = messageContainer.scrollHeight;
+    messageInput.dispatchEvent(new Event("input"));
 }
 
 function tryDeprecatedFriendURLCopy() {
@@ -429,6 +461,8 @@ function changeChannel(channelID) {
         }
     }
     currentChannelID = channelID;
+    channelTypingUsers.length = 0;
+    typing = false;
     messageContainer.replaceChildren();
     api.requestChannelInfo(channelID);
 }
@@ -786,6 +820,13 @@ messageInput.addEventListener("keydown", (event) => {
         sendMessage();
     }
 });
+messageInput.addEventListener("input", (event) => {
+    let t = event.target.value.length !== 0;
+    if (t !== typing) {
+        api.setTyping(t);
+        typing = t;
+    }
+})
 messageInput.addEventListener("drop", async (event) => uploadMessageFiles(event.dataTransfer.files));
 
 sendButton.addEventListener("click", sendMessage);

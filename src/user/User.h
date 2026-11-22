@@ -87,6 +87,12 @@ namespace zormid::user {
 
 		void setActiveClients(uint32_t clients);
 
+		[[nodiscard]] uint32_t& getTypingClients() {
+			return mTypingClients;
+		}
+
+		void setTypingClients(uint32_t clients);
+
 		[[nodiscard]] std::vector<net::http::PayloadData>& getWriteQueue() {
 			return mWriteQueue;
 		}
@@ -106,6 +112,7 @@ namespace zormid::user {
 		std::vector<chat::ChannelID> mChannels = {};
 		uint32_t mActiveUses = 0;
 		uint32_t mActiveClients = 0;
+		uint32_t mTypingClients = 0;
 		std::vector<net::http::PayloadData> mWriteQueue = {};
 	};
 }

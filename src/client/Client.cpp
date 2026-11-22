@@ -31,20 +31,14 @@ namespace zormid::client {
 	void Client::close() {
 		mSocket->close();
 		if (mUser) {
-			mUser->getActiveClients()--;
-			sendUserInfoToAll();
-			user::manager::unloadUser(mUser->getID());
-			mUser = nullptr;
+			close_();
 		}
 	}
 
 	bool Client::isOpen() {
 		const bool open = mSocket->isOpen();
 		if (!open && mUser) {
-			mUser->getActiveClients()--;
-			sendUserInfoToAll();
-			user::manager::unloadUser(mUser->getID());
-			mUser = nullptr;
+			close_();
 		}
 		return open;
 	}
@@ -98,6 +92,44 @@ namespace zormid::client {
 		response << mUser->getAvatar();
 		response << (mUser->getActiveClients() == 0 ? 0u : 1u);
 		mUser->pushPayload(response.buildAllocatedPayload());
+	}
+
+	void Client::sendTypingToAllInChannels() const {
+		for (const chat::ChannelID channelID : mUser->getChannels()) {
+			for (chat::Channel channel(channelID); const user::manager::UserID& userID : channel.getUsers()) {
+				if (userID == mUser->getID()) {
+					continue;
+				}
+				if (!user::manager::isActive(userID)) {
+					continue;
+				}
+				user::User& user = user::manager::loadUser(userID);
+				if (user.getActiveClients() == 0) {
+					user::manager::unloadUser(userID);
+					continue;
+				}
+				net::http::PayloadWriter response;
+				response << 0xCu;
+				response << channelID;
+				response << mUser->getID();
+				response << mTyping;
+				user.pushPayload(response.buildAllocatedPayload());
+				user::manager::unloadUser(userID);
+			}
+		}
+	}
+
+	void Client::close_() {
+		if (mTyping) {
+			mTyping = false;
+			if (--mUser->getTypingClients() == 0) {
+				sendTypingToAllInChannels();
+			}
+		}
+		mUser->getActiveClients()--;
+		sendUserInfoToAll();
+		user::manager::unloadUser(mUser->getID());
+		mUser = nullptr;
 	}
 
 	void Client::processPacket(net::http::PayloadReader& payload) {
@@ -154,6 +186,9 @@ namespace zormid::client {
 				break;
 			case 0xF:
 				processSetAvatarPacket(payload);
+				break;
+			case 0x10:
+				processTypingPacket(payload);
 				break;
 			default:
 				std::cout << "Unknown packet ID: " << id << std::endl;
@@ -386,6 +421,22 @@ namespace zormid::client {
 		payload >> avatar;
 		mUser->setAvatar(avatar);
 		sendUserInfoToAll();
+	}
+
+	void Client::processTypingPacket(net::http::PayloadReader& payload) {
+		bool typing;
+		payload >> typing;
+		if (typing != mTyping) {
+			mTyping = typing;
+			if (typing) {
+				if (mUser->getTypingClients()++ == 0) {
+					sendTypingToAllInChannels();
+				}
+			}
+			else if (--mUser->getTypingClients() == 0) {
+				sendTypingToAllInChannels();
+			}
+		}
 	}
 
 	void Client::processFileUploadPacket(net::http::PayloadReader& payload) {

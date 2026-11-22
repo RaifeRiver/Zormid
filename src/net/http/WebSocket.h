@@ -58,6 +58,8 @@ namespace zormid::net::http {
 
 		void operator>>(uint32_t& data);
 
+		void operator>>(bool& data);
+
 		void operator>>(std::string& data);
 
 		chat::ChannelID readChannelID();

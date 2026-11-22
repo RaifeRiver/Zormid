@@ -32,8 +32,13 @@ namespace zormid::client {
 	private:
 		std::unique_ptr<net::http::WebSocket> mSocket;
 		user::User* mUser = nullptr;
+		bool mTyping = false;
 
 		void sendUserInfoToAll() const;
+
+		void sendTypingToAllInChannels() const;
+
+		void close_();
 
 		void processPacket(net::http::PayloadReader& payload);
 
@@ -62,6 +67,8 @@ namespace zormid::client {
 		void processLogoutSessionPacket(net::http::PayloadReader& payload) const;
 
 		void processSetAvatarPacket(net::http::PayloadReader& payload) const;
+
+		void processTypingPacket(net::http::PayloadReader& payload);
 
 		static void processFileUploadPacket(net::http::PayloadReader& payload) ;
 

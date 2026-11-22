@@ -83,6 +83,11 @@ export function setChannelRemoveHandler(handler) {
     channelRemoveHandler = handler;
 }
 
+export let userTypingChangeHandler;
+export function setUserTypingChangeHandler(handler) {
+    userTypingChangeHandler = handler;
+}
+
 function readString(packet, pos) {
     let size = packet.getUint32(pos, true);
     let bytes = new Uint8Array(packet.buffer, pos + 4, size);
@@ -267,6 +272,14 @@ async function processPacket(packet) {
             if (channelRemoveHandler) {
                 let channelID = readID(view, 4, 20);
                 channelRemoveHandler(channelID);
+            }
+            break;
+        case 0xC:
+            if (userTypingChangeHandler) {
+                let channelID = readID(view, 4, 20);
+                let userID = readID(view, 24, USER_ID_SIZE);
+                let typing = view.getUint8(24 + USER_ID_SIZE) !== 0;
+                userTypingChangeHandler({channelID: channelID, userID: userID, typing: typing});
             }
             break;
         default:
@@ -482,5 +495,13 @@ export function setAvatar(url) {
     for (let i = 0; i < url.length; i++) {
         view.setUint8(i + 8, url.charCodeAt(i));
     }
+    websocket.send(buffer);
+}
+
+export function setTyping(typing) {
+    let buffer = new ArrayBuffer(5);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0x10, true);
+    view.setUint8(4, typing ? 1 : 0);
     websocket.send(buffer);
 }

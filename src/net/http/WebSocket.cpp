@@ -18,13 +18,14 @@ namespace zormid::net::http {
 		return *this;
 	}
 
-	PayloadWriter& PayloadWriter::operator<<(int64_t data) {
+	PayloadWriter& PayloadWriter::operator<<(const int64_t data) {
 		write(&data, sizeof(int64_t));
 		return *this;
 	}
 
 	PayloadWriter& PayloadWriter::operator<<(const bool data) {
-		write(&data, sizeof(bool));
+		const uint8_t i = data ? 1 : 0;
+		write(&i, sizeof(uint8_t));
 		return *this;
 	}
 
@@ -82,6 +83,16 @@ namespace zormid::net::http {
 		}
 		memcpy(&data, mData.data + mIndex, sizeof(uint32_t));
 		mIndex += sizeof(uint32_t);
+	}
+
+	void PayloadReader::operator>>(bool& data) {
+		if (mIndex >= mData.size) {
+			throw std::out_of_range("Payload read out of bounds");
+		}
+		uint8_t i;
+		memcpy(&i, mData.data + mIndex, sizeof(uint8_t));
+		mIndex += sizeof(uint8_t);
+		data = i != 0;
 	}
 
 	void PayloadReader::operator>>(std::string& data) {
