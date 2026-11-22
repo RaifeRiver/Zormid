@@ -223,11 +223,15 @@ p {
 }
 
 #add-friend {
-    background-color: var(--theme-background-color);
+    background-color: var(--theme-secondary-background-color);
     color: var(--theme-text-color);
     font-family: var(--theme-font-family), sans-serif;
     border: var(--theme-border-color) 2px solid;
     margin: 1vh 1vw;
+}
+
+#add-friend:hover {
+    background-color: var(--theme-background-color);
 }
 
 #add-friend-seperator {
