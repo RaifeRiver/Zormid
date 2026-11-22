@@ -210,7 +210,23 @@ namespace zormid::client {
 		mUser->getFriends().push_back(userID);
 		user::User& user = user::manager::loadUser(userID);
 		user.getFriends().push_back(mUser->getID());
+		if (user.getActiveClients() != 0) {
+			net::http::PayloadWriter response;
+			response << 0x1u;
+			const std::vector<user::manager::UserID>& friends = mUser->getFriends();
+			response << static_cast<uint32_t>(friends.size());
+			for (const user::manager::UserID& friendID : friends) {
+				response << friendID;
+				user::User& user2 = user::manager::loadUser(friendID);
+				response << user2.getUsername();
+				response << user2.getAvatar();
+				response << (user2.getActiveClients() > 0 ? 1u : 0u);
+				user::manager::unloadUser(friendID);
+			}
+			user.pushPayload(response.buildAllocatedPayload());
+		}
 		user::manager::unloadUser(userID);
+		processFriendListRequestPacket();
 	}
 
 	void Client::processChannelListRequestPacket(net::http::PayloadReader& payload) const {
