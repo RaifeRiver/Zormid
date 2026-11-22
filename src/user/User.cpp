@@ -37,6 +37,10 @@ namespace zormid::user {
 		mUsername = username;
 	}
 
+	void User::setAvatar(const std::string& avatar) {
+		mAvatar = avatar;
+	}
+
 	void User::setActiveClients(const uint32_t clients) {
 		mActiveClients = clients;
 	}

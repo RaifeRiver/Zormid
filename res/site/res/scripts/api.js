@@ -88,8 +88,9 @@ async function processPacket(packet) {
     switch (id) {
         case 0x0:
             if (authHandler) {
-                let username = readString(view, 4).text;
-                authHandler(username);
+                let {text: username, bytes: usernameLength} = readString(view, 4);
+                let avatar = readString(view, 8 + usernameLength).text;
+                authHandler({username: username, avatar: avatar});
             }
             break;
         case 0x1:
@@ -101,7 +102,9 @@ async function processPacket(packet) {
                     let id = readID(view, pos, USER_ID_SIZE);
                     let {text: username, bytes: usernameSize} = readString(view, pos + USER_ID_SIZE);
                     pos += 4 + USER_ID_SIZE + usernameSize;
-                    friends.push({userID: id, username: username});
+                    let {text: avatar, bytes: avatarSize} = readString(view, pos);
+                    pos += 4 + avatarSize;
+                    friends.push({userID: id, username: username, avatar: avatar});
                 }
                 friendListRequestHandler(friends);
             }
@@ -156,8 +159,10 @@ async function processPacket(packet) {
                 for (let i = 0; i < userCount; i++) {
                     let userID = readID(view, pos, USER_ID_SIZE);
                     let {text: username, bytes: usernameSize} = readString(view, pos + USER_ID_SIZE);
-                    users.push({userID: userID, username: username});
                     pos += USER_ID_SIZE + 4 + usernameSize;
+                    let {text: avatar, bytes: avatarSize} = readString(view, pos);
+                    pos += 4 + avatarSize;
+                    users.push({userID: userID, username: username, avatar: avatar});
                 }
                 channelInfoHandler({channelID: channelID, name: channelName, messageCount: messageCount, users: users});
             }
@@ -429,6 +434,17 @@ export function logoutSession(session) {
     view.setUint32(4, session.length, true);
     for (let i = 0; i < session.length; i++) {
         view.setUint8(i + 8, session.charCodeAt(i));
+    }
+    websocket.send(buffer);
+}
+
+export function setAvatar(url) {
+    let buffer = new ArrayBuffer(8 + url.length);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0xF, true);
+    view.setUint32(4, url.length, true);
+    for (let i = 0; i < url.length; i++) {
+        view.setUint8(i + 8, url.charCodeAt(i));
     }
     websocket.send(buffer);
 }

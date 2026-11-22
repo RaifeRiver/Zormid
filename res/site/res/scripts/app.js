@@ -49,6 +49,7 @@ let addChannelName = document.getElementById("add-channel-name");
 
 let openFriendsListButton = document.getElementById("open-friends-list");
 
+let userAvatar = document.getElementById("user-avatar");
 let userNameDisplay = document.getElementById("user-name");
 let userSettingsButton = document.getElementById("user-settings-button");
 
@@ -77,6 +78,8 @@ let emojiListInput = document.getElementById("emoji-list-input");
 let userSettingsMenu = document.getElementById("user-settings-menu");
 let userSettingsProfileTab = document.getElementById("user-settings-profile-tab");
 let userSettingsProfile = document.getElementById("user-settings-profile");
+let userSettingsProfileChangeAvatar = document.getElementById("user-settings-profile-change-avatar");
+let userSettingsProfileAvatar = document.getElementById("user-settings-profile-avatar");
 let userSettingsProfileUsername = document.getElementById("user-settings-profile-username");
 let userSettingsProfileLogout = document.getElementById("user-settings-profile-logout");
 let userSettingsSessionsTab = document.getElementById("user-settings-sessions-tab");
@@ -96,6 +99,8 @@ let waitingForChannelMessages = false;
 let connectionAttempts = 0;
 let emojiEntries = [];
 let currentUserSettingsContent = userSettingsProfile;
+let uploadType;
+let users = {};
 
 let messageScrollObserver;
 
@@ -115,9 +120,15 @@ api.setConnectHandler(() => {
     userID = atob(userCookie);
     api.authenticate(userID, atob(sessionCookie));
 });
-api.setAuthHandler((username) => {
-    userNameDisplay.textContent = username;
-    userSettingsProfileUsername.value = username;
+api.setAuthHandler((info) => {
+    userNameDisplay.textContent = info.username;
+    userSettingsProfileUsername.value = info.username;
+
+    let avatar = info.avatar === "DEFAULT" ? "/res/images/default-avatar.png" : info.avatar;
+    userAvatar.src = avatar;
+    userSettingsProfileAvatar.src = avatar;
+
+    users[userID] = info;
 
     const addFriendCookie = cookies.getCookie("add-friend");
     if (addFriendCookie) {
@@ -146,6 +157,7 @@ api.setFriendListRequestHandler((f) => {
         let friendElement = document.importNode(friendTemplate.content, true);
         friendElement.querySelector(".friend-username").textContent = friend.username;
         friendContainer.appendChild(friendElement);
+        users[friend.userID] = friend;
     }
 });
 api.setUsernameRequestHandler((username, userID) => {
@@ -174,7 +186,7 @@ api.setMessageHandler((message) => {
     if (message.channelID !== currentChannelID && message.userID !== userID) {
         return;
     }
-    insertMessage(message.index, message.username, btoa(message.userID), emojis.toEmojis(message.content));
+    insertMessage(message.index, message.userID, emojis.toEmojis(message.content));
 });
 api.setChannelInfoHandler((info) => {
     if (info.channelID !== currentChannelID) {
@@ -207,6 +219,7 @@ api.setChannelInfoHandler((info) => {
         });
         manageElement.firstElementChild.dataset.id = btoa(user.userID);
         userListManageUsersUsers.appendChild(manageElement);
+        users[user.userID] = user;
     }
     for (let user of friends) {
         if (info.users.map(user => user.userID).includes(user.userID)) {
@@ -228,7 +241,7 @@ api.setChannelMessagesHandler((messageInfo) => {
         return;
     }
     for (let i = 0; i < messageInfo.messages.length; i++) {
-        insertMessage(messageInfo.firstMessage + i, messageInfo.messages[i].username, btoa(messageInfo.messages[i].userID), emojis.toEmojis(messageInfo.messages[i].content));
+        insertMessage(messageInfo.firstMessage + i, messageInfo.messages[i].userID, emojis.toEmojis(messageInfo.messages[i].content));
     }
     if (waitingForChannelMessages) {
         messageContainer.scrollTop = messageContainer.scrollHeight;
@@ -444,7 +457,8 @@ function processMessageContents(message) {
     return markdown.convertToHTML(message);
 }
 
-function insertMessage(index, from, fromID, content) {
+function insertMessage(index, fromID, content) {
+    let user = users[fromID];
     let shouldScroll = messageContainer.scrollTop + messageContainer.clientHeight >= messageContainer.scrollHeight - 2;
     let previousMessageElement;
     let previousIndex;
@@ -456,12 +470,12 @@ function insertMessage(index, from, fromID, content) {
             return;
         }
         if (childIndex > index - 1) {
-            if (child.dataset.username === from) {
+            if (child.dataset.username === user.username) {
                 nextMessageElement = child;
             }
             break;
         }
-        if (child.dataset.username === from) {
+        if (child.dataset.username === user.username) {
             previousMessageElement = child;
         }
         else {
@@ -471,19 +485,17 @@ function insertMessage(index, from, fromID, content) {
     }
     if (previousMessageElement) {
         let messageElement = document.importNode(continuationMessageTemplate.content, true);
-        let contentElement = messageElement.querySelector(".message-content");
-        contentElement.innerHTML = processMessageContents(content);
-        messageElement.firstElementChild.dataset.username = from;
+        messageElement.querySelector(".message-content").innerHTML = processMessageContents(content);
+        messageElement.firstElementChild.dataset.username = user.username;
         messageElement.firstElementChild.dataset.index = index;
         messageContainer.insertBefore(messageElement, messageContainer.children[previousIndex + 1]);
     }
     else {
         let messageElement = document.importNode(messageTemplate.content, true);
-        let usernameElement = messageElement.querySelector(".message-username");
-        let contentElement = messageElement.querySelector(".message-content");
-        usernameElement.textContent = from;
-        contentElement.innerHTML = processMessageContents(content);
-        messageElement.firstElementChild.dataset.username = from;
+        messageElement.querySelector(".message-avatar").src = user.avatar === "DEFAULT" ? "/res/images/default-avatar.png" : user.avatar;
+        messageElement.querySelector(".message-username").textContent = user.username;
+        messageElement.querySelector(".message-content").innerHTML = processMessageContents(content);
+        messageElement.firstElementChild.dataset.username = user.username;
         messageElement.firstElementChild.dataset.index = index;
         if (previousIndex !== undefined) {
             messageContainer.insertBefore(messageElement, messageContainer.children[previousIndex + 1]);
@@ -634,6 +646,20 @@ async function uploadMessageFiles(files) {
 
 function openUploadDialog() {
     uploadFileInput.click();
+    uploadType = "message";
+}
+
+function openChangeAvatarDialog() {
+    uploadFileInput.click();
+    uploadType = "avatar";
+}
+
+async function uploadAvatarFile(file) {
+    let id = await api.uploadFile(file);
+    let url = `${window.location.origin}/upload/${id}`;
+    api.setAvatar(url);
+    userAvatar.src = url;
+    userSettingsProfileAvatar.src = url;
 }
 
 messageInput.addEventListener("keydown", (event) => {
@@ -662,12 +688,20 @@ channelUserListButton.addEventListener("click", toggleUserList);
 document.addEventListener("click", documentClickHandler);
 
 uploadFileButton.addEventListener("click", openUploadDialog);
-uploadFileInput.addEventListener("change", async (event) => uploadMessageFiles(event.target.files));
+uploadFileInput.addEventListener("change", async (event) => {
+    if (uploadType === "message") {
+        return uploadMessageFiles(event.target.files);
+    }
+    else if (uploadType === "avatar") {
+        return uploadAvatarFile(event.target.files[0]);
+    }
+});
 
 emojiListInput.addEventListener("input", searchEmojiList)
 
 userSettingsButton.addEventListener("click", openUserSettingsMenu);
 userSettingsProfileTab.addEventListener("click", () => openUserSettingsTab(userSettingsProfile));
+userSettingsProfileChangeAvatar.addEventListener("click", openChangeAvatarDialog);
 userSettingsProfileUsername.addEventListener("change", changeUsernameFromSettings);
 userSettingsProfileLogout.addEventListener("click", logout);
 userSettingsSessionsTab.addEventListener("click", () => {

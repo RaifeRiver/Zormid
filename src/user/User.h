@@ -9,7 +9,7 @@
 
 namespace zormid::user {
 	constexpr std::string USER_FILE_HEADER = "ZORMUSER";
-	constexpr uint32_t USER_FILE_VERSION = 2;
+	constexpr uint32_t USER_FILE_VERSION = 3;
 
 	struct Session {
 		explicit Session(const char* id, std::string userAgent);
@@ -61,6 +61,12 @@ namespace zormid::user {
 
 		void setUsername(const std::string& username);
 
+		[[nodiscard]] std::string& getAvatar() {
+			return mAvatar;
+		}
+
+		void setAvatar(const std::string& avatar);
+
 		[[nodiscard]] std::vector<manager::UserID>& getFriends() {
 			return mFriends;
 		}
@@ -88,6 +94,7 @@ namespace zormid::user {
 		char mPasswordSalt[16] = {};
 		char mPasswordDigest[20] = {};
 		std::string mUsername;
+		std::string mAvatar = "DEFAULT";
 		std::vector<Session> mSessions = {};
 		std::vector<manager::UserID> mFriends = {};
 		std::vector<chat::ChannelID> mChannels = {};

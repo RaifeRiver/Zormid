@@ -206,6 +206,12 @@ namespace zormid::user::manager {
 			}
 		}
 		*fileStream >> user.getUsername();
+		if (version > 2) {
+			*fileStream >> user.getAvatar();
+		}
+		else {
+			user.setAvatar("DEFAULT");
+		}
 		uint32_t friendCount;
 		*fileStream >> friendCount;
 		for (uint32_t i = 0; i < friendCount; i++) {
@@ -250,6 +256,7 @@ namespace zormid::user::manager {
 			fileStream << session.getUserAgent();
 		}
 		fileStream << user.getUsername();
+		fileStream << user.getAvatar();
 		fileStream << static_cast<uint32_t>(user.getFriends().size());
 		for (const UserID& friendID: user.getFriends()) {
 			fileStream << friendID;

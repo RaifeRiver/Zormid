@@ -76,6 +76,8 @@
                 <div id="channel-list-break-bottom" class="channel-list-break"></div>
 
                 <div id="user-info">
+                    <img id="user-avatar" alt="Avatar">
+
                     <p id="user-name"></p>
 
                     <button id="user-settings-button">⚙︎</button>
@@ -116,13 +118,16 @@
 
                     <template id="message-template">
                         <div class="message">
-                            <p class="message-username"></p>
-                            <p class="message-content"></p>
+                            <img class="message-avatar" alt="Avatar">
+                            <div class="message-content-container">
+                                <p class="message-username"></p>
+                                <p class="message-content"></p>
+                            </div>
                         </div>
                     </template>
 
                     <template id="continuation-message-template">
-                        <div class="message">
+                        <div class="continuation-message">
                             <p class="message-content"></p>
                         </div>
                     </template>
@@ -241,6 +246,10 @@
 
                 <div id="user-settings-profile" class="user-settings-content">
                     <h3>Profile</h3>
+
+                    <button id="user-settings-profile-change-avatar">
+                        <img id="user-settings-profile-avatar" alt="Avatar">
+                    </button>
 
                     <label for="user-settings-profile-username">Username:</label>
                     <input type="text" id="user-settings-profile-username" placeholder="Username...">

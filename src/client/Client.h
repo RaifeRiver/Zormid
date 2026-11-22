@@ -59,6 +59,8 @@ namespace zormid::client {
 
 		void processLogoutSessionPacket(net::http::PayloadReader& payload) const;
 
+		void processSetAvatarPacket(net::http::PayloadReader& payload) const;
+
 		static void processFileUploadPacket(net::http::PayloadReader& payload) ;
 
 		static void processChangeChannelUsersPacket(net::http::PayloadReader& payload);

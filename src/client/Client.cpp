@@ -97,6 +97,9 @@ namespace zormid::client {
 			case 0xE:
 				processLogoutSessionPacket(payload);
 				break;
+			case 0xF:
+				processSetAvatarPacket(payload);
+				break;
 			default:
 				std::cout << "Unknown packet ID: " << id << std::endl;
 				break;
@@ -116,6 +119,7 @@ namespace zormid::client {
 				net::http::PayloadWriter response;
 				response << 0x0u;
 				response << mUser->getUsername();
+				response << mUser->getAvatar();
 				mSocket->write(response.buildPayload());
 				return;
 			}
@@ -130,7 +134,9 @@ namespace zormid::client {
 		response << static_cast<uint32_t>(friends.size());
 		for (const user::manager::UserID& friendID : friends) {
 			response << friendID;
-			response << user::manager::loadUser(friendID).getUsername();
+			user::User& user = user::manager::loadUser(friendID);
+			response << user.getUsername();
+			response << user.getAvatar();
 			user::manager::unloadUser(friendID);
 		}
 		mSocket->write(response.buildPayload());
@@ -207,7 +213,9 @@ namespace zormid::client {
 		response << static_cast<uint32_t>(users.size());
 		for (const user::manager::UserID& userID : users) {
 			response << userID;
-			response << user::manager::loadUser(userID).getUsername();
+			user::User& user = user::manager::loadUser(userID);
+			response << user.getUsername();
+			response << user.getAvatar();
 			user::manager::unloadUser(userID);
 		}
 		mSocket->write(response.buildPayload());
@@ -276,6 +284,12 @@ namespace zormid::client {
 		std::erase_if(mUser->getSessions(), [&userAgent](const user::Session& session) {
 			return session.getUserAgent() == userAgent;
 		});
+	}
+
+	void Client::processSetAvatarPacket(net::http::PayloadReader& payload) const {
+		std::string avatar;
+		payload >> avatar;
+		mUser->setAvatar(avatar);
 	}
 
 	void Client::processFileUploadPacket(net::http::PayloadReader& payload) {
