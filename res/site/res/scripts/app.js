@@ -158,6 +158,7 @@ api.setFriendListRequestHandler((f) => {
     document.getElementById("add-friend").addEventListener("click", openAddFriendMenu);
     for (let friend of friends) {
         let friendElement = document.importNode(friendTemplate.content, true);
+        friendElement.querySelector(".friend-avatar").src = friend.avatar;
         friendElement.querySelector(".friend-username").textContent = friend.username;
         friendContainer.appendChild(friendElement);
         users[friend.userID] = friend;
