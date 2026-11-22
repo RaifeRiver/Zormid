@@ -220,7 +220,7 @@ namespace zormid::client {
 		if (user.getActiveClients() != 0) {
 			net::http::PayloadWriter response;
 			response << 0x1u;
-			const std::vector<user::manager::UserID>& friends = mUser->getFriends();
+			const std::vector<user::manager::UserID>& friends = user.getFriends();
 			response << static_cast<uint32_t>(friends.size());
 			for (const user::manager::UserID& friendID : friends) {
 				response << friendID;
