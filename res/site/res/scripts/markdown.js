@@ -22,6 +22,29 @@ function fetchFile(file) {
             let name = atob(response.headers.get("Zormid-File-Name")) || file.substring(file.lastIndexOf("/") + 1);
             fileNode.firstElementChild.dataset.name = btoa(name);
             fileNode.querySelector(".file-name").textContent = name;
+            let fileSize = response.headers.get("Content-Length");
+            if (fileSize) {
+                let size = parseInt(fileSize);
+                if (size < 1024) {
+                    fileSize = `${size}B`;
+                }
+                else if (size < 1024 * 1024) {
+                    fileSize = `${(size / 1024).toFixed(2)}KB`;
+                }
+                else if (size < 1024 * 1024 * 1024) {
+                    fileSize = `${(size / (1024 * 1024)).toFixed(2)}MB`;
+                }
+                else if (size < 1024 * 1024 * 1024 * 1024) {
+                    fileSize = `${(size / (1024 * 1024 * 1024)).toFixed(2)}GB`;
+                }
+                else {
+                    fileSize = `${(size / (1024 * 1024 * 1024 * 1024)).toFixed(2)}TB`;
+                }
+            }
+            else {
+                fileSize = "Unknown";
+            }
+            fileNode.querySelector(".file-size").textContent = fileSize;
             loadingFile.replaceWith(fileNode);
             delete loadingFile.dataset.src;
         }

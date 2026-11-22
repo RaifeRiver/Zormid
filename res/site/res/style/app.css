@@ -59,7 +59,7 @@ body {
     border: var(--theme-border-color) 2px solid;
     border-radius: 5px;
     padding: 0.5vw;
-    margin: auto 2vw 1vw;
+    margin: auto 2vw 1vh;
 }
 
 #message-input {
@@ -209,7 +209,6 @@ p {
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding-left: 1vw;
     flex-shrink: 0;
 }
 
@@ -220,6 +219,7 @@ p {
     margin: 0;
     text-wrap: nowrap;
     overflow: hidden;
+    padding-left: 1vw;
 }
 
 #friend-container {
@@ -692,13 +692,23 @@ a {
     box-sizing: border-box;
 }
 
+.file-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.file-size {
+    color: var(--theme-secondary-text-color);
+    font-size: 12px;
+}
+
 .file-download {
     border: var(--theme-border-color) 2px solid;
     width: 4vh;
     height: 4vh;
     background-color: var(--theme-secondary-background-color);
     color: white;
-    margin-left: 1vh;
+    margin-left: auto;
     margin-right: 1vh;
     aspect-ratio: 1/1;
 }
@@ -859,6 +869,8 @@ summary {
 
 #back-button {
     display: none;
+    aspect-ratio: 1/1;
+    margin-left: 2vw;
 }
 
 @media (orientation: portrait) {
@@ -903,10 +915,6 @@ summary {
         width: 16vw;
     }
 
-    #channel-name {
-        margin-left: 3vw;
-    }
-
     #add-friend {
         height: 7vh;
         margin-left: 3vw;
@@ -928,16 +936,16 @@ summary {
     }
 
     .message-avatar {
-        height: 10vw;
+        height: 8vw;
     }
 
     .message-content-container {
-        padding-left: 10.5vw;
-        min-height: 10vw;
+        padding-left: 9vw;
+        min-height: 8vw;
     }
 
     .continuation-message {
-        margin-left: 10.5vw;
+        margin-left: 9vw;
     }
 
     #channel-settings-container {
