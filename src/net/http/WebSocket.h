@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "HTTPHeader.h"
-#include "chat/Channel.h"
+#include "chat/TextChannel.h"
 #include "net/Socket.h"
 
 namespace zormid::user {

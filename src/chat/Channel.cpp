@@ -5,8 +5,7 @@
 #include <iostream>
 #include <random>
 
-#include "Message.h"
-#include "user/User.h"
+#include "TextChannel.h"
 #include "util/Base16.h"
 #include "util/FileStream.h"
 
@@ -27,7 +26,62 @@ namespace zormid::chat {
 		memcpy(mID, id, 20);
 	}
 
-	Channel::Channel(const ChannelID& id) : mID(id) {
+	void Channel::create() {
+		if (mNeedsNewSave) {
+			createNewSave_();
+			mNeedsNewSave = false;
+		}
+	}
+
+	void Channel::setName(const std::string& name) {
+		mName = name;
+		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
+		util::OFileStream fileStream(CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".dat");
+		fileStream.write(CHANNEL_FILE_HEADER.c_str(), CHANNEL_FILE_HEADER.size());
+		fileStream << CHANNEL_FILE_VERSION;
+		fileStream << static_cast<uint32_t>(mType);
+		fileStream << mName;
+	}
+
+	void Channel::addUser(const user::manager::UserID& id) {
+		mUsers.push_back(id);
+		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
+		util::OFileStream userFileStream(CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".users.dat", true);
+		userFileStream << static_cast<uint32_t>(mUsers.size());
+		userFileStream.seek(4 + (mUsers.size() - 1) * user::manager::USER_ID_SIZE);
+		userFileStream << id;
+	}
+
+	void Channel::removeUser(const user::manager::UserID& id) {
+		const size_t index = std::ranges::find(mUsers.begin(), mUsers.end(), id) - mUsers.begin();
+		const bool last = index == mUsers.size() - 1;
+		if (!last) {
+			mUsers[index] = mUsers.back();
+		}
+		mUsers.pop_back();
+		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
+		util::OFileStream userFileStream(CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".users.dat", true);
+		userFileStream << static_cast<uint32_t>(mUsers.size());
+		if (!last) {
+			userFileStream.seek(index * user::manager::USER_ID_SIZE + 4);
+			userFileStream << mUsers[index];
+		}
+	}
+
+	void Channel::save() {
+		save_();
+	}
+
+	void Channel::deleteChannel() {
+		mUsers.clear();
+		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
+		const std::string file = CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2);
+		std::filesystem::remove(file + ".dat");
+		std::filesystem::remove(file + ".users.dat");
+		deleteChannel_();
+	}
+
+	Channel::Channel(const ChannelID& id, const ChannelType type) : mID(id), mType(type) {
 		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
 		const std::string dir = hash.substr(0, 2);
 		if (!std::filesystem::exists(CHANNELS_DIR + dir)) {
@@ -70,6 +124,10 @@ namespace zormid::chat {
 			fileStream = std::make_unique<util::IFileStream>(file + ".dat");
 			fileStream->read(nullptr, CHANNEL_FILE_HEADER.size() + 4);
 		}
+		*fileStream >> reinterpret_cast<uint32_t&>(mType);
+		if (mType != type) {
+			throw std::runtime_error("Invalid channel type");
+		}
 		*fileStream >> mName;
 		util::IFileStream userFileStream(file + ".users.dat");
 		uint32_t userCount;
@@ -80,107 +138,52 @@ namespace zormid::chat {
 			userFileStream.read(userIDChars, user::manager::USER_ID_SIZE);
 			mUsers.emplace_back(userIDChars);
 		}
-		util::IFileStream messageInfoFileStream(file + ".message_info.dat");
-		messageInfoFileStream >> mMessageCount;
 	}
 
-	uint32_t Channel::send(const Message& message) {
-		uint32_t index = mMessageCount++;
-		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
-		const std::string file = CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2);
-		util::OFileStream messageInfoFileStream(file + ".message_info.dat", true);
-		messageInfoFileStream << mMessageCount;
-		messageInfoFileStream.seekEnd();
-		util::OFileStream messageFileStream(file + ".messages.dat", true);
-		messageFileStream.seekEnd();
-		messageInfoFileStream << message.fromID;
-		messageInfoFileStream << messageFileStream.getPosition();
-		messageInfoFileStream << message.timestamp;
-		messageFileStream << message.content;
-		return index;
-	}
+	void Channel::load() {}
 
-	void Channel::addUser(const user::manager::UserID& id) {
-		mUsers.push_back(id);
-		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
-		util::OFileStream userFileStream(CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".users.dat", true);
-		userFileStream << static_cast<uint32_t>(mUsers.size());
-		userFileStream.seek(4 + (mUsers.size() - 1) * user::manager::USER_ID_SIZE);
-		userFileStream << id;
-	}
+	void Channel::save_() {}
 
-	void Channel::removeUser(const user::manager::UserID& id) {
-		const size_t index = std::ranges::find(mUsers.begin(), mUsers.end(), id) - mUsers.begin();
-		const bool last = index == mUsers.size() - 1;
-		if (!last) {
-			mUsers[index] = mUsers.back();
-		}
-		mUsers.pop_back();
-		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
-		util::OFileStream userFileStream(CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".users.dat", true);
-		userFileStream << static_cast<uint32_t>(mUsers.size());
-		if (!last) {
-			userFileStream.seek(index * user::manager::USER_ID_SIZE + 4);
-			userFileStream << mUsers[index];
-		}
-	}
+	void Channel::deleteChannel_() {}
 
-	std::vector<Message> Channel::getMessages(uint32_t startIndex, uint32_t count) const {
-		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
-		const std::string file = CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2);
-		util::IFileStream messageInfoFileStream(file + ".message_info.dat");
-		util::IFileStream messageFileStream(file + ".messages.dat");
-		messageInfoFileStream.seek(startIndex * (4 + user::manager::USER_ID_SIZE) + 4);
-		std::vector<Message> messages;
-		messages.reserve(count);
-		for (uint32_t i = 0; i < count; i++) {
-			user::manager::UserID fromID = messageInfoFileStream.readUserID();
-			uint32_t pos;
-			messageInfoFileStream >> pos;
-			int64_t timestamp;
-			messageInfoFileStream >> timestamp;
-			messageFileStream.seek(pos);
-			std::string content;
-			messageFileStream >> content;
-			messages.push_back({.content = content, .from = user::manager::loadUser(fromID).getUsername(), .fromID = fromID, .channelID = mID, .timestamp = timestamp});
-			user::manager::unloadUser(fromID);
-		}
-		return messages;
-	}
+	void Channel::createNewSave_() {}
 
-	void Channel::setName(const std::string& name) {
-		mName = name;
-		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
-		util::OFileStream fileStream(CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2) + ".dat");
-		fileStream.write(CHANNEL_FILE_HEADER.c_str(), CHANNEL_FILE_HEADER.size());
-		fileStream << CHANNEL_FILE_VERSION;
-		fileStream << mName;
-	}
-
-	void Channel::deleteChannel() {
-		mUsers.clear();
-		mMessageCount = 0;
-		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
-		const std::string file = CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2);
-		std::filesystem::remove(file + ".dat");
-		std::filesystem::remove(file + ".users.dat");
-		std::filesystem::remove(file + ".message_info.dat");
-		std::filesystem::remove(file + ".messages.dat");
-	}
-
-	void Channel::createNewSave() const {
+	void Channel::createNewSave() {
 		const std::string hash = util::base16::encode(static_cast<const char*>(mID), 20);
 		std::filesystem::create_directories(CHANNELS_DIR + hash.substr(0, 2));
 		const std::string file = CHANNELS_DIR + hash.substr(0, 2) + "/" + hash.substr(2);
 		util::OFileStream fileStream(file + ".dat");
 		fileStream.write(CHANNEL_FILE_HEADER.c_str(), CHANNEL_FILE_HEADER.size());
 		fileStream << CHANNEL_FILE_VERSION;
+		fileStream << static_cast<uint32_t>(mType);
 		fileStream << mName;
 		util::OFileStream userFileStream(file + ".users.dat");
 		userFileStream << 0u;
-		util::OFileStream messageInfoFileStream(file + ".message_info.dat");
-		messageInfoFileStream << 0u;
-		util::OFileStream messageFileStream(file + ".messages.dat");
+		mNeedsNewSave = true;
+	}
+
+	std::unique_ptr<Channel> loadChannel(ChannelID id) {
+		const std::string hash = util::base16::encode(static_cast<const char*>(id), 20);
+		const std::string dir = hash.substr(0, 2);
+		if (!std::filesystem::exists(CHANNELS_DIR + dir)) {
+			return nullptr;
+		}
+		const std::string file = CHANNELS_DIR + dir + "/" + hash.substr(2);
+		if (!std::filesystem::exists(file + ".dat")) {
+			return nullptr;
+		}
+		ChannelType type;
+		{
+			util::IFileStream fileStream(file + ".dat");
+			fileStream.seek(CHANNEL_FILE_HEADER.size() + 4);
+			fileStream >> reinterpret_cast<uint32_t&>(type);
+		}
+		switch (type) {
+			case ChannelType::TEXT:
+				return std::make_unique<TextChannel>(id);
+			default:
+				return nullptr;
+		}
 	}
 
 	bool migrateChannelFile(const std::string& file) {
@@ -203,70 +206,11 @@ namespace zormid::chat {
 			std::cerr << "Unsupported channel file " << file << std::endl;
 			return false;
 		}
+		if (version < 3) {
+			std::cerr << "Channel file too old " << file << std::endl;
+			return false;
+		}
 		bool migrated = false;
-		if (version == 0) {
-			std::string name;
-			fileStream >> name;
-			uint32_t messageCount;
-			fileStream >> messageCount;
-			std::vector<std::pair<user::manager::UserID, std::string>> messages;
-			messages.reserve(messageCount);
-			for (uint32_t i = 0; i < messageCount; i++) {
-				char userIDChars[20];
-				fileStream.read(userIDChars, 20);
-				user::manager::UserID fromID(userIDChars);
-				std::string content;
-				fileStream >> content;
-				messages.emplace_back(fromID, content);
-			}
-			uint32_t userCount;
-			fileStream >> userCount;
-			std::vector<user::manager::UserID> users;
-			users.reserve(userCount);
-			for (uint32_t i = 0; i < userCount; i++) {
-				char userIDChars[20];
-				fileStream.read(userIDChars, 20);
-				users.emplace_back(userIDChars);
-			}
-			util::OFileStream outStream(file + ".dat");
-			outStream.write(CHANNEL_FILE_HEADER.c_str(), CHANNEL_FILE_HEADER.size());
-			outStream << 1u;
-			outStream << name;
-			util::OFileStream userFileStream(file + ".users.dat");
-			userFileStream << userCount;
-			for (const user::manager::UserID& userID: users) {
-				userFileStream << userID;
-			}
-			util::OFileStream messageInfoFileStream(file + ".message_info.dat");
-			messageInfoFileStream << messageCount;
-			util::OFileStream messageFileStream(file + ".messages.dat");
-			for (const auto& [userID, content] : messages) {
-				messageInfoFileStream << userID;
-				messageInfoFileStream << messageFileStream.getPosition();
-				messageFileStream << content;
-			}
-			version = 1;
-			migrated = true;
-		}
-		if (version == 1) {
-			uint32_t messageCount = 0;
-			fileStream >> messageCount;
-			util::OFileStream outStream(file + ".dat");
-			outStream.seek(CHANNEL_FILE_HEADER.size());
-			outStream << 2u;
-			util::IFileStream messageInfoFileStream(file + ".message_info.dat");
-			util::OFileStream messageInfoOutputFileStream(file + ".message_info.dat.new");
-			for (uint32_t i = 0; i < messageCount; i++) {
-				user::manager::UserID userID = messageInfoFileStream.readUserID();
-				uint32_t messagePosition;
-				messageInfoFileStream >> messagePosition;
-				messageInfoOutputFileStream << userID;
-				messageInfoOutputFileStream << messagePosition;
-				messageInfoOutputFileStream << 0l;
-			}
-			version = 2;
-			migrated = true;
-		}
 		return migrated;
 	}
 

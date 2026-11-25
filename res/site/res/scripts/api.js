@@ -8,6 +8,8 @@ let pendingUploads = {};
 
 export const USER_ID_SIZE = 12;
 
+export const CHANNEL_TYPE_TEXT = 0;
+
 export let connectHandler;
 export function setConnectHandler(handler) {
     connectHandler = handler;
@@ -145,10 +147,10 @@ async function processPacket(packet) {
                 let pos = 8 + USER_ID_SIZE;
                 for (let i = 0; i < channelCount; i++) {
                     let channelID = readID(view, pos, 20);
-                    pos += 20;
-                    let {text: channelName, bytes: channelSize} = readString(view, pos);
-                    pos += channelSize + 4;
-                    channels.push({channelID: channelID, channelName: channelName});
+                    let channelType = view.getUint32(pos + 20, true);
+                    let {text: channelName, bytes: channelSize} = readString(view, pos + 24);
+                    pos += channelSize + 28;
+                    channels.push({channelID: channelID, channelType: channelType, channelName: channelName});
                 }
                 channelListRequestHandler(channels, userID);
             }
@@ -167,8 +169,8 @@ async function processPacket(packet) {
         case 0x5:
             if (channelInfoHandler) {
                 let channelID = readID(view, 4, 20);
-                let {text: channelName, bytes: channelNameSize} = readString(view, 24);
-                let messageCount = view.getUint32(28 + channelNameSize, true);
+                let channelType = view.getUint32(24, true);
+                let {text: channelName, bytes: channelNameSize} = readString(view, 28);
                 let userCount = view.getUint32(32 + channelNameSize, true);
                 let users = [];
                 let pos = 36 + channelNameSize;
@@ -181,7 +183,11 @@ async function processPacket(packet) {
                     pos += 8 + avatarSize;
                     users.push({userID: userID, username: username, avatar: avatar, status: status});
                 }
-                channelInfoHandler({channelID: channelID, name: channelName, messageCount: messageCount, users: users});
+                let channel = {channelID: channelID, channelType: channelType, name: channelName, users: users};
+                if (channelType === CHANNEL_TYPE_TEXT) {
+                    channel.messageCount = view.getUint32(32 + channelNameSize, true);
+                }
+                channelInfoHandler(channel);
             }
             break;
         case 0x6:
@@ -264,8 +270,9 @@ async function processPacket(packet) {
         case 0xA:
             if (channelAddHandler) {
                 let channelID = readID(view, 4, 20);
-                let channelName = readString(view, 24).text;
-                channelAddHandler({channelID: channelID, channelName: channelName});
+                let channelType = view.getUint32(24, true);
+                let channelName = readString(view, 28).text;
+                channelAddHandler({channelID: channelID, channelType: channelType, channelName: channelName});
             }
             break;
         case 0xB:
@@ -404,19 +411,20 @@ export function requestChannelMessages(channelID, firstMessage) {
     websocket.send(buffer);
 }
 
-export function createChannel(name, users) {
+export function createChannel(type, name, users) {
     let bytes = encoder.encode(name);
-    let buffer = new ArrayBuffer(12 + bytes.length + users.length * USER_ID_SIZE);
+    let buffer = new ArrayBuffer(16 + bytes.length + users.length * USER_ID_SIZE);
     let view = new DataView(buffer);
     view.setUint32(0, 0x7, true);
-    view.setUint32(4, bytes.length, true);
+    view.setUint32(4, type, true);
+    view.setUint32(8, bytes.length, true);
     for (let i = 0; i < bytes.length; i++) {
-        view.setUint8(i + 8, bytes[i]);
+        view.setUint8(i + 12, bytes[i]);
     }
-    view.setUint32(8 + bytes.length, users.length, true);
+    view.setUint32(12 + bytes.length, users.length, true);
     for (let i = 0; i < users.length; i++) {
         for (let j = 0; j < USER_ID_SIZE; j++) {
-            view.setUint8(i * USER_ID_SIZE + j + 12 + bytes.length, users[i].charCodeAt(j));
+            view.setUint8(i * USER_ID_SIZE + j + 16 + bytes.length, users[i].charCodeAt(j));
         }
     }
     websocket.send(buffer);

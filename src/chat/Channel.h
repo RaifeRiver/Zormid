@@ -1,17 +1,14 @@
 #pragma once
 
-#include <cstdint>
-#include <string>
+#include <memory>
 #include <vector>
 
 #include "user/UserManager.h"
 
 namespace zormid::chat {
-	struct Message;
-
 	const std::string CHANNELS_DIR = "../data/channels/";
 	constexpr std::string CHANNEL_FILE_HEADER = "ZORMCHAN";
-	constexpr uint32_t CHANNEL_FILE_VERSION = 2;
+	constexpr uint32_t CHANNEL_FILE_VERSION = 3;
 
 	struct ChannelID {
 		ChannelID();
@@ -28,11 +25,27 @@ namespace zormid::chat {
 		char mID[20] = {};
 	};
 
+	enum class ChannelType : uint32_t {
+		TEXT = 0
+	};
+
 	class Channel {
 	public:
-		explicit Channel(const ChannelID& id);
+		void create();
 
-		uint32_t send(const Message& message);
+		[[nodiscard]] ChannelID getID() const {
+			return mID;
+		}
+
+		[[nodiscard]] ChannelType getType() const {
+			return mType;
+		}
+
+		[[nodiscard]] std::string& getName() {
+			return mName;
+		}
+
+		void setName(const std::string& name);
 
 		void addUser(const user::manager::UserID& id);
 
@@ -42,28 +55,34 @@ namespace zormid::chat {
 			return mUsers;
 		}
 
-		[[nodiscard]] std::string& getName() {
-			return mName;
-		}
-
-		[[nodiscard]] uint32_t getMessageCount() const {
-			return mMessageCount;
-		}
-
-		[[nodiscard]] std::vector<Message> getMessages(uint32_t startIndex, uint32_t count) const;
-
-		void setName(const std::string& name);
+		void save();
 
 		void deleteChannel();
 
+		virtual ~Channel() = default;
+
+	protected:
+		explicit Channel(const ChannelID& id, ChannelType type);
+
+		virtual void load();
+
+		virtual void save_();
+
+		virtual void deleteChannel_();
+
+		virtual void createNewSave_();
+
 	private:
+		bool mNeedsNewSave = false;
 		ChannelID mID;
+		ChannelType mType;
 		std::string mName;
 		std::vector<user::manager::UserID> mUsers;
-		uint32_t mMessageCount = 0;
 
-		void createNewSave() const;
+		void createNewSave();
 	};
+
+	std::unique_ptr<Channel> loadChannel(ChannelID id);
 
 	bool migrateChannelFile(const std::string& file);
 

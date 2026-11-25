@@ -63,7 +63,7 @@ namespace zormid::client {
 			user::manager::unloadUser(friendID);
 		}
 		for (const chat::ChannelID channelID : mUser->getChannels()) {
-			for (chat::Channel channel(channelID); const user::manager::UserID& userID : channel.getUsers()) {
+			for (const std::unique_ptr<chat::Channel> channel = chat::loadChannel(channelID); const user::manager::UserID& userID : channel->getUsers()) {
 				if (userID == mUser->getID()) {
 					continue;
 				}
@@ -96,7 +96,7 @@ namespace zormid::client {
 
 	void Client::sendTypingToAllInChannels() const {
 		for (const chat::ChannelID channelID : mUser->getChannels()) {
-			for (chat::Channel channel(channelID); const user::manager::UserID& userID : channel.getUsers()) {
+			for (std::unique_ptr<chat::Channel> channel = chat::loadChannel(channelID); const user::manager::UserID& userID : channel->getUsers()) {
 				if (userID == mUser->getID()) {
 					continue;
 				}
@@ -293,7 +293,9 @@ namespace zormid::client {
 		response << static_cast<uint32_t>(channels.size());
 		for (const chat::ChannelID& c: channels) {
 			response << c;
-			response << chat::Channel(c).getName();
+			const std::unique_ptr<chat::Channel> channel = chat::loadChannel(c);
+			response << static_cast<uint32_t>(channel->getType());
+			response << channel->getName();
 		}
 		user::manager::unloadUser(userID);
 		mSocket->write(response.buildPayload());
@@ -304,9 +306,13 @@ namespace zormid::client {
 		std::string message;
 		payload >> message;
 		const int64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		chat::Channel channel(channelID);
-		const uint32_t index = channel.send({.content = message, .from = mUser->getUsername(), .fromID = mUser->getID(), .channelID = channelID, .timestamp = timestamp});
-		for (const user::manager::UserID& userID : channel.getUsers()) {
+		const std::unique_ptr<chat::Channel> channel = chat::loadChannel(channelID);
+		auto* textChannel = dynamic_cast<chat::TextChannel*>(channel.get());
+		if (!textChannel) {
+			return;
+		}
+		const uint32_t index = textChannel->send({.content = message, .from = mUser->getUsername(), .fromID = mUser->getID(), .channelID = channelID, .timestamp = timestamp});
+		for (const user::manager::UserID& userID : textChannel->getUsers()) {
 			if (!user::manager::isActive(userID)) {
 				continue;
 			}
@@ -330,13 +336,13 @@ namespace zormid::client {
 
 	void Client::processChannelInfoRequestPacket(net::http::PayloadReader& payload) const {
 		const chat::ChannelID channelID = payload.readChannelID();
-		chat::Channel channel(channelID);
+		const std::unique_ptr<chat::Channel> channel = chat::loadChannel(channelID);
 		net::http::PayloadWriter response;
 		response << 0x5u;
 		response << channelID;
-		response << channel.getName();
-		response << channel.getMessageCount();
-		const std::vector<user::manager::UserID>& users = channel.getUsers();
+		response << static_cast<uint32_t>(channel->getType());
+		response << channel->getName();
+		const std::vector<user::manager::UserID>& users = channel->getUsers();
 		response << static_cast<uint32_t>(users.size());
 		for (const user::manager::UserID& userID : users) {
 			response << userID;
@@ -346,21 +352,29 @@ namespace zormid::client {
 			response << (user.getActiveClients() > 0 ? 1u : 0u);
 			user::manager::unloadUser(userID);
 		}
+		if (channel->getType() == chat::ChannelType::TEXT) {
+			const auto* textChannel = dynamic_cast<chat::TextChannel*>(channel.get());
+			response << textChannel->getMessageCount();
+		}
 		mSocket->write(response.buildPayload());
 	}
 
 	void Client::processChannelMessageRequestPacket(net::http::PayloadReader& payload) const {
 		const chat::ChannelID channelID = payload.readChannelID();
-		const chat::Channel channel(channelID);
+		const std::unique_ptr<chat::Channel> channel = chat::loadChannel(channelID);
+		const auto* textChannel = dynamic_cast<chat::TextChannel*>(channel.get());
+		if (!textChannel) {
+			return;
+		}
 		uint32_t firstMessage;
 		payload >> firstMessage;
 		net::http::PayloadWriter response;
 		response << 0x6u;
 		response << channelID;
 		response << firstMessage;
-		const uint32_t messageCount = std::min(channel.getMessageCount() - firstMessage, 50u);
+		const uint32_t messageCount = std::min(textChannel->getMessageCount() - firstMessage, 50u);
 		response << messageCount;
-		for (const chat::Message& message : channel.getMessages(firstMessage, messageCount)) {
+		for (const chat::Message& message : textChannel->getMessages(firstMessage, messageCount)) {
 			response << message.fromID;
 			response << message.content;
 			response << message.from;
@@ -467,20 +481,20 @@ namespace zormid::client {
 
 	void Client::processChangeChannelUsersPacket(net::http::PayloadReader& payload) {
 		const chat::ChannelID channelID = payload.readChannelID();
-		chat::Channel channel(channelID);
+		const std::unique_ptr<chat::Channel> channel = chat::loadChannel(channelID);
 		uint32_t userCount;
 		payload >> userCount;
-		std::vector<user::manager::UserID> oldUsers = channel.getUsers();
+		std::vector<user::manager::UserID> oldUsers = channel->getUsers();
 		for (uint32_t i = 0; i < userCount; i++) {
 			user::manager::UserID userID = payload.readUserID();
 			if (auto it = std::ranges::find(oldUsers, userID); it == oldUsers.end()) {
-				channel.addUser(userID);
+				channel->addUser(userID);
 				user::User& user = user::manager::loadUser(userID);
 				if (user.getActiveClients() != 0) {
 					net::http::PayloadWriter response;
 					response << 0xAu;
 					response << channelID;
-					response << channel.getName();
+					response << channel->getName();
 					user.pushPayload(response.buildAllocatedPayload());
 				}
 				user.getChannels().push_back(channelID);
@@ -491,7 +505,7 @@ namespace zormid::client {
 			}
 		}
 		for (const user::manager::UserID& userID : oldUsers) {
-			channel.removeUser(userID);
+			channel->removeUser(userID);
 			user::User& user = user::manager::loadUser(userID);
 			if (user.getActiveClients() != 0) {
 				net::http::PayloadWriter response;
@@ -502,11 +516,11 @@ namespace zormid::client {
 			user.getChannels().erase(std::ranges::find(user.getChannels(), channelID));
 			user::manager::unloadUser(userID);
 		}
-		if (channel.getUsers().empty()) {
-			channel.deleteChannel();
+		if (channel->getUsers().empty()) {
+			channel->deleteChannel();
 		}
 		else {
-			for (const user::manager::UserID& userID : channel.getUsers()) {
+			for (const user::manager::UserID& userID : channel->getUsers()) {
 				user::User& user = user::manager::loadUser(userID);
 				if (user.getActiveClients() == 0) {
 					user::manager::unloadUser(userID);
@@ -515,9 +529,9 @@ namespace zormid::client {
 				net::http::PayloadWriter response;
 				response << 0x5u;
 				response << channelID;
-				response << channel.getName();
-				response << channel.getMessageCount();
-				const std::vector<user::manager::UserID>& users = channel.getUsers();
+				response << static_cast<uint32_t>(channel->getType());
+				response << channel->getName();
+				const std::vector<user::manager::UserID>& users = channel->getUsers();
 				response << static_cast<uint32_t>(users.size());
 				for (const user::manager::UserID& userID2 : users) {
 					response << userID2;
@@ -527,6 +541,10 @@ namespace zormid::client {
 					response << (user2.getActiveClients() > 0 ? 1u : 0u);
 					user::manager::unloadUser(userID2);
 				}
+				if (channel->getType() == chat::ChannelType::TEXT) {
+					const auto* textChannel = dynamic_cast<chat::TextChannel*>(channel.get());
+					response << textChannel->getMessageCount();
+				}
 				user.pushPayload(response.buildAllocatedPayload());
 				user::manager::unloadUser(userID);
 			}
@@ -534,22 +552,33 @@ namespace zormid::client {
 	}
 
 	void Client::processCreateChannelPacket(net::http::PayloadReader& payload) {
+		chat::ChannelType channelType;
+		payload >> reinterpret_cast<uint32_t&>(channelType);
 		const chat::ChannelID channelID;
-		chat::Channel channel(channelID);
+		std::unique_ptr<chat::Channel> channel;
+		switch (channelType) {
+			case chat::ChannelType::TEXT:
+				channel = std::make_unique<chat::TextChannel>(channelID);
+				break;
+			default:
+				return;
+		}
+		channel->create();
 		std::string channelName;
 		payload >> channelName;
-		channel.setName(channelName);
+		channel->setName(channelName);
 		uint32_t userCount;
 		payload >> userCount;
 		for (uint32_t i = 0; i < userCount; i++) {
 			user::manager::UserID userID = payload.readUserID();
-			channel.addUser(userID);
+			channel->addUser(userID);
 			user::User& user = user::manager::loadUser(userID);
 			user.getChannels().push_back(channelID);
 			if (user.getActiveClients() != 0) {
 				net::http::PayloadWriter response;
 				response << 0xAu;
 				response << channelID;
+				response << static_cast<uint32_t>(channelType);
 				response << channelName;
 				user.pushPayload(response.buildAllocatedPayload());
 			}

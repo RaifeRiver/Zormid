@@ -8,12 +8,14 @@
 | `status`        | `uint32` enum<br>`0` - Offline<br>`1` - Online                                      |
 | `user`          | id: `user_id`<br>username: `string`<br>avatar: `string`<br>status: `status`         |
 | `channel_id`    | 20 byte channel ID                                                                  |
-| `channel`       | id: `channel_id`<br>name: `string`                                                  |
+| `channel`       | id: `channel_id`<br>type: `channel_type`<br>name: `string`                                                  |
 | `message`       | from: `user_id`<br>content: `string`<br>username: `string`<br>timestamp: `int64`    |
 | `file_id`       | 20 byte SHA1 hash of the file contents                                              |
 | `upload_status` | `uint8` enum<br>`0` - Upload<br>`1` - File too large<br>`2` - File already uploaded |
 | `session_id`    | 16 byte session ID                                                                  |
 | `bool`          | 1 byte boolean value                                                                |
+| `channel_type`| `uint32` enum<br>`0` - Text|
+| `extended_channel[type=0]` | id: `channel_id`<br>type: `channel_type`<br>name: `string`<br>users: `user[]`<br>message_count: `uint32` |
 
 # Server To Client
 
@@ -24,12 +26,12 @@
 | `0x2` | user_id: `user_id`<br>username: `string`                                                                                     | Response to username request                                                   |
 | `0x3` | user_id: `user_id`<br>channels: `channel[]`                                                                                  | Response to channel list request or sent when the user's channel list changes  |
 | `0x4` | from: `user_id`<br>channel: `channel_id`<br>content: `string`<br>username: `string`<br>index: `uint32`<br>timestamp: `int64` | Received message                                                               |
-| `0x5` | channel_id: `channel_id`<br>channel_name: `string`<br>message_count: `uint32`<br>users: `user[]`                             | Response to channel info request or when the channel info changes              |
+| `0x5` | channel: `extended_channel`                             | Response to channel info request or when the channel info changes              |
 | `0x6` | channel_id: `channel_id`<br>first_message: `uint32`<br>message_count: `uint32`<br>messages: `message[]`                      | Response to channel message request                                            |
 | `0x7` | file_id: `file_id`<br>status: `upload_status`                                                                                | Response to file upload request                                                |
 | `0x8` | sessions: `string[]`                                                                                                         | Response to session info request, each string is the user agent of the session |
 | `0x9` | user: `user`                                                                                                                 | Response to user info request or sent when a user's info changes               |
-| `0xA` | channel_id: `channel_id`<br>channel_name: `string`                                                                           | User added to channel                                                          |
+| `0xA` | channel: `channel`                                                                           | User added to channel                                                          |
 | `0xB` | channel_id: `channel_id`                                                                                                     | User removed from channel                                                      |
 | `0xC` | channel_id: `channel_id`<br>user_id: `user_id`<br>typing: `bool`                                                             | User started or stopped typing in a channel                                    |
 
@@ -44,7 +46,7 @@
 | `0x4`  | user_id: `user_id`                                           | Requests list of channels that user with id `user_id` is in            |
 | `0x5`  | channel_id: `channel_id`<br>content: `string`                | Sends a message                                                        |
 | `0x6`  | channel_id: `channel_id`                                     | Requests channel info for a specific channel                           |
-| `0x7`  | channel_name: `string`<br>users: `user_id[]`                 | Creates a channel, does not implicitly contain the current user        |
+| `0x7`  | type: `channel_type`<br>name: `string`<br>users: `user_id[]`                 | Creates a channel, does not implicitly contain the current user        |
 | `0x8`  | channel_id: `channel_id`<br>first_message: `uint32`          | Requests 50 messages from a specified start index                      |
 | `0x9`  | username: `string`                                           | Changes the current user's username                                    |
 | `0xA`  | channel_id: `channel_id`<br>users: `user_id[]`               | Replaces the channel's entire user list with the specified             |

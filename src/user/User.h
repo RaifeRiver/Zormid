@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "UserManager.h"
-#include "chat/Channel.h"
+#include "chat/TextChannel.h"
 #include "net/http/WebSocket.h"
 
 namespace zormid::user {

@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "Channel.h"
+#include "TextChannel.h"
 #include "user/UserManager.h"
 
 namespace zormid::chat {

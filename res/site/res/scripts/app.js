@@ -504,7 +504,7 @@ function addChannelFromMenu() {
             }
         }
     }
-    api.createChannel(name, selectedFriends);
+    api.createChannel(api.CHANNEL_TYPE_TEXT, name, selectedFriends);
     addChannelMenu.close();
 }
 
