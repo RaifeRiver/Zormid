@@ -978,8 +978,8 @@ function joinCall() {
         addUserElement(userID, userElement);
         voiceChannelUsers.appendChild(userElement);
         api.joinCall(currentChannelID);
-    }).catch(() => {
-        alert("Failed to join call, ensure the page has microphone permission");
+    }).catch((error) => {
+        alert(`Failed to join call, ensure the page has the microphone permission: ${error}`);
     });
 }
 
