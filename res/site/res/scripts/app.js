@@ -225,7 +225,10 @@ api.setChannelInfoHandler((info) => {
         return;
     }
     document.title = `Zormid - ${info.channelName}`;
-    channelName.textContent = info.channelType === api.CHANNEL_TYPE_VOICE ? `📞 ${info.channelName}`: info.channelName;
+    channelName.textContent = info.channelName;
+    if (info.channelType === api.CHANNEL_TYPE_VOICE) {
+        channelName.innerHTML = `<i class="fa-solid fa-phone"></i> ${channelName.innerHTML}`;
+    }
     channelMessageCount = info.messageCount;
     channelSettingsContainer.style.display = "flex";
     messageContainer.replaceChildren();
