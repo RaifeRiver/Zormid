@@ -366,7 +366,7 @@ api.setCallJoinedHandler(async (userID) => {
         audioElement.autoplay = true;
         audioElement.srcObject = event.streams[0];
         audioElement.style.display = "none";
-        document.appendChild(audioElement);
+        document.body.appendChild(audioElement);
     });
     for (let track of callStream.getTracks()) {
         callConnection.addTrack(track);
@@ -396,7 +396,7 @@ api.setCallOfferHandler(async (offer, response, fromID) => {
             let audioElement = document.createElement("audio");
             audioElement.autoplay = true;
             audioElement.srcObject = event.streams[0];
-            document.appendChild(audioElement);
+            document.body.appendChild(audioElement);
         });
         for (let track of callStream.getTracks()) {
             callConnection.addTrack(track);
