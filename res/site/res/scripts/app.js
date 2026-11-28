@@ -421,7 +421,7 @@ api.setCallOfferHandler(async (offer, response, fromID) => {
 });
 
 api.setCallCandidateHandler(async (fromID, candidate) => {
-    if (callConnections[fromID].remoteDescription) {
+    if (callConnections[fromID]?.remoteDescription) {
         await callConnections[fromID].addIceCandidate(candidate);
     }
     else {
