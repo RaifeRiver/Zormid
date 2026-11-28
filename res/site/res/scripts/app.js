@@ -890,7 +890,10 @@ function removeUserElement(id, element) {
 
 function addChannel(channel) {
     let channelElement = document.importNode(channelTemplate.content, true).firstElementChild;
-    channelElement.textContent = channel.channelType === api.CHANNEL_TYPE_VOICE ? `📞 ${channel.channelName}`: channel.channelName;
+    channelElement.textContent = channel.channelName;
+    if (channel.channelType === api.CHANNEL_TYPE_VOICE) {
+        channelElement.innerHTML = `<i class="fa-solid fa-phone"></i> ${channelElement.innerHTML}`;
+    }
     channelElement.addEventListener("click", () => changeChannel(channel.channelID));
     channelElement.dataset.id = base64.encodeURL(channel.channelID);
     channelElement.dataset.type = channel.channelType;

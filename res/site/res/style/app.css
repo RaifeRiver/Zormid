@@ -85,7 +85,6 @@ body {
     height: 3vh;
     aspect-ratio: 1/1;
     color: var(--theme-text-color);
-    font-size: 25px;
     align-self: flex-start;
 }
 

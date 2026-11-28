@@ -3,5 +3,5 @@
 #include <string>
 
 namespace zormid::util {
-	std::string getMimeType(const std::string& extension);
+	std::string getMimeType(const std::string& name);
 }

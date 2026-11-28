@@ -119,12 +119,7 @@ namespace zormid {
 				response.statusCode = 200;
 				response.statusMessage = "OK";
 				response.headers["Zormid-File-Name"] = util::base64::encode(fileName.c_str(), fileName.length());
-				if (std::vector<std::string> splitName = util::string::split(fileName, ".", 1); splitName.size() > 1) {
-					response.headers["Content-Type"] = util::getMimeType(splitName[1]);
-				}
-				else {
-					response.headers["Content-Type"] = "text/plain";
-				}
+				response.headers["Content-Type"] = util::getMimeType(fileName);
 				response.body = std::string(buffer, size);
 				response.write(*client);
 				free(buffer);
@@ -153,12 +148,7 @@ namespace zormid {
 			response.statusCode = 200;
 			response.statusMessage = "OK";
 			response.body = data.value();
-			if (std::vector<std::string> splitPath = util::string::split(request.path, ".", 1); splitPath.size() > 1) {
-				response.headers["Content-Type"] = util::getMimeType(splitPath[1]);
-			}
-			else {
-				response.headers["Content-Type"] = "text/plain";
-			}
+			response.headers["Content-Type"] = util::getMimeType(request.path);
 			response.write(*client);
 			client->close();
 		});

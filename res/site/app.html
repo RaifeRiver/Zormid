@@ -12,6 +12,9 @@
         <link rel="stylesheet" href="/res/style/theme.css">
         <link rel="stylesheet" href="/res/style/app.css">
 
+        <link rel="stylesheet" href="/res/fontawesome/css/fontawesome.min.css">
+        <link rel="stylesheet" href="/res/fontawesome/css/solid.min.css">
+
         <script>
             document.documentElement.setAttribute("data-theme", "sync");
         </script>
@@ -86,18 +89,18 @@
 
                     <p id="user-name" class="user-username"></p>
 
-                    <button id="user-settings-button">⚙︎</button>
+                    <button id="user-settings-button"><i class="fa-solid fa-xs fa-gear"></i></button>
                 </div>
             </div>
 
             <div id="main-area">
                 <div id="channel-info-container">
-                    <button id="back-button" class="channel-settings-button">←</button>
+                    <button id="back-button" class="channel-settings-button"><i class="fa-solid fa-xs fa-arrow-left"></i></button>
 
                     <p id="channel-name">Friends</p>
 
                     <div id="channel-settings-container">
-                        <button id="channel-user-list-button" class="channel-settings-button">User List</button>
+                        <button id="channel-user-list-button" class="channel-settings-button"><i class="fa-solid fa-users"></i></button>
                     </div>
                 </div>
 
@@ -156,7 +159,7 @@
                                 <p class="file-name"></p>
                                 <p class="file-size"></p>
                             </div>
-                            <button class="file-download">⭳</button>
+                            <button class="file-download"><i class="fa-solid fa-lg fa-download"></i></button>
                     </div></template>
 
                     <div id="channel-bottom-container">
@@ -164,7 +167,7 @@
 
                         <div id="input-container">
                             <details id="insert-input">
-                                <summary>+</summary>
+                                <summary><i class="fa-solid fa-plus"></i></summary>
 
                                 <div id="insert-input-container">
                                     <button id="upload-file-button">Upload File...</button>
@@ -184,7 +187,7 @@
                                     </ul>
                                 </div>
                             </details>
-                            <button id="send-button">➤</button>
+                            <button id="send-button"><i class="fa-solid fa-lg fa-paper-plane"></i></button>
                         </div>
                     </div>
                 </div>
@@ -237,7 +240,7 @@
 
             <p id="add-friend-copy-error"></p>
 
-            <button id="add-friend-close" class="close-button">X</button>
+            <button id="add-friend-close" class="close-button"><i class="fa-solid fa-xs fa-x"></i></button>
         </dialog>
 
         <dialog id="accept-friend-menu" class="popup-menu">
@@ -250,7 +253,7 @@
                 <button id="accept-friend-decline" class="accept-friend-button">Decline</button>
             </div>
 
-            <button id="accept-friend-close" class="close-button">X</button>
+            <button id="accept-friend-close" class="close-button"><i class="fa-solid fa-xs fa-x"></i></button>
         </dialog>
 
         <dialog id="add-channel-menu" class="popup-menu">
@@ -268,7 +271,7 @@
             <div id="add-channel-friends"></div>
 
             <button id="add-channel-add" class="dialog-confirm-button">Add</button>
-            <button id="add-channel-close" class="close-button">X</button>
+            <button id="add-channel-close" class="close-button"><i class="fa-solid fa-xs fa-x"></i></button>
         </dialog>
 
         <template id="add-channel-friend-template">
@@ -327,7 +330,7 @@
                 </div>
             </div>
 
-            <button id="user-settings-close" class="close-button">X</button>
+            <button id="user-settings-close" class="close-button"><i class="fa-solid fa-xs fa-x"></i></button>
         </dialog>
 
         <dialog id="user-list-manage-users-menu" class="popup-menu">
@@ -337,7 +340,7 @@
             <div id="user-list-manage-users-users"></div>
 
             <button id="user-list-manage-users-confirm" class="dialog-confirm-button">Confirm</button>
-            <button id="user-list-manage-users-close" class="close-button">X</button>
+            <button id="user-list-manage-users-close" class="close-button"><i class="fa-solid fa-xs fa-x"></i></button>
         </dialog>
 
         <script type="module" src="/res/scripts/app.js"></script>

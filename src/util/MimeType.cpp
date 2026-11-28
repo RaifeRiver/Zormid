@@ -1,26 +1,26 @@
 #include "MimeType.h"
 
 namespace zormid::util {
-	std::string getMimeType(const std::string& extension) {
-		if (extension == "css") {
+	std::string getMimeType(const std::string& name) {
+		if (name.ends_with(".css")) {
 			return "text/css";
 		}
-		if (extension == "js") {
+		if (name.ends_with(".js")) {
 			return "text/javascript";
 		}
-		if (extension == "json") {
+		if (name.ends_with(".json")) {
 			return "application/json";
 		}
-		if (extension == "png") {
+		if (name.ends_with(".png")) {
 			return "image/png";
 		}
-		if (extension == "jpg" || extension == "jpeg") {
+		if (name.ends_with(".jpg") || name.ends_with(".jpeg")) {
 			return "image/jpeg";
 		}
-		if (extension == "webp") {
+		if (name.ends_with(".webp")) {
 			return "image/webp";
 		}
-		if (extension == "gif") {
+		if (name.ends_with(".gif")) {
 			return "image/gif";
 		}
 		return "text/plain";
