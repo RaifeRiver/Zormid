@@ -73,7 +73,7 @@ namespace zormid {
 		mServer = std::make_unique<net::http::HTTPServer>(mConfig.getPort());
 		mServer->setClientHandler([&](net::http::HTTPRequestHeader request, std::unique_ptr<net::Socket> client) {
 			net::http::HTTPResponseHeader response;
-			if (request.headers["Connection"] == "Upgrade" && request.headers["Upgrade"] == "websocket") {
+			if (util::string::toLower(request.headers["connection"]) == "upgrade" && util::string::toLower(request.headers["upgrade"]) == "websocket") {
 				mClients.push_back(std::make_unique<client::Client>(std::make_unique<net::http::WebSocket>(std::move(client), request)));
 				return;
 			}

@@ -1,5 +1,9 @@
 #include "HTTPServer.h"
 
+#include <charconv>
+
+#include "util/StringHelper.h"
+
 namespace zormid::net::http {
 	HTTPServer::HTTPServer(const uint16_t port) : mServerSocket(port) {}
 
@@ -21,14 +25,24 @@ namespace zormid::net::http {
 					const size_t splitIndex = line.find(':');
 					std::string key = line.substr(0, splitIndex);
 					const std::string value = line.substr(line.find_first_not_of(' ', splitIndex + 1), line.find_last_not_of('\r') - line.find_first_not_of(' ', splitIndex + 1) + 1);
-					header.headers[key] = value;
+					header.headers[util::string::toLower(key)] = value;
 				}
 				char buffer[256];
-				while (client->available()) {
+				size_t totalRead = 0;
+				std::string& contentLengthString = header.headers["content-length"];
+				size_t contentLength;
+				if (auto [pointer, error] = std::from_chars(contentLengthString.data(), contentLengthString.data() + contentLengthString.size(), contentLength); error != std::errc() || pointer != contentLengthString.data() + contentLengthString.size()) {
+					contentLength = -1;
+				}
+				while ((client->available() && contentLength == -1) || totalRead < contentLength) {
 					const size_t read = client->read(buffer, sizeof(buffer));
 					if (read == 0) {
-						break;
+						if (contentLength == -1) {
+							break;
+						}
+						continue;
 					}
+					totalRead += read;
 					header.body.append(buffer, read);
 				}
 				if (const size_t queryPos = header.path.find_first_of('?'); queryPos != std::string::npos) {

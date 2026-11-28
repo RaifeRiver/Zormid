@@ -30,4 +30,12 @@ namespace zormid::util::string {
 		}
 		return result;
 	}
+
+	std::string toLower(const std::string& str) {
+		std::string result = str;
+		for (char& c : result) {
+			c = static_cast<char>(std::tolower(c));
+		}
+		return result;
+	}
 }

@@ -148,7 +148,7 @@ namespace zormid::net::http {
 		response.headers["Connection"] = "Upgrade";
 		response.headers["Upgrade"] = "websocket";
 		sha1::SHA1 sha;
-		const std::string key = request.headers["Sec-WebSocket-Key"] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+		const std::string key = request.headers["sec-websocket-key"] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 		sha.processBlock(key.c_str(), key.c_str() + key.size());
 		uint8_t digest[20];
 		sha.getDigestBytes(digest);
@@ -230,7 +230,7 @@ namespace zormid::net::http {
 		uint8_t firstByte = 1 << 7;
 		firstByte |= opcode;
 		mSocket->write(&firstByte, 1);
-		uint8_t payloadLength = 0;
+		uint8_t payloadLength;
 		if (data.size < 126) {
 			payloadLength = data.size;
 		}

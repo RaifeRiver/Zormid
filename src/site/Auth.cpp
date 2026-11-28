@@ -12,8 +12,8 @@
 
 namespace zormid::site {
 	static std::string getPage(const std::string& type, const std::string& message = "") {
-		if (const std::optional<std::string> data = util::file::readFile("../res/site/auth.html"); data.has_value()) {
-			std::string page = data.value();
+		if (const std::optional<std::string> data = util::file::readFile("../res/site/auth.html"); data) {
+			std::string page = *data;
 			page = util::string::replaceAll(page, "%login-type%", type);
 			page = util::string::replaceAll(page, "%response-message%", message.empty() ? "" : "<p id=\"response-error\">" + message + "</p>");
 			if (type == "Login") {
@@ -28,7 +28,7 @@ namespace zormid::site {
 	}
 
 	bool verifySessionCookies(const net::http::HTTPRequestHeader& request) {
-		if (const auto cookieIt = request.headers.find("Cookie"); cookieIt != request.headers.end()) {
+		if (const auto cookieIt = request.headers.find("cookie"); cookieIt != request.headers.end()) {
 			const std::string& cookieHeader = cookieIt->second;
 			std::string userCookie;
 			std::string sessionCookie;
@@ -65,7 +65,7 @@ namespace zormid::site {
 					return false;
 				}
 				std::string userAgent = "Unknown";
-				if (const auto userAgentIt = request.headers.find("User-Agent"); userAgentIt != request.headers.end()) {
+				if (const auto userAgentIt = request.headers.find("user-agent"); userAgentIt != request.headers.end()) {
 					userAgent = userAgentIt->second;
 				}
 				for (user::User& user = user::manager::loadUser(userID); user::Session& session : user.getSessions()) {
@@ -171,7 +171,7 @@ namespace zormid::site {
 			response.statusMessage = "See Other";
 			response.headers["Location"] = "/app/";
 			std::string userAgent = "Unknown";
-			if (auto userAgentIt = request.headers.find("User-Agent"); userAgentIt != request.headers.end()) {
+			if (auto userAgentIt = request.headers.find("user-agent"); userAgentIt != request.headers.end()) {
 				userAgent = userAgentIt->second;
 			}
 			const user::Session& session = user->startSession(userAgent);
