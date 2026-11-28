@@ -119,6 +119,7 @@ let typing = false;
 let stateSet = false;
 let callStream;
 let callConnection;
+let pendingICECandidates = [];
 
 let messageScrollObserver;
 
@@ -359,7 +360,7 @@ api.setUserTypingChangeHandler((info) => {
     typingIndicator.textContent = `${typingString} ${channelTypingUsers.length === 1 ? "is" : "are"} typing...`;
 });
 
-api.setCallJoinedHandler(async (userID) => {
+api.setCallJoinedHandler(async (joinedID) => {
     callConnection = new RTCPeerConnection({iceServers: [{urls: "stun:stun.cloudflare.com:3478"}, {urls: "turn:free.expressturn.com:3478", username: "000000002111055202", credential: "+RFLZyMU/RHslWGpjuF6JyT4xt8="}]});
     callConnection.addEventListener("track", (event) => {
         let audioElement = document.createElement("audio");
@@ -375,10 +376,10 @@ api.setCallJoinedHandler(async (userID) => {
     await callConnection.setLocalDescription(offer);
     callConnection.addEventListener("icecandidate", (event) => {
         if (event.candidate) {
-            api.sendCallCandidate(userID, event.candidate);
+            api.sendCallCandidate(joinedID, event.candidate);
         }
     });
-    api.sendCallOffer(userID, offer, false);
+    api.sendCallOffer(joinedID, offer, false);
 });
 
 api.setCallOfferHandler(async (offer, response, fromID) => {
@@ -406,10 +407,19 @@ api.setCallOfferHandler(async (offer, response, fromID) => {
         await callConnection.setLocalDescription(localOffer);
         api.sendCallOffer(fromID, localOffer, true);
     }
+    for (let candidate of pendingICECandidates) {
+        await callConnection.addIceCandidate(candidate);
+    }
+    pendingICECandidates.length = 0;
 });
 
 api.setCallCandidateHandler(async (candidate) => {
-    await callConnection.addIceCandidate(candidate);
+    if (callConnection.remoteDescription) {
+        await callConnection.addIceCandidate(candidate);
+    }
+    else {
+        pendingICECandidates.push(candidate);
+    }
 });
 
 connectionAttempts++;
