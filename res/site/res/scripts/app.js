@@ -370,7 +370,7 @@ api.setCallJoinedHandler(async (joinedID) => {
         document.body.appendChild(audioElement);
     });
     for (let track of callStream.getTracks()) {
-        callConnection.addTrack(track);
+        callConnection.addTrack(track, callStream);
     }
     let offer = await callConnection.createOffer();
     await callConnection.setLocalDescription(offer);
@@ -400,7 +400,7 @@ api.setCallOfferHandler(async (offer, response, fromID) => {
             document.body.appendChild(audioElement);
         });
         for (let track of callStream.getTracks()) {
-            callConnection.addTrack(track);
+            callConnection.addTrack(track, callStream);
         }
         await callConnection.setRemoteDescription(offer);
         let localOffer = await callConnection.createAnswer();
