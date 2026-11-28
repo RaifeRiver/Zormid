@@ -893,7 +893,22 @@ summary {
 }
 
 #voice-controls {
+    margin-top: auto;
+    align-self: center;
+    margin-bottom: 1vh;
+}
 
+#voice-controls button {
+    background-color: var(--theme-secondary-background-color);
+    border: var(--theme-border-color) 2px solid;
+    color: var(--theme-text-color);
+    font-family: var(--theme-font-family), sans-serif;
+    height: 4vh;
+    aspect-ratio: 1/1;
+}
+
+#voice-controls button:hover {
+    background-color: var(--theme-background-color);
 }
 
 @media (orientation: portrait) {

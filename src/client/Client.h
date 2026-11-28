@@ -77,6 +77,8 @@ namespace zormid::client {
 
 		void processCallCandidatePacket(net::http::PayloadReader& payload) const;
 
+		void processLeaveCallPacket();
+
 		static void processFileUploadPacket(net::http::PayloadReader& payload) ;
 
 		static void processChangeChannelUsersPacket(net::http::PayloadReader& payload);

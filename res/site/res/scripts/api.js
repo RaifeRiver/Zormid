@@ -106,6 +106,11 @@ export function setCallCandidateHandler(handler) {
     callCandidateHandler = handler;
 }
 
+export let callLeftHandler;
+export function setCallLeftHandler(handler) {
+    callLeftHandler = handler;
+}
+
 function readString(packet, pos) {
     let size = packet.getUint32(pos, true);
     let bytes = new Uint8Array(packet.buffer, pos + 4, size);
@@ -325,6 +330,13 @@ async function processPacket(packet) {
                 let {text: sdpMid, bytes: sdpMidLength} = readString(view, 8 + candidateLength);
                 let sdpMLineIndex = view.getUint32(12 + candidateLength + sdpMidLength, true);
                 callCandidateHandler({candidate: candidate, sdpMid: sdpMid, sdpMLineIndex: sdpMLineIndex});
+            }
+            break;
+        case 0x10:
+            if (callLeftHandler) {
+                let channelID = readID(view, 4, 20);
+                let userID = readID(view, 24, USER_ID_SIZE);
+                callLeftHandler(channelID, userID);
             }
             break;
         default:
@@ -596,5 +608,12 @@ export function sendCallCandidate(userID, candidate) {
         view.setUint8(i + 12 + USER_ID_SIZE + candidate.candidate.length, candidate.sdpMid.charCodeAt(i));
     }
     view.setUint32(12 + USER_ID_SIZE + candidate.candidate.length + candidate.sdpMid.length, candidate.sdpMLineIndex, true);
+    websocket.send(buffer);
+}
+
+export function leaveCall() {
+    let buffer = new ArrayBuffer(4);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0x14, true);
     websocket.send(buffer);
 }

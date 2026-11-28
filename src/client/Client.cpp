@@ -132,8 +132,7 @@ namespace zormid::client {
 			}
 		}
 		if (mCallChannel) {
-			chat::call::leaveCall(*mCallChannel, this);
-			mCallChannel = {};
+			processLeaveCallPacket();
 		}
 		mUser->getActiveClients()--;
 		sendUserInfoToAll();
@@ -207,6 +206,9 @@ namespace zormid::client {
 				break;
 			case 0x13:
 				processCallCandidatePacket(payload);
+				break;
+			case 0x14:
+				processLeaveCallPacket();
 				break;
 			default:
 				std::cout << "Unknown packet ID: " << id << std::endl;
@@ -524,6 +526,22 @@ namespace zormid::client {
 				client->getSocket().write(data);
 			}
 		}
+	}
+
+	void Client::processLeaveCallPacket() {
+		if (!mCallChannel) {
+			return;
+		}
+		chat::call::leaveCall(*mCallChannel, this);
+		net::http::PayloadWriter response;
+		response << 0x10u;
+		response << *mCallChannel;
+		response << mUser->getID();
+		const net::http::PayloadData data = response.buildPayload();
+		for (const Client* client : chat::call::getClientsInCall(*mCallChannel)) {
+			client->getSocket().write(data);
+		}
+		mCallChannel = {};
 	}
 
 	void Client::processFileUploadPacket(net::http::PayloadReader& payload) {

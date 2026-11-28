@@ -17,6 +17,9 @@ let messageContainer = document.getElementById("message-container");
 let typingIndicator = document.getElementById("typing-indicator");
 
 let voiceChannelContainer = document.getElementById("voice-channel-container");
+let joinCallButton = document.getElementById("voice-controls-join");
+let voiceControlsContainer = document.getElementById("voice-controls-container");
+let leaveCallButton = document.getElementById("voice-controls-leave");
 
 let sendButton = document.getElementById("send-button");
 
@@ -422,6 +425,13 @@ api.setCallCandidateHandler(async (candidate) => {
     }
 });
 
+api.setCallLeftHandler((channelID, leftID) => {
+    if (currentChannelID !== channelID) {
+        return;
+    }
+    callConnection.close();
+})
+
 connectionAttempts++;
 api.connect();
 
@@ -552,18 +562,6 @@ function changeChannel(channelID) {
     currentChannelID = channelID;
     if (type === api.CHANNEL_TYPE_TEXT) {
         messageContainer.replaceChildren();
-    }
-    else if (type === api.CHANNEL_TYPE_VOICE) {
-        navigator.mediaDevices.getUserMedia({
-            audio: {
-                noiseSuppression: true,
-                echoCancellation: true,
-                autoGainControl: true
-            }
-        }).then((stream) => {
-            callStream = stream;
-            api.joinCall(channelID);
-        });
     }
     api.requestChannelInfo(channelID);
 }
@@ -923,6 +921,33 @@ function back() {
     currentChannelID = null;
 }
 
+function joinCall() {
+    navigator.mediaDevices.getUserMedia({
+        audio: {
+            noiseSuppression: true,
+            echoCancellation: true,
+            autoGainControl: true
+        }
+    }).then((stream) => {
+        callStream = stream;
+        joinCallButton.style.display = "none";
+        voiceControlsContainer.style.display = "flex";
+        api.joinCall(currentChannelID);
+    }).catch(() => {
+        alert("Failed to join call, ensure the page has microphone permission");
+    });
+}
+
+function leaveCall() {
+	voiceControlsContainer.style.display = "none";
+    joinCallButton.style.display = "inline-block";
+    for (let track of callStream.getTracks()) {
+        track.stop();
+    }
+    callConnection.close();
+    api.leaveCall();
+}
+
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -984,6 +1009,9 @@ userListManageUsersClose.addEventListener("click", closeManageChannelUsersMenu);
 userListManageUsersConfirm.addEventListener("click", changeChannelUsers);
 
 backButton.addEventListener("click", back);
+
+joinCallButton.addEventListener("click", joinCall);
+leaveCallButton.addEventListener("click", leaveCall);
 
 window.addEventListener("drop", (event) => event.preventDefault());
 window.addEventListener("dragover", (event) => event.preventDefault());
