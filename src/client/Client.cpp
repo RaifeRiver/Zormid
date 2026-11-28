@@ -495,6 +495,7 @@ namespace zormid::client {
 		net::http::PayloadWriter response;
 		response << 0xEu;
 		response << responseOffer;
+		response << mUser->getID();
 		response << offer;
 		const net::http::PayloadData data = response.buildPayload();
 		for (const Client* client : chat::call::getClientsInCall(*mCallChannel)) {

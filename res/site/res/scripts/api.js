@@ -314,8 +314,9 @@ async function processPacket(packet) {
         case 0xE:
             if (callOfferHandler) {
                 let response = view.getUint8(4) !== 0;
-                let offer = readString(view, 5).text;
-                callOfferHandler({type: "offer", sdp: offer}, response);
+                let userID = readID(view, 5, USER_ID_SIZE);
+                let offer = readString(view, 5 + USER_ID_SIZE).text;
+                callOfferHandler({type: response ? "answer" : "offer", sdp: offer}, response, userID);
             }
             break;
         case 0xF:

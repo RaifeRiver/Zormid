@@ -381,7 +381,7 @@ api.setCallJoinedHandler(async (userID) => {
     api.sendCallOffer(userID, offer, false);
 });
 
-api.setCallOfferHandler(async (offer, response) => {
+api.setCallOfferHandler(async (offer, response, fromID) => {
     if (response) {
         await callConnection.setRemoteDescription(offer);
     }
@@ -389,13 +389,14 @@ api.setCallOfferHandler(async (offer, response) => {
         callConnection = new RTCPeerConnection({iceServers: [{urls: "stun:stun.cloudflare.com:3478"}, {urls: "turn:free.expressturn.com:3478", username: "000000002111055202", credential: "+RFLZyMU/RHslWGpjuF6JyT4xt8="}]});
         callConnection.addEventListener("icecandidate", (event) => {
             if (event.candidate) {
-                api.sendCallCandidate(userID, event.candidate);
+                api.sendCallCandidate(fromID, event.candidate);
             }
         });
         callConnection.addEventListener("track", (event) => {
             let audioElement = document.createElement("audio");
             audioElement.autoplay = true;
             audioElement.srcObject = event.streams[0];
+            document.appendChild(audioElement);
         });
         for (let track of callStream.getTracks()) {
             callConnection.addTrack(track);
@@ -403,7 +404,7 @@ api.setCallOfferHandler(async (offer, response) => {
         await callConnection.setRemoteDescription(offer);
         let localOffer = await callConnection.createAnswer();
         await callConnection.setLocalDescription(localOffer);
-        api.sendCallOffer(userID, localOffer, true);
+        api.sendCallOffer(fromID, localOffer, true);
     }
 });
 
