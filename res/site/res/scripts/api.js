@@ -326,10 +326,11 @@ async function processPacket(packet) {
             break;
         case 0xF:
             if (callCandidateHandler) {
-                let {text: candidate, bytes: candidateLength} = readString(view, 4);
-                let {text: sdpMid, bytes: sdpMidLength} = readString(view, 8 + candidateLength);
-                let sdpMLineIndex = view.getUint32(12 + candidateLength + sdpMidLength, true);
-                callCandidateHandler({candidate: candidate, sdpMid: sdpMid, sdpMLineIndex: sdpMLineIndex});
+                let userID = readID(view, 4, USER_ID_SIZE);
+                let {text: candidate, bytes: candidateLength} = readString(view, 4 + USER_ID_SIZE);
+                let {text: sdpMid, bytes: sdpMidLength} = readString(view, 8 + USER_ID_SIZE + candidateLength);
+                let sdpMLineIndex = view.getUint32(12 + USER_ID_SIZE + candidateLength + sdpMidLength, true);
+                callCandidateHandler(userID, {candidate: candidate, sdpMid: sdpMid, sdpMLineIndex: sdpMLineIndex});
             }
             break;
         case 0x10:

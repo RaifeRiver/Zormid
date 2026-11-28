@@ -36,7 +36,7 @@
 | `0xC`  | channel_id: `channel_id`<br>user_id: `user_id`<br>typing: `bool`                                                             | User started or stopped typing in a channel                                    |
 | `0xD`  | user_id: `user_id`                                                                                                           | User joined the current call                                                   |
 | `0xE`  | response: `bool`<br>offer: `string`                                                                                          | Offer to join rtc connection                                                   |
-| `0xF`  | candidate: `string`<br>sdp_mid: `string`<br>sdp_mline_index: `uint32`                                                        | Rtc connection candidate                                                       |
+| `0xF`  | from: `user_id`<br>candidate: `string`<br>sdp_mid: `string`<br>sdp_mline_index: `uint32`                                                        | Rtc connection candidate                                                       |
 | `0x10` | channel_id: `channel_id`<br>user_id: `user_id`                                                                               | User left a call                                                               |
 
 # Client To Server

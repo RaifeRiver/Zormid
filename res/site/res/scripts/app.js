@@ -121,8 +121,8 @@ let connected = false;
 let typing = false;
 let stateSet = false;
 let callStream;
-let callConnection;
-let pendingICECandidates = [];
+let callConnections = {};
+let pendingICECandidates = {};
 
 let messageScrollObserver;
 
@@ -364,8 +364,8 @@ api.setUserTypingChangeHandler((info) => {
 });
 
 api.setCallJoinedHandler(async (joinedID) => {
-    callConnection = new RTCPeerConnection({iceServers: [{urls: "stun:stun.cloudflare.com:3478"}, {urls: "turn:free.expressturn.com:3478", username: "000000002111055202", credential: "+RFLZyMU/RHslWGpjuF6JyT4xt8="}]});
-    callConnection.addEventListener("track", (event) => {
+    let connection = new RTCPeerConnection({iceServers: [{urls: "stun:stun.cloudflare.com:3478"}, {urls: "turn:free.expressturn.com:3478", username: "000000002111055202", credential: "+RFLZyMU/RHslWGpjuF6JyT4xt8="}]});
+    connection.addEventListener("track", (event) => {
         let audioElement = document.createElement("audio");
         audioElement.autoplay = true;
         audioElement.srcObject = event.streams[0];
@@ -373,55 +373,64 @@ api.setCallJoinedHandler(async (joinedID) => {
         document.body.appendChild(audioElement);
     });
     for (let track of callStream.getTracks()) {
-        callConnection.addTrack(track, callStream);
+        connection.addTrack(track, callStream);
     }
-    let offer = await callConnection.createOffer();
-    await callConnection.setLocalDescription(offer);
-    callConnection.addEventListener("icecandidate", (event) => {
+    let offer = await connection.createOffer();
+    await connection.setLocalDescription(offer);
+    connection.addEventListener("icecandidate", (event) => {
         if (event.candidate) {
             api.sendCallCandidate(joinedID, event.candidate);
         }
     });
+    callConnections[joinedID] = connection;
     api.sendCallOffer(joinedID, offer, false);
 });
 
 api.setCallOfferHandler(async (offer, response, fromID) => {
     if (response) {
-        await callConnection.setRemoteDescription(offer);
+        await callConnections[fromID].setRemoteDescription(offer);
     }
     else {
-        callConnection = new RTCPeerConnection({iceServers: [{urls: "stun:stun.cloudflare.com:3478"}, {urls: "turn:free.expressturn.com:3478", username: "000000002111055202", credential: "+RFLZyMU/RHslWGpjuF6JyT4xt8="}]});
-        callConnection.addEventListener("icecandidate", (event) => {
+        let connection = new RTCPeerConnection({iceServers: [{urls: "stun:stun.cloudflare.com:3478"}, {urls: "turn:free.expressturn.com:3478", username: "000000002111055202", credential: "+RFLZyMU/RHslWGpjuF6JyT4xt8="}]});
+        connection.addEventListener("icecandidate", (event) => {
             if (event.candidate) {
                 api.sendCallCandidate(fromID, event.candidate);
             }
         });
-        callConnection.addEventListener("track", (event) => {
+        connection.addEventListener("track", (event) => {
             let audioElement = document.createElement("audio");
             audioElement.autoplay = true;
             audioElement.srcObject = event.streams[0];
             document.body.appendChild(audioElement);
         });
         for (let track of callStream.getTracks()) {
-            callConnection.addTrack(track, callStream);
+            connection.addTrack(track, callStream);
         }
-        await callConnection.setRemoteDescription(offer);
-        let localOffer = await callConnection.createAnswer();
-        await callConnection.setLocalDescription(localOffer);
+        await connection.setRemoteDescription(offer);
+        let localOffer = await connection.createAnswer();
+        await connection.setLocalDescription(localOffer);
+        callConnections[fromID] = connection;
         api.sendCallOffer(fromID, localOffer, true);
     }
-    for (let candidate of pendingICECandidates) {
-        await callConnection.addIceCandidate(candidate);
+    if (pendingICECandidates[fromID]) {
+        for (let candidate of pendingICECandidates[fromID]) {
+            await callConnections[fromID].addIceCandidate(candidate);
+        }
+        pendingICECandidates[fromID] = undefined;
     }
-    pendingICECandidates.length = 0;
 });
 
-api.setCallCandidateHandler(async (candidate) => {
-    if (callConnection.remoteDescription) {
-        await callConnection.addIceCandidate(candidate);
+api.setCallCandidateHandler(async (fromID, candidate) => {
+    if (callConnections[fromID].remoteDescription) {
+        await callConnections[fromID].addIceCandidate(candidate);
     }
     else {
-        pendingICECandidates.push(candidate);
+        if (!pendingICECandidates[fromID]) {
+            pendingICECandidates[fromID] = [candidate];
+        }
+        else {
+            pendingICECandidates[fromID].push(candidate);
+        }
     }
 });
 
@@ -429,7 +438,7 @@ api.setCallLeftHandler((channelID, leftID) => {
     if (currentChannelID !== channelID) {
         return;
     }
-    callConnection.close();
+    callConnections[leftID].close();
 })
 
 connectionAttempts++;
@@ -944,7 +953,10 @@ function leaveCall() {
     for (let track of callStream.getTracks()) {
         track.stop();
     }
-    callConnection.close();
+    for (let connection of callConnections) {
+        connection.close();
+    }
+    callConnections.length = 0;
     api.leaveCall();
 }
 
