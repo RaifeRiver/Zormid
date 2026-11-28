@@ -953,10 +953,11 @@ function leaveCall() {
     for (let track of callStream.getTracks()) {
         track.stop();
     }
-    for (let [_, connection] of Object.entries(callConnections)) {
+    for (let connection of Object.values(callConnections)) {
         connection.close();
     }
-    callConnections.length = 0;
+    callConnections = {};
+    pendingICECandidates = {};
     api.leaveCall();
 }
 
