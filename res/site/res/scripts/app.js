@@ -953,7 +953,7 @@ function leaveCall() {
     for (let track of callStream.getTracks()) {
         track.stop();
     }
-    for (let connection of callConnections) {
+    for (let [_, connection] of Object.entries(callConnections)) {
         connection.close();
     }
     callConnections.length = 0;
