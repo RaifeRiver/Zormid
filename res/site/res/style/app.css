@@ -405,13 +405,13 @@ p {
     gap: 1vh;
 }
 
-.user-list-user {
+.user-list-user, .voice-channel-user {
     display: flex;
     flex-direction: row;
     gap: 1vw;
 }
 
-.user-list-username {
+.user-list-username, .voice-channel-user-username {
     color: var(--theme-text-color);
     font-family: var(--theme-font-family), sans-serif;
     align-self: center;
@@ -789,7 +789,7 @@ a {
     margin-left: 5vh;
 }
 
-.friend-avatar, .user-list-avatar {
+.friend-avatar, .user-list-avatar, .voice-channel-user-avatar {
     height: 4vh;
     aspect-ratio: 1/1;
     border-radius: 50%;
@@ -909,6 +909,12 @@ summary {
 
 #voice-controls button:hover {
     background-color: var(--theme-background-color);
+}
+
+#voice-channel-users {
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
 }
 
 @media (orientation: portrait) {

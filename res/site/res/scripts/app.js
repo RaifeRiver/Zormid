@@ -20,6 +20,8 @@ let voiceChannelContainer = document.getElementById("voice-channel-container");
 let joinCallButton = document.getElementById("voice-controls-join");
 let voiceControlsContainer = document.getElementById("voice-controls-container");
 let leaveCallButton = document.getElementById("voice-controls-leave");
+let voiceChannelUsers = document.getElementById("voice-channel-users");
+let voiceChannelUserTemplate = document.getElementById("voice-channel-user-template");
 
 let sendButton = document.getElementById("send-button");
 
@@ -254,7 +256,7 @@ api.setChannelInfoHandler((info) => {
         manageButton.addEventListener("click", (e) => {
             e.target.textContent = e.target.textContent === "Add" ? "Remove" : "Add";
         });
-        manageElement.firstElementChild.dataset.id = btoa(user.userID);
+        manageElement.firstElementChild.dataset.id = base64.encodeURL(user.userID);
         addUserElement(user.userID, manageElement.firstElementChild);
         userListManageUsersUsers.appendChild(manageElement);
         setUserInfo(user.userID, user);
@@ -270,8 +272,20 @@ api.setChannelInfoHandler((info) => {
         manageButton.addEventListener("click", (e) => {
             e.target.textContent = e.target.textContent === "Add" ? "Remove" : "Add";
         });
-        manageElement.firstElementChild.dataset.id = btoa(user.userID);
+        manageElement.firstElementChild.dataset.id = base64.encodeURL(user.userID);
         userListManageUsersUsers.appendChild(manageElement);
+    }
+    if (info.channelType === api.CHANNEL_TYPE_VOICE) {
+        voiceChannelUsers.replaceChildren();
+        for (let activeUser of info.activeUsers) {
+            let userElement = voiceChannelUserTemplate.content.cloneNode(true);
+            let user = users[activeUser];
+            userElement.querySelector(".voice-channel-user-avatar").src = user.avatar === "DEFAULT" ? "/res/images/default-avatar.png" : user.avatar;
+            userElement.querySelector(".voice-channel-user-username").textContent = user.username;
+            userElement.querySelector(".voice-channel-user").dataset.id = base64.encodeURL(activeUser);
+            addUserElement(activeUser, userElement);
+            voiceChannelUsers.appendChild(userElement);
+        }
     }
 });
 api.setChannelMessagesHandler((messageInfo) => {
@@ -441,8 +455,20 @@ api.setCallLeftHandler((channelID, leftID) => {
     if (currentChannelID !== channelID) {
         return;
     }
-    callConnections[leftID].close();
-})
+    callConnections[leftID]?.close();
+    delete callConnections[leftID];
+    voiceChannelUsers.querySelector(`[data-id=${base64.encodeURL(leftID)}]`)?.remove();
+});
+
+api.setCallChannelJoinedHandler((channelID, joinedID) => {
+    let userElement = voiceChannelUserTemplate.content.cloneNode(true);
+    let user = users[joinedID];
+    userElement.querySelector(".voice-channel-user-avatar").src = user.avatar === "DEFAULT" ? "/res/images/default-avatar.png" : user.avatar;
+    userElement.querySelector(".voice-channel-user-username").textContent = user.username;
+    userElement.querySelector(".voice-channel-user").dataset.id = base64.encodeURL(joinedID);
+    addUserElement(joinedID, userElement);
+    voiceChannelUsers.appendChild(userElement);
+});
 
 connectionAttempts++;
 api.connect();
@@ -813,7 +839,7 @@ function changeChannelUsers() {
     let users = []
     for (let user of userListManageUsersUsers.children) {
         if (user.querySelector(".add-channel-friend-button").textContent === "Remove") {
-            users.push(atob(user.dataset.id));
+            users.push(base64.decodeURL(user.dataset.id));
         }
     }
     api.changeChannelUsers(currentChannelID, users);
@@ -944,6 +970,13 @@ function joinCall() {
         callStream = stream;
         joinCallButton.style.display = "none";
         voiceControlsContainer.style.display = "flex";
+        let userElement = voiceChannelUserTemplate.content.cloneNode(true);
+        let user = users[userID];
+        userElement.querySelector(".voice-channel-user-avatar").src = user.avatar === "DEFAULT" ? "/res/images/default-avatar.png" : user.avatar;
+        userElement.querySelector(".voice-channel-user-username").textContent = user.username;
+        userElement.querySelector(".voice-channel-user").dataset.id = base64.encodeURL(userID);
+        addUserElement(userID, userElement);
+        voiceChannelUsers.appendChild(userElement);
         api.joinCall(currentChannelID);
     }).catch(() => {
         alert("Failed to join call, ensure the page has microphone permission");
@@ -961,6 +994,7 @@ function leaveCall() {
     }
     callConnections = {};
     pendingICECandidates = {};
+    voiceChannelUsers.querySelector(`[data-id=${base64.encodeURL(userID)}]`).remove();
     api.leaveCall();
 }
 

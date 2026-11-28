@@ -111,6 +111,11 @@ export function setCallLeftHandler(handler) {
     callLeftHandler = handler;
 }
 
+export let callChannelJoinedHandler;
+export function setCallChannelJoinedHandler(handler) {
+    callChannelJoinedHandler = handler;
+}
+
 function readString(packet, pos) {
     let size = packet.getUint32(pos, true);
     let bytes = new Uint8Array(packet.buffer, pos + 4, size);
@@ -206,7 +211,17 @@ async function processPacket(packet) {
                 }
                 let channel = {channelID: channelID, channelType: channelType, channelName: channelName, users: users};
                 if (channelType === CHANNEL_TYPE_TEXT) {
-                    channel.messageCount = view.getUint32(32 + channelNameSize, true);
+                    channel.messageCount = view.getUint32(pos, true);
+                }
+                else if (channelType === CHANNEL_TYPE_VOICE) {
+                    channel.activeUsers = [];
+                    let activeUserCount = view.getUint32(pos, true);
+                    pos += 4;
+                    for (let i = 0; i < activeUserCount; i++) {
+                        let userID = readID(view, pos, USER_ID_SIZE);
+                        pos += USER_ID_SIZE;
+                        channel.activeUsers.push(userID);
+                    }
                 }
                 channelInfoHandler(channel);
             }
@@ -338,6 +353,13 @@ async function processPacket(packet) {
                 let channelID = readID(view, 4, 20);
                 let userID = readID(view, 24, USER_ID_SIZE);
                 callLeftHandler(channelID, userID);
+            }
+            break;
+        case 0x11:
+            if (callChannelJoinedHandler) {
+                let channelID = readID(view, 4, 20);
+                let userID = readID(view, 24, USER_ID_SIZE);
+                callChannelJoinedHandler(channelID, userID);
             }
             break;
         default:

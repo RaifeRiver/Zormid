@@ -1,21 +1,22 @@
 # Data Types
 
-| Type                       | Description                                                                                              |
-|----------------------------|----------------------------------------------------------------------------------------------------------|
-| `string`                   | `uint32` length followed by content                                                                      |
-| `x[]`                      | Array of type `x` defined as `uint32` length followed by the data                                        |
-| `user_id`                  | 12 byte user ID                                                                                          |
-| `status`                   | `uint32` enum<br>`0` - Offline<br>`1` - Online                                                           |
-| `user`                     | id: `user_id`<br>username: `string`<br>avatar: `string`<br>status: `status`                              |
-| `channel_id`               | 20 byte channel ID                                                                                       |
-| `channel`                  | id: `channel_id`<br>type: `channel_type`<br>name: `string`                                               |
-| `message`                  | from: `user_id`<br>content: `string`<br>username: `string`<br>timestamp: `int64`                         |
-| `file_id`                  | 20 byte SHA1 hash of the file contents                                                                   |
-| `upload_status`            | `uint8` enum<br>`0` - Upload<br>`1` - File too large<br>`2` - File already uploaded                      |
-| `session_id`               | 16 byte session ID                                                                                       |
-| `bool`                     | 1 byte boolean value                                                                                     |
-| `channel_type`             | `uint32` enum<br>`0` - Text                                                                              |
-| `extended_channel[type=0]` | id: `channel_id`<br>type: `channel_type`<br>name: `string`<br>users: `user[]`<br>message_count: `uint32` |
+| Type                       | Description                                                                                                |
+|----------------------------|------------------------------------------------------------------------------------------------------------|
+| `string`                   | `uint32` length followed by content                                                                        |
+| `x[]`                      | Array of type `x` defined as `uint32` length followed by the data                                          |
+| `user_id`                  | 12 byte user ID                                                                                            |
+| `status`                   | `uint32` enum<br>`0` - Offline<br>`1` - Online                                                             |
+| `user`                     | id: `user_id`<br>username: `string`<br>avatar: `string`<br>status: `status`                                |
+| `channel_id`               | 20 byte channel ID                                                                                         |
+| `channel`                  | id: `channel_id`<br>type: `channel_type`<br>name: `string`                                                 |
+| `message`                  | from: `user_id`<br>content: `string`<br>username: `string`<br>timestamp: `int64`                           |
+| `file_id`                  | 20 byte SHA1 hash of the file contents                                                                     |
+| `upload_status`            | `uint8` enum<br>`0` - Upload<br>`1` - File too large<br>`2` - File already uploaded                        |
+| `session_id`               | 16 byte session ID                                                                                         |
+| `bool`                     | 1 byte boolean value                                                                                       |
+| `channel_type`             | `uint32` enum<br>`0` - Text                                                                                |
+| `extended_channel[type=0]` | id: `channel_id`<br>type: `channel_type`<br>name: `string`<br>users: `user[]`<br>message_count: `uint32`   |
+| `extended_channel[type=1]` | id: `channel_id`<br>type: `channel_type`<br>name: `string`<br>users: `user[]`<br>active_users: `user_id[]` |
 
 # Server To Client
 
@@ -36,8 +37,9 @@
 | `0xC`  | channel_id: `channel_id`<br>user_id: `user_id`<br>typing: `bool`                                                             | User started or stopped typing in a channel                                    |
 | `0xD`  | user_id: `user_id`                                                                                                           | User joined the current call                                                   |
 | `0xE`  | response: `bool`<br>offer: `string`                                                                                          | Offer to join rtc connection                                                   |
-| `0xF`  | from: `user_id`<br>candidate: `string`<br>sdp_mid: `string`<br>sdp_mline_index: `uint32`                                                        | Rtc connection candidate                                                       |
+| `0xF`  | from: `user_id`<br>candidate: `string`<br>sdp_mid: `string`<br>sdp_mline_index: `uint32`                                     | Rtc connection candidate                                                       |
 | `0x10` | channel_id: `channel_id`<br>user_id: `user_id`                                                                               | User left a call                                                               |
+| `0x11` | channel_id: `channel_id`<br>user_id: `user_id`                                                                               | User joined a call                                                             |
 
 # Client To Server
 

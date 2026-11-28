@@ -372,9 +372,16 @@ namespace zormid::client {
 			response << (user.getActiveClients() > 0 ? 1u : 0u);
 			user::manager::unloadUser(userID);
 		}
-		if (channel->getType() == chat::ChannelType::TEXT) {
+		if (const chat::ChannelType channelType = channel->getType(); channelType == chat::ChannelType::TEXT) {
 			const auto* textChannel = dynamic_cast<chat::TextChannel*>(channel.get());
 			response << textChannel->getMessageCount();
+		}
+		else if (channelType == chat::ChannelType::VOICE) {
+			const std::vector<Client*>& clients = chat::call::getClientsInCall(channelID);
+			response << static_cast<uint32_t>(clients.size());
+			for (const Client* client : clients) {
+				response << client->getUserID();
+			}
 		}
 		mSocket->write(response.buildPayload());
 	}
@@ -484,6 +491,25 @@ namespace zormid::client {
 		for (const Client* client : clientsInCall) {
 			client->getSocket().write(data);
 		}
+		for (const std::unique_ptr<chat::Channel> channel = chat::loadChannel(channelID); const user::manager::UserID& userID : channel->getUsers()) {
+			if (userID == mUser->getID()) {
+				continue;
+			}
+			if (!user::manager::isActive(userID)) {
+				continue;
+			}
+			user::User& user = user::manager::loadUser(userID);
+			if (user.getActiveClients() == 0) {
+				user::manager::unloadUser(userID);
+				continue;
+			}
+			net::http::PayloadWriter response2;
+			response2 << 0x11u;
+			response2 << channelID;
+			response2 << mUser->getID();
+			user.pushPayload(response2.buildAllocatedPayload());
+			user::manager::unloadUser(userID);
+		}
 		clientsInCall.push_back(this);
 		mCallChannel = channelID;
 	}
@@ -534,13 +560,24 @@ namespace zormid::client {
 			return;
 		}
 		chat::call::leaveCall(*mCallChannel, this);
-		net::http::PayloadWriter response;
-		response << 0x10u;
-		response << *mCallChannel;
-		response << mUser->getID();
-		const net::http::PayloadData data = response.buildPayload();
-		for (const Client* client : chat::call::getClientsInCall(*mCallChannel)) {
-			client->getSocket().write(data);
+		for (const std::unique_ptr<chat::Channel> channel = chat::loadChannel(*mCallChannel); const user::manager::UserID& userID : channel->getUsers()) {
+			if (userID == mUser->getID()) {
+				continue;
+			}
+			if (!user::manager::isActive(userID)) {
+				continue;
+			}
+			user::User& user = user::manager::loadUser(userID);
+			if (user.getActiveClients() == 0) {
+				user::manager::unloadUser(userID);
+				continue;
+			}
+			net::http::PayloadWriter response;
+			response << 0x10u;
+			response << *mCallChannel;
+			response << mUser->getID();
+			user.pushPayload(response.buildAllocatedPayload());
+			user::manager::unloadUser(userID);
 		}
 		mCallChannel = {};
 	}
