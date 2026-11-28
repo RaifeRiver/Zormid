@@ -7,7 +7,7 @@
 #include "net/http/HTTPServer.h"
 
 namespace zormid {
-	static constexpr std::string ZORMID_VERSION = "v0.1";
+	static constexpr std::string ZORMID_VERSION = "v0.4";
 
 	class Zormid {
 	public:
