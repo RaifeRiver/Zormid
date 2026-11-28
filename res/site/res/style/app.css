@@ -684,6 +684,7 @@ a {
     justify-content: flex-start;
     align-items: center;
     box-sizing: border-box;
+    margin-bottom: 0.5vh;
 }
 
 .file-info {
@@ -915,6 +916,10 @@ summary {
     overflow-y: scroll;
     display: flex;
     flex-direction: column;
+}
+
+#voice-channel-container {
+    padding: 1vh 1vw;
 }
 
 @media (orientation: portrait) {
