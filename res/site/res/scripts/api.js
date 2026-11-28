@@ -9,6 +9,7 @@ let pendingUploads = {};
 export const USER_ID_SIZE = 12;
 
 export const CHANNEL_TYPE_TEXT = 0;
+export const CHANNEL_TYPE_VOICE = 1;
 
 export let connectHandler;
 export function setConnectHandler(handler) {
@@ -88,6 +89,21 @@ export function setChannelRemoveHandler(handler) {
 export let userTypingChangeHandler;
 export function setUserTypingChangeHandler(handler) {
     userTypingChangeHandler = handler;
+}
+
+export let callJoinedHandler;
+export function setCallJoinedHandler(handler) {
+    callJoinedHandler = handler;
+}
+
+export let callOfferHandler;
+export function setCallOfferHandler(handler) {
+    callOfferHandler = handler;
+}
+
+export let callCandidateHandler;
+export function setCallCandidateHandler(handler) {
+    callCandidateHandler = handler;
 }
 
 function readString(packet, pos) {
@@ -183,7 +199,7 @@ async function processPacket(packet) {
                     pos += 8 + avatarSize;
                     users.push({userID: userID, username: username, avatar: avatar, status: status});
                 }
-                let channel = {channelID: channelID, channelType: channelType, name: channelName, users: users};
+                let channel = {channelID: channelID, channelType: channelType, channelName: channelName, users: users};
                 if (channelType === CHANNEL_TYPE_TEXT) {
                     channel.messageCount = view.getUint32(32 + channelNameSize, true);
                 }
@@ -287,6 +303,27 @@ async function processPacket(packet) {
                 let userID = readID(view, 24, USER_ID_SIZE);
                 let typing = view.getUint8(24 + USER_ID_SIZE) !== 0;
                 userTypingChangeHandler({channelID: channelID, userID: userID, typing: typing});
+            }
+            break;
+        case 0xD:
+            if (callJoinedHandler) {
+                let userID = readID(view, 4, USER_ID_SIZE);
+                callJoinedHandler(userID);
+            }
+            break;
+        case 0xE:
+            if (callOfferHandler) {
+                let response = view.getUint8(4) !== 0;
+                let offer = readString(view, 5).text;
+                callOfferHandler({type: "offer", sdp: offer}, response);
+            }
+            break;
+        case 0xF:
+            if (callCandidateHandler) {
+                let {text: candidate, bytes: candidateLength} = readString(view, 4);
+                let {text: sdpMid, bytes: sdpMidLength} = readString(view, 8 + candidateLength);
+                let sdpMLineIndex = view.getUint32(12 + candidateLength + sdpMidLength, true);
+                callCandidateHandler({candidate: candidate, sdpMid: sdpMid, sdpMLineIndex: sdpMLineIndex});
             }
             break;
         default:
@@ -514,5 +551,49 @@ export function setTyping(typing, channelID) {
     for (let i = 0; i < 20; i++) {
         view.setUint8(i + 5, channelID.charCodeAt(i));
     }
+    websocket.send(buffer);
+}
+
+export function joinCall(channelID) {
+    let buffer = new ArrayBuffer(24);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0x11, true);
+    for (let i = 0; i < 20; i++) {
+        view.setUint8(i + 4, channelID.charCodeAt(i));
+    }
+    websocket.send(buffer);
+}
+
+export function sendCallOffer(userID, offer, response) {
+    let buffer = new ArrayBuffer(9 + USER_ID_SIZE + offer.sdp.length);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0x12, true);
+    for (let i = 0; i < USER_ID_SIZE; i++) {
+        view.setUint8(i + 4, userID.charCodeAt(i));
+    }
+    view.setUint8(4 + USER_ID_SIZE, response ? 1 : 0);
+    view.setUint32(5 + USER_ID_SIZE, offer.sdp.length, true);
+    for (let i = 0; i < offer.sdp.length; i++) {
+        view.setUint8(i + 9 + USER_ID_SIZE, offer.sdp.charCodeAt(i));
+    }
+    websocket.send(buffer);
+}
+
+export function sendCallCandidate(userID, candidate) {
+    let buffer = new ArrayBuffer(20 + USER_ID_SIZE + candidate.candidate.length + candidate.sdpMid.length);
+    let view = new DataView(buffer);
+    view.setUint32(0, 0x13, true);
+    for (let i = 0; i < USER_ID_SIZE; i++) {
+        view.setUint8(i + 4, userID.charCodeAt(i));
+    }
+    view.setUint32(4 + USER_ID_SIZE, candidate.candidate.length, true);
+    for (let i = 0; i < candidate.candidate.length; i++) {
+        view.setUint8(i + 8 + USER_ID_SIZE, candidate.candidate.charCodeAt(i));
+    }
+    view.setUint32(8 + USER_ID_SIZE + candidate.candidate.length, candidate.sdpMid.length, true);
+    for (let i = 0; i < candidate.sdpMid.length; i++) {
+        view.setUint8(i + 12 + USER_ID_SIZE + candidate.candidate.length, candidate.sdpMid.charCodeAt(i));
+    }
+    view.setUint32(12 + USER_ID_SIZE + candidate.candidate.length + candidate.sdpMid.length, candidate.sdpMLineIndex, true);
     websocket.send(buffer);
 }

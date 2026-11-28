@@ -340,7 +340,7 @@ p {
     margin-bottom: 1vh;
 }
 
-#channel-container {
+.channel-container {
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -532,7 +532,7 @@ p {
     background-color: var(--theme-secondary-background-color);
 }
 
-.user-settings-content label {
+label {
     display: block;
     color: var(--theme-text-color);
     font-family: var(--theme-font-family), sans-serif;
@@ -556,7 +556,7 @@ p {
     gap: 0.5vh;
 }
 
-.user-settings-content select {
+select {
     color: var(--theme-text-color);
     background-color: var(--theme-secondary-background-color);
     border: var(--theme-border-color) 2px solid;
@@ -893,6 +893,10 @@ summary {
     font-family: monospace;
 }
 
+#voice-controls {
+
+}
+
 @media (orientation: portrait) {
     #main-area {
         display: none;
@@ -903,7 +907,7 @@ summary {
         border: none;
     }
 
-    #channel-container {
+    .channel-container {
         min-width: 100vw;
     }
 

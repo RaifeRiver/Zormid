@@ -26,7 +26,8 @@ namespace zormid::chat {
 	};
 
 	enum class ChannelType : uint32_t {
-		TEXT = 0
+		TEXT = 0,
+		VOICE = 1
 	};
 
 	class Channel {
@@ -88,3 +89,7 @@ namespace zormid::chat {
 
 	uint32_t migrateAllChannels();
 }
+
+template <> struct std::hash<zormid::chat::ChannelID> {
+	size_t operator()(const zormid::chat::ChannelID& id) const noexcept;
+};

@@ -125,7 +125,7 @@
                     </template>
                 </div>
 
-                <div id="channel-container" style="display: none;">
+                <div id="text-channel-container" class="channel-container" style="display: none;">
                     <div id="message-container">
 
                     </div>
@@ -189,6 +189,12 @@
                     </div>
                 </div>
 
+                <div id="voice-channel-container" class="channel-container" style="display: none;">
+	                <div id="voice-channel-users"></div>
+
+                    <div id="voice-controls"></div>
+                </div>
+
                 <input id="file-upload-input" type="file">
 
                 <a id="file-download-link"></a>
@@ -250,9 +256,15 @@
         <dialog id="add-channel-menu" class="popup-menu">
             <h3>Add Channel</h3>
 
-            <input id="add-channel-name" placeholder="Channel name">
+            <input id="add-channel-name" type="text" placeholder="Channel name">
 
-            <p>Friends:</p>
+            <label for="add-channel-type">Channel type:</label>
+            <select id="add-channel-type">
+                <option value="0">Text</option>
+                <option value="1">Voice</option>
+            </select>
+
+            <label for="add-channel-friends">Friends:</label>
             <div id="add-channel-friends"></div>
 
             <button id="add-channel-add" class="dialog-confirm-button">Add</button>

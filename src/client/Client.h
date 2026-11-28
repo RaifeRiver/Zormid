@@ -33,6 +33,7 @@ namespace zormid::client {
 		std::unique_ptr<net::http::WebSocket> mSocket;
 		user::User* mUser = nullptr;
 		std::optional<chat::ChannelID> mTypingChannel;
+		std::optional<chat::ChannelID> mCallChannel;
 
 		void sendUserInfoToAll() const;
 
@@ -69,6 +70,12 @@ namespace zormid::client {
 		void processSetAvatarPacket(net::http::PayloadReader& payload) const;
 
 		void processTypingPacket(net::http::PayloadReader& payload);
+
+		void processJoinCallPacket(net::http::PayloadReader& payload);
+
+		void processCallOfferPacket(net::http::PayloadReader& payload) const;
+
+		void processCallCandidatePacket(net::http::PayloadReader& payload) const;
 
 		static void processFileUploadPacket(net::http::PayloadReader& payload) ;
 

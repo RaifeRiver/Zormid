@@ -5,6 +5,8 @@
 #include <iostream>
 
 #include "Zormid.h"
+#include "chat/CallManager.h"
+#include "chat/VoiceChannel.h"
 #include "util/Base64.h"
 #include "util/FileStream.h"
 
@@ -16,6 +18,9 @@ namespace zormid::client {
 		while ((payload = mSocket->read()).has_value()) {
 			net::http::PayloadReader payloadReader(*payload);
 			processPacket(payloadReader);
+		}
+		if (!mSocket->isOpen() && mUser) {
+			close_();
 		}
 	}
 
@@ -96,7 +101,7 @@ namespace zormid::client {
 
 	void Client::sendTypingToAllInChannels() const {
 		for (const chat::ChannelID channelID : mUser->getChannels()) {
-			for (std::unique_ptr<chat::Channel> channel = chat::loadChannel(channelID); const user::manager::UserID& userID : channel->getUsers()) {
+			for (const std::unique_ptr<chat::Channel> channel = chat::loadChannel(channelID); const user::manager::UserID& userID : channel->getUsers()) {
 				if (userID == mUser->getID()) {
 					continue;
 				}
@@ -125,6 +130,10 @@ namespace zormid::client {
 			if (--mUser->getTypingClients() == 0) {
 				sendTypingToAllInChannels();
 			}
+		}
+		if (mCallChannel) {
+			chat::call::leaveCall(*mCallChannel, this);
+			mCallChannel = {};
 		}
 		mUser->getActiveClients()--;
 		sendUserInfoToAll();
@@ -189,6 +198,15 @@ namespace zormid::client {
 				break;
 			case 0x10:
 				processTypingPacket(payload);
+				break;
+			case 0x11:
+				processJoinCallPacket(payload);
+				break;
+			case 0x12:
+				processCallOfferPacket(payload);
+				break;
+			case 0x13:
+				processCallCandidatePacket(payload);
 				break;
 			default:
 				std::cout << "Unknown packet ID: " << id << std::endl;
@@ -454,6 +472,59 @@ namespace zormid::client {
 		}
 	}
 
+	void Client::processJoinCallPacket(net::http::PayloadReader& payload) {
+		const chat::ChannelID channelID = payload.readChannelID();
+		std::vector<Client*>& clientsInCall = chat::call::getClientsInCall(channelID);
+		net::http::PayloadWriter response;
+		response << 0xDu;
+		response << mUser->getID();
+		const net::http::PayloadData data = response.buildPayload();
+		for (const Client* client : clientsInCall) {
+			client->getSocket().write(data);
+		}
+		clientsInCall.push_back(this);
+		mCallChannel = channelID;
+	}
+
+	void Client::processCallOfferPacket(net::http::PayloadReader& payload) const {
+		const user::manager::UserID userID = payload.readUserID();
+		bool responseOffer;
+		payload >> responseOffer;
+		std::string offer;
+		payload >> offer;
+		net::http::PayloadWriter response;
+		response << 0xEu;
+		response << responseOffer;
+		response << offer;
+		const net::http::PayloadData data = response.buildPayload();
+		for (const Client* client : chat::call::getClientsInCall(*mCallChannel)) {
+			if (client->getUserID() == userID) {
+				client->getSocket().write(data);
+			}
+		}
+	}
+
+	void Client::processCallCandidatePacket(net::http::PayloadReader& payload) const {
+		const user::manager::UserID userID = payload.readUserID();
+		std::string candidate;
+		payload >> candidate;
+		std::string sdpMid;
+		payload >> sdpMid;
+		uint32_t sdpMLineIndex;
+		payload >> sdpMLineIndex;
+		net::http::PayloadWriter response;
+		response << 0xFu;
+		response << candidate;
+		response << sdpMid;
+		response << sdpMLineIndex;
+		const net::http::PayloadData data = response.buildPayload();
+		for (const Client* client : chat::call::getClientsInCall(*mCallChannel)) {
+			if (client->getUserID() == userID) {
+				client->getSocket().write(data);
+			}
+		}
+	}
+
 	void Client::processFileUploadPacket(net::http::PayloadReader& payload) {
 		char id[20];
 		payload.read(id, 20);
@@ -559,6 +630,9 @@ namespace zormid::client {
 		switch (channelType) {
 			case chat::ChannelType::TEXT:
 				channel = std::make_unique<chat::TextChannel>(channelID);
+				break;
+			case chat::ChannelType::VOICE:
+				channel = std::make_unique<chat::VoiceChannel>(channelID);
 				break;
 			default:
 				return;

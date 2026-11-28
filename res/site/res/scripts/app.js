@@ -9,12 +9,14 @@ let loadingScreen = document.getElementById("loading-screen");
 let sidePanel = document.getElementById("side-panel");
 let mainArea = document.getElementById("main-area");
 
-let channelContainer = document.getElementById("channel-container");
+let textChannelContainer = document.getElementById("text-channel-container");
 let messageInput = document.getElementById("message-input");
 let messageTemplate = document.getElementById("message-template");
 let continuationMessageTemplate = document.getElementById("continuation-message-template");
 let messageContainer = document.getElementById("message-container");
 let typingIndicator = document.getElementById("typing-indicator");
+
+let voiceChannelContainer = document.getElementById("voice-channel-container");
 
 let sendButton = document.getElementById("send-button");
 
@@ -45,6 +47,7 @@ let friendTemplate = document.getElementById("friend-template");
 
 let addChannelMenu = document.getElementById("add-channel-menu");
 let addChannelClose = document.getElementById("add-channel-close");
+let addChannelType = document.getElementById("add-channel-type");
 let addChannelFriends = document.getElementById("add-channel-friends");
 let addChannelFriendTemplate = document.getElementById("add-channel-friend-template");
 let addChannelAdd = document.getElementById("add-channel-add");
@@ -101,6 +104,7 @@ let portraitMedia = window.matchMedia("(orientation: portrait)");
 
 let userID;
 let currentChannelID;
+let currentChannelType;
 let channelMessageCount;
 let channelTypingUsers = [];
 let friends = [];
@@ -112,6 +116,9 @@ let uploadType;
 let users = {};
 let connected = false;
 let typing = false;
+let stateSet = false;
+let callStream;
+let callConnection;
 
 let messageScrollObserver;
 
@@ -163,9 +170,6 @@ api.setAuthHandler((info) => {
     document.title = "Zormid - Friends";
 
     window.addEventListener("popstate", (event) => setState(event.state));
-    if (history.state) {
-        setState(history.state);
-    }
 });
 api.setFriendListRequestHandler((f) => {
     friends = f;
@@ -199,6 +203,12 @@ api.setChannelListRequestHandler((channels, id) => {
     for (let channel of channels) {
         addChannel(channel);
     }
+    if (!stateSet) {
+        stateSet = true;
+        if (history.state) {
+            setState(history.state);
+        }
+    }
 });
 api.setMessageHandler((message) => {
     if (message.channelID !== currentChannelID && message.userID !== userID) {
@@ -210,8 +220,8 @@ api.setChannelInfoHandler((info) => {
     if (info.channelID !== currentChannelID) {
         return;
     }
-    document.title = `Zormid - ${info.name}`;
-    channelName.textContent = info.name;
+    document.title = `Zormid - ${info.channelName}`;
+    channelName.textContent = info.channelType === api.CHANNEL_TYPE_VOICE ? `📞 ${info.channelName}`: info.channelName;
     channelMessageCount = info.messageCount;
     channelSettingsContainer.style.display = "flex";
     messageContainer.replaceChildren();
@@ -349,6 +359,58 @@ api.setUserTypingChangeHandler((info) => {
     typingIndicator.textContent = `${typingString} ${channelTypingUsers.length === 1 ? "is" : "are"} typing...`;
 });
 
+api.setCallJoinedHandler(async (userID) => {
+    callConnection = new RTCPeerConnection({iceServers: [{urls: "stun:stun.cloudflare.com:3478"}, {urls: "turn:free.expressturn.com:3478", username: "000000002111055202", credential: "+RFLZyMU/RHslWGpjuF6JyT4xt8="}]});
+    callConnection.addEventListener("track", (event) => {
+        let audioElement = document.createElement("audio");
+        audioElement.autoplay = true;
+        audioElement.srcObject = event.streams[0];
+        audioElement.style.display = "none";
+        document.appendChild(audioElement);
+    });
+    for (let track of callStream.getTracks()) {
+        callConnection.addTrack(track);
+    }
+    let offer = await callConnection.createOffer();
+    await callConnection.setLocalDescription(offer);
+    callConnection.addEventListener("icecandidate", (event) => {
+        if (event.candidate) {
+            api.sendCallCandidate(userID, event.candidate);
+        }
+    });
+    api.sendCallOffer(userID, offer, false);
+});
+
+api.setCallOfferHandler(async (offer, response) => {
+    if (response) {
+        await callConnection.setRemoteDescription(offer);
+    }
+    else {
+        callConnection = new RTCPeerConnection({iceServers: [{urls: "stun:stun.cloudflare.com:3478"}, {urls: "turn:free.expressturn.com:3478", username: "000000002111055202", credential: "+RFLZyMU/RHslWGpjuF6JyT4xt8="}]});
+        callConnection.addEventListener("icecandidate", (event) => {
+            if (event.candidate) {
+                api.sendCallCandidate(userID, event.candidate);
+            }
+        });
+        callConnection.addEventListener("track", (event) => {
+            let audioElement = document.createElement("audio");
+            audioElement.autoplay = true;
+            audioElement.srcObject = event.streams[0];
+        });
+        for (let track of callStream.getTracks()) {
+            callConnection.addTrack(track);
+        }
+        await callConnection.setRemoteDescription(offer);
+        let localOffer = await callConnection.createAnswer();
+        await callConnection.setLocalDescription(localOffer);
+        api.sendCallOffer(userID, localOffer, true);
+    }
+});
+
+api.setCallCandidateHandler(async (candidate) => {
+    await callConnection.addIceCandidate(candidate);
+});
+
 connectionAttempts++;
 api.connect();
 
@@ -451,20 +513,43 @@ function changeChannel(channelID) {
     if (channelID === currentChannelID) {
         return;
     }
-    history.pushState({channel: channelID}, "", "/app/channel/" + base64.encodeURL(channelID));
+    let encodedChannelID = base64.encodeURL(channelID);
+    history.pushState({channel: channelID}, "", `/app/channel/${encodedChannelID}`);
+    let type = parseInt(channelList.querySelector(`[data-id="${encodedChannelID}"]`).dataset.type);
     if (!currentChannelID) {
         friendListContainer.style.display = "none";
-        channelContainer.style.display = "flex";
         if (portraitMedia.matches) {
             sidePanel.style.display = "none";
             mainArea.style.display = "flex";
         }
     }
-    currentChannelID = channelID;
+    else {
+        api.setTyping(false, currentChannelID);
+    }
+    if (currentChannelType !== type) {
+        if (type === api.CHANNEL_TYPE_TEXT) {
+            voiceChannelContainer.style.display = "none";
+            textChannelContainer.style.display = "flex";
+        }
+        else if (type === api.CHANNEL_TYPE_VOICE) {
+            textChannelContainer.style.display = "none";
+            voiceChannelContainer.style.display = "flex";
+        }
+    }
     channelTypingUsers.length = 0;
     typing = false;
-    api.setTyping(false, currentChannelID);
-    messageContainer.replaceChildren();
+    currentChannelID = channelID;
+    if (type === api.CHANNEL_TYPE_TEXT) {
+        messageContainer.replaceChildren();
+    }
+    else if (type === api.CHANNEL_TYPE_VOICE) {
+        navigator.mediaDevices.getUserMedia({
+            audio: true
+        }).then((stream) => {
+            callStream = stream;
+            api.joinCall(channelID);
+        });
+    }
     api.requestChannelInfo(channelID);
 }
 
@@ -504,7 +589,7 @@ function addChannelFromMenu() {
             }
         }
     }
-    api.createChannel(api.CHANNEL_TYPE_TEXT, name, selectedFriends);
+    api.createChannel(parseInt(addChannelType.value), name, selectedFriends);
     addChannelMenu.close();
 }
 
@@ -521,7 +606,9 @@ function openFriendsList() {
     typing = false;
     api.setTyping(false, currentChannelID);
     currentChannelID = undefined;
-    channelContainer.style.display = "none";
+    currentChannelType = undefined;
+    textChannelContainer.style.display = "none";
+    voiceChannelContainer.style.display = "none";
     channelName.textContent = "Friends";
     channelSettingsContainer.style.display = "none";
     userListContainer.style.display = "none";
@@ -788,9 +875,10 @@ function removeUserElement(id, element) {
 
 function addChannel(channel) {
     let channelElement = document.importNode(channelTemplate.content, true).firstElementChild;
-    channelElement.textContent = channel.channelName;
+    channelElement.textContent = channel.channelType === api.CHANNEL_TYPE_VOICE ? `📞 ${channel.channelName}`: channel.channelName;
     channelElement.addEventListener("click", () => changeChannel(channel.channelID));
     channelElement.dataset.id = base64.encodeURL(channel.channelID);
+    channelElement.dataset.type = channel.channelType;
     channelList.appendChild(channelElement);
 }
 

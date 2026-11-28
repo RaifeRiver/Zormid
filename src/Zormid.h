@@ -19,7 +19,7 @@ namespace zormid {
 			return mConfig;
 		}
 
-		[[nodiscard]] std::vector<client::Client>& getClients() {
+		[[nodiscard]] std::vector<std::unique_ptr<client::Client>>& getClients() {
 			return mClients;
 		}
 
@@ -35,7 +35,7 @@ namespace zormid {
 		bool mRunning = true;
 		Config mConfig;
 		std::unique_ptr<net::http::HTTPServer> mServer;
-		std::vector<client::Client> mClients;
+		std::vector<std::unique_ptr<client::Client>> mClients;
 
 		Zormid();
 	};

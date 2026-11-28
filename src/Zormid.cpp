@@ -24,13 +24,13 @@ namespace zormid {
 		while (mRunning) {
 			mServer->accept();
 			for (uint32_t i = 0; i < mClients.size(); i++) {
-				mClients[i].process();
-				if (!mClients[i].isOpen()) {
+				mClients[i]->process();
+				if (!mClients[i]->isOpen()) {
 					mClients.erase(mClients.begin() + i--);
 				}
 			}
-			for (const client::Client& client: mClients) {
-				client.writeAll();
+			for (const std::unique_ptr<client::Client>& client: mClients) {
+				client->writeAll();
 			}
 			for (user::User& user : user::manager::getLoadedUsers() | std::views::values) {
 				user.clearWriteQueue();
@@ -74,7 +74,7 @@ namespace zormid {
 		mServer->setClientHandler([&](net::http::HTTPRequestHeader request, std::unique_ptr<net::Socket> client) {
 			net::http::HTTPResponseHeader response;
 			if (request.headers["Connection"] == "Upgrade" && request.headers["Upgrade"] == "websocket") {
-				mClients.emplace_back(std::make_unique<net::http::WebSocket>(std::move(client), request));
+				mClients.push_back(std::make_unique<client::Client>(std::make_unique<net::http::WebSocket>(std::move(client), request)));
 				return;
 			}
 			if (request.path.starts_with("/app/")) {

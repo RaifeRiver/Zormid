@@ -65,7 +65,7 @@ namespace zormid::chat {
 		std::filesystem::remove(file + ".messages.dat");
 	}
 
-	void TextChannel::createNewSave_() {std::cout << "Create new save" << std::endl;
+	void TextChannel::createNewSave_() {
 		const std::string hash = util::base16::encode(static_cast<const char*>(getID()), 20);
 		const std::string dir = hash.substr(0, 2);
 		const std::string file = CHANNELS_DIR + dir + "/" + hash.substr(2);

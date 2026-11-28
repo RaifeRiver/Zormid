@@ -6,6 +6,7 @@
 #include <random>
 
 #include "TextChannel.h"
+#include "VoiceChannel.h"
 #include "util/Base16.h"
 #include "util/FileStream.h"
 
@@ -181,6 +182,8 @@ namespace zormid::chat {
 		switch (type) {
 			case ChannelType::TEXT:
 				return std::make_unique<TextChannel>(id);
+			case ChannelType::VOICE:
+				return std::make_unique<VoiceChannel>(id);
 			default:
 				return nullptr;
 		}
@@ -227,4 +230,8 @@ namespace zormid::chat {
 		}
 		return count;
 	}
+}
+
+std::size_t std::hash<zormid::chat::ChannelID>::operator()(const zormid::chat::ChannelID& id) const noexcept {
+	return std::hash<std::string_view>{}(std::string_view(static_cast<const char*>(id), 20));
 }
