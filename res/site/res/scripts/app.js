@@ -555,7 +555,11 @@ function changeChannel(channelID) {
     }
     else if (type === api.CHANNEL_TYPE_VOICE) {
         navigator.mediaDevices.getUserMedia({
-            audio: true
+            audio: {
+                noiseSuppression: true,
+                echoCancellation: true,
+                autoGainControl: true
+            }
         }).then((stream) => {
             callStream = stream;
             api.joinCall(channelID);
